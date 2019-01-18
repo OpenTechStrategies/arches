@@ -6,8 +6,8 @@ from arches.management.commands import utils
 
 postgres_version = subprocess.check_output(["psql", "--version"])
 pattern = re.compile(r'\s\d+.\d*.\d*')
-matches = pattern.findall(postgres_version)
-psqlversionmatch = matches[0]
+matches = pattern.findall(postgres_version.decode('utf-8'))
+psqlversionmatch = matches[0].strip()
 split = (psqlversionmatch.split('.'))  # major[9].minor[2].patch[0]
 
 # add "0" place holders
@@ -16,6 +16,8 @@ if len(split) < 2:  # e.g 9 > 9.0
 if len(split) < 3:  # e.g 9.1 > 9.1.0
     split.append(0)
 
+# We need version splits as ints, not strings
+split = [int(s) for s in split]
 
 def create_sqlfile(database_settings, path_to_file):
     context = Context(database_settings)
