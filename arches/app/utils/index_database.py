@@ -64,7 +64,7 @@ def index_resources_by_type(resource_types, clear_index=True, batch_size=setting
         start = datetime.now()
         resources = Resource.objects.filter(graph_id=str(resource_type))
         graph_name = models.GraphModel.objects.get(graphid=str(resource_type)).name
-        print "Indexing resource type '{0}'".format(graph_name)
+        print(("Indexing resource type '{0}'".format(graph_name)))
         result_summary = {'database':len(resources), 'indexed':0}
 
         if clear_index:
@@ -82,7 +82,7 @@ def index_resources_by_type(resource_types, clear_index=True, batch_size=setting
         result_summary['indexed'] = se.count(index='resource', doc_type=str(resource_type))
 
         status = 'Passed' if result_summary['database'] == result_summary['indexed'] else 'Failed'
-        print "Status: {0}, Resource Type: {1}, In Database: {2}, Indexed: {3}, Took: {4} seconds".format(status, graph_name, result_summary['database'], result_summary['indexed'], (datetime.now()-start).seconds)
+        print(("Status: {0}, Resource Type: {1}, In Database: {2}, Indexed: {3}, Took: {4} seconds".format(status, graph_name, result_summary['database'], result_summary['indexed'], (datetime.now()-start).seconds)))
 
 def index_resource_relations(clear_index=True, batch_size=settings.BULK_IMPORT_BATCH_SIZE):
     """
@@ -95,7 +95,7 @@ def index_resource_relations(clear_index=True, batch_size=settings.BULK_IMPORT_B
     """
 
     start = datetime.now()
-    print "Indexing resource to resource relations"
+    print("Indexing resource to resource relations")
 
     cursor = connection.cursor()
     se = SearchEngineFactory().create()
@@ -121,7 +121,7 @@ def index_resource_relations(clear_index=True, batch_size=settings.BULK_IMPORT_B
             resource_relations_indexer.add(index='resource_relations', doc_type='all', id=doc['resourcexid'], data=doc)
 
     index_count = se.count(index='resource_relations')
-    print "Status: {0}, In Database: {1}, Indexed: {2}, Took: {3} seconds".format('Passed' if cursor.rowcount == index_count else 'Failed', cursor.rowcount, index_count, (datetime.now()-start).seconds)
+    print(("Status: {0}, In Database: {1}, Indexed: {2}, Took: {3} seconds".format('Passed' if cursor.rowcount == index_count else 'Failed', cursor.rowcount, index_count, (datetime.now()-start).seconds)))
 
 def index_concepts(clear_index=True, batch_size=settings.BULK_IMPORT_BATCH_SIZE):
     """
@@ -134,7 +134,7 @@ def index_concepts(clear_index=True, batch_size=settings.BULK_IMPORT_BATCH_SIZE)
     """
 
     start = datetime.now()
-    print "Indexing concepts"
+    print("Indexing concepts")
     cursor = connection.cursor()
     se = SearchEngineFactory().create()
     if clear_index:
@@ -202,4 +202,4 @@ def index_concepts(clear_index=True, batch_size=settings.BULK_IMPORT_BATCH_SIZE)
     cursor.execute("SELECT count(*) from values WHERE valuetype in ({0})".format(valueTypes))
     concept_count_in_db = cursor.fetchone()[0]
     index_count = se.count(index='strings', doc_type='concept')
-    print "Status: {0}, In Database: {1}, Indexed: {2}, Took: {3} seconds".format('Passed' if concept_count_in_db == index_count else 'Failed', concept_count_in_db, index_count, (datetime.now()-start).seconds)
+    print(("Status: {0}, In Database: {1}, Indexed: {2}, Took: {3} seconds".format('Passed' if concept_count_in_db == index_count else 'Failed', concept_count_in_db, index_count, (datetime.now()-start).seconds)))

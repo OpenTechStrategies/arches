@@ -143,7 +143,7 @@ class UserManagerView(BaseManagerView):
                     message = _('Your arches profile was just changed.  If this was unexpected, please contact your Arches administrator at %s.' % (admin_info))
                     user.email_user(_('You\'re Arches Profile Has Changed'), message)
                 except Exception as e:
-                    print e
+                    print(e)
                 request.user = user
             context['form'] = form
 
@@ -161,11 +161,11 @@ class UserManagerView(BaseManagerView):
             all_ordered_card_ids += mobile_survey_dict['cards']
             mobile_surveys.append(mobile_survey_dict)
 
-        active_graphs = set([unicode(card.graph_id) for card in models.CardModel.objects.filter(cardid__in=all_ordered_card_ids)])
+        active_graphs = set([str(card.graph_id) for card in models.CardModel.objects.filter(cardid__in=all_ordered_card_ids)])
 
         for i, graph in enumerate(graphs):
             cards = []
-            if i == 0 or unicode(graph.graphid) in active_graphs:
+            if i == 0 or str(graph.graphid) in active_graphs:
                 cards = [Card.objects.get(pk=card.cardid) for card in models.CardModel.objects.filter(graph=graph)]
             resources.append({'name': graph.name, 'id': graph.graphid, 'subtitle': graph.subtitle, 'iconclass': graph.iconclass, 'cards': cards})
 

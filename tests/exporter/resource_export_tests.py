@@ -113,8 +113,7 @@ class BusinessDataExportTests(ArchesTestCase):
         export = BusinessDataExporter('csv',
                                       configs='tests/fixtures/data/csv/resource_export_test.mapping',
                                       single_file=True).export()
-        csv_export = filter(lambda export: 'csv' in export['name'],
-                            export)[0]['outputfile'].getvalue().split('\r')
+        csv_export = [export for export in export if 'csv' in export['name']][0]['outputfile'].getvalue().split('\r')
         csv_output = list(unicodecsv.DictReader(BytesIO(export[0]['outputfile'].getvalue()), encoding='utf-8-sig'))[0]
 
         csvinputfile = 'tests/fixtures/data/csv/resource_export_test.csv'

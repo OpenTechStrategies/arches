@@ -118,7 +118,7 @@ class ConceptDataType(BaseConceptDataType):
                 else:
                     query.must(match_query)
 
-        except KeyError, e:
+        except KeyError as e:
             pass
 
     def to_rdf(self, edge_info, edge):
@@ -193,8 +193,8 @@ class ConceptDataType(BaseConceptDataType):
                 return values[0]["id"]
             else:
                 if concept_id:
-                    print("FAILED TO FIND MATCHING LABEL '{0}' FOR CONCEPT '{1}'").format(
-                        label, concept_id)
+                    print((("FAILED TO FIND MATCHING LABEL '{0}' FOR CONCEPT '{1}'").format(
+                        label, concept_id)))
                     label = None
                 else:
                     print("No Concept ID URI supplied for rdf")
@@ -256,7 +256,7 @@ class ConceptListDataType(BaseConceptDataType):
                 else:
                     query.must(match_query)
 
-        except KeyError, e:
+        except KeyError as e:
             pass
 
     def to_rdf(self, edge_info, edge):

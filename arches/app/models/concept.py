@@ -56,7 +56,7 @@ class Concept(object):
         self.hassubconcepts = False
 
         if len(args) != 0:
-            if isinstance(args[0], basestring):
+            if isinstance(args[0], str):
                 try:
                     uuid.UUID(args[0])
                     self.get(args[0])
@@ -263,7 +263,7 @@ class Concept(object):
 
         for subconcept in self.subconcepts:
             concepts_to_delete = Concept.gather_concepts_to_delete(subconcept)
-            for key, concept in concepts_to_delete.iteritems():
+            for key, concept in list(concepts_to_delete.items()):
                 models.Concept.objects.get(pk=key).delete()
 
         for parentconcept in self.parentconcepts:
@@ -309,7 +309,7 @@ class Concept(object):
 
         if delete_self:
             concepts_to_delete = Concept.gather_concepts_to_delete(self)
-            for key, concept in concepts_to_delete.iteritems():
+            for key, concept in list(concepts_to_delete.items()):
                 # delete only member relationships if the nodetype == Collection
                 if concept.nodetype == 'Collection':
                     concept = Concept().get(id=concept.id, include_subconcepts=True, include_parentconcepts=True,
@@ -408,7 +408,7 @@ class Concept(object):
         columns = "valueidto::text, conceptidto::text, valuetypeto, categoryto, valueto, languageto"
         data = self.get_child_edges(conceptid, ['narrower', 'hasTopConcept'],
                                     child_valuetypes, parent_valuetype, columns, depth_limit)
-        return [dict(zip(['id', 'conceptid', 'type', 'category', 'value', 'language'], d), top_concept='') for d in data]
+        return [dict(list(zip(['id', 'conceptid', 'type', 'category', 'value', 'language'], d)), top_concept='') for d in data]
 
     def get_child_edges(self, conceptid, relationtypes, child_valuetypes=None, parent_valuetype='prefLabel', columns=None, depth_limit=None, offset=None, limit=20, order_hierarchically=False, query=None, languageid=settings.LANGUAGE_CODE):
         """
@@ -786,7 +786,7 @@ class Concept(object):
 
         def delete_concept_values_index(concepts_to_delete):
             se = SearchEngineFactory().create()
-            for concept in concepts_to_delete.itervalues():
+            for concept in list(concepts_to_delete.values()):
                 query = Query(se, start=0, limit=10000)
                 term = Term(field='conceptid', term=concept.id)
                 query.add_query(term)
@@ -962,7 +962,7 @@ class Concept(object):
             links.append({'source': self.id, 'target': related.id, 'relationship': 'related'})
 
         # get unique node list and assign unique integer ids for each node (required by d3)
-        nodes = {node['concept_id']: node for node in nodes}.values()
+        nodes = list({node['concept_id']: node for node in nodes}.values())
         for i in range(len(nodes)):
             nodes[i]['id'] = i
             for link in links:
@@ -1104,7 +1104,7 @@ class Concept(object):
                 val.children.sort(key=lambda x: (x.sortorder, x.text))
 
         for row in rows:
-            rec = dict(zip(column_names, row))
+            rec = dict(list(zip(column_names, row)))
             path = rec['conceptpath'][1:-1].split(',')
             _findNarrower(result, path, rec)
 
@@ -1148,7 +1148,7 @@ class ConceptValue(object):
         self.language = ''
 
         if len(args) != 0:
-            if isinstance(args[0], basestring):
+            if isinstance(args[0], str):
                 try:
                     uuid.UUID(args[0])
                     self.get(args[0])

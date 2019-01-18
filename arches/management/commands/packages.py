@@ -18,7 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """This module contains commands for building Arches."""
 import os, sys, subprocess, shutil, csv, json, unicodecsv
-import urllib, uuid, glob
+import urllib.request, urllib.parse, urllib.error, uuid, glob
 from datetime import datetime
 from django.core import management
 from django.core.management.base import BaseCommand, CommandError
@@ -127,7 +127,7 @@ class Command(BaseCommand):
             help='used to force a yes answer to any user input "continue? y/n" prompt')
 
     def handle(self, *args, **options):
-        print 'operation: '+ options['operation']
+        print(('operation: '+ options['operation']))
         package_name = settings.PACKAGE_NAME
 
         if options['operation'] == 'setup':
@@ -224,8 +224,8 @@ class Command(BaseCommand):
                 configs = {"permitted_resource_relationships":constraints}
                 config_file.write(JSONSerializer().serialize(configs))
             except Exception as e:
-                print e
-                print 'Could not read resource to resource constraints'
+                print(e)
+                print('Could not read resource to resource constraints')
 
     def export_resource_graphs(self, dest_dir, force=False):
         """
@@ -237,7 +237,7 @@ class Command(BaseCommand):
         existing_resource_graphs = {}
         existing_resource_graph_paths = glob.glob(os.path.join(dest_dir, '*.json'))
         for existing_graph_file in existing_resource_graph_paths:
-            print 'reading', existing_graph_file
+            print(('reading', existing_graph_file))
             with open(existing_graph_file, 'r') as f:
                 existing_graph = json.loads(f.read())
                 if 'graph' in existing_graph:
@@ -255,17 +255,17 @@ class Command(BaseCommand):
                 if graph['graphid'] not in existing_resource_graphs:
                     output_file = os.path.join(dest_dir, graph['name'] + '.json')
                     with open(output_file, 'w') as f:
-                        print 'writing', output_file
+                        print(('writing', output_file))
                         f.write(graph_json)
                 else:
                     output_file = existing_resource_graphs[graph['graphid']]['path']
                     if force == False:
-                        overwrite = raw_input('"{0}" already exists in this directory. Overwrite? (Y/N): '.format(existing_resource_graphs[graph['graphid']]['name']))
+                        overwrite = eval(input('"{0}" already exists in this directory. Overwrite? (Y/N): '.format(existing_resource_graphs[graph['graphid']]['name'])))
                     else:
                         overwrite = 'true'
                     if overwrite.lower() in ('t', 'true', 'y', 'yes'):
                         with open(output_file, 'w') as f:
-                            print 'writing', output_file
+                            print(('writing', output_file))
                             f.write(graph_json)
 
     def export_package_settings(self, dest_dir, force=False):
@@ -274,7 +274,7 @@ class Command(BaseCommand):
         packages_package_settings_file = os.path.join(dest_dir, 'package_settings.py')
         if os.path.exists(projects_package_settings_file):
             if os.path.exists(packages_package_settings_file) and force == False:
-                resp = raw_input('"{0}" already exists in this directory. Overwrite? (Y/N): '.format('package_settings.py'))
+                resp = eval(input('"{0}" already exists in this directory. Overwrite? (Y/N): '.format('package_settings.py')))
                 if resp.lower() in ('t', 'true', 'y', 'yes'):
                     overwrite = True
                 else:
@@ -284,17 +284,17 @@ class Command(BaseCommand):
 
     def update_package(self, dest_dir, yes):
         if os.path.exists(os.path.join(dest_dir, 'package_config.json')):
-            print 'Updating Resource Models'
+            print('Updating Resource Models')
             self.export_resource_graphs(os.path.join(dest_dir, 'graphs', 'resource_models'), yes)
         else:
-            print "Could not update package. This directory does not have a package_config.json file. It cannot be verified as a package."
+            print("Could not update package. This directory does not have a package_config.json file. It cannot be verified as a package.")
         self.export_package_settings(dest_dir, yes)
 
     def create_package(self, dest_dir):
         if os.path.exists(dest_dir):
-            print 'Cannot create package', dest_dir, 'already exists'
+            print(('Cannot create package', dest_dir, 'already exists'))
         else:
-            print 'Creating template package in', dest_dir
+            print(('Creating template package in', dest_dir))
             dirs = [
                 'business_data',
                 'business_data/files',
@@ -322,7 +322,7 @@ class Command(BaseCommand):
             for directory in dirs:
                 if len(glob.glob(os.path.join(dest_dir, directory, '*'))) == 0:
                     with open(os.path.join(dest_dir, directory, '.gitkeep'), 'w'):
-                        print 'added', os.path.join(dest_dir, directory, '.gitkeep')
+                        print(('added', os.path.join(dest_dir, directory, '.gitkeep')))
 
             self.export_package_configs(dest_dir)
             self.export_resource_graphs(os.path.join(dest_dir, 'graphs', 'resource_models'), 'true')
@@ -330,8 +330,8 @@ class Command(BaseCommand):
             try:
                 self.save_system_settings(data_dest=os.path.join(dest_dir, 'system_settings'))
             except Exception as e:
-                print e
-                print "Could not save system settings"
+                print(e)
+                print("Could not save system settings")
             self.export_package_settings(dest_dir, 'true')
 
 
@@ -341,10 +341,10 @@ class Command(BaseCommand):
             update_system_settings = True
             if os.path.exists(settings.SYSTEM_SETTINGS_LOCAL_PATH):
                 if yes == False:
-                    response = raw_input('Overwrite current system settings with package settings? (Y/N): ')
+                    response = eval(input('Overwrite current system settings with package settings? (Y/N): '))
                     if response.lower() in ('t', 'true', 'y', 'yes'):
                         update_system_settings = True
-                        print 'Using package system settings'
+                        print('Using package system settings')
                     else:
                         update_system_settings = False
 
@@ -359,7 +359,7 @@ class Command(BaseCommand):
                 update_package_settings = True
                 if os.path.exists(os.path.join(settings.APP_ROOT, 'package_settings.py')):
                     if yes == False:
-                        response = raw_input('Overwrite current packages_settings.py? (Y/N): ')
+                        response = eval(input('Overwrite current packages_settings.py? (Y/N): '))
                         if response.lower() not in ('t', 'true', 'y', 'yes'):
                             update_package_settings = False
                     if update_package_settings == True:
@@ -387,8 +387,8 @@ class Command(BaseCommand):
                             sql = f.read()
                             cursor.execute(sql)
             except Exception as e:
-                print e
-                print 'Could not connect to db'
+                print(e)
+                print('Could not connect to db')
 
 
         def load_resource_views(package_dir):
@@ -400,8 +400,8 @@ class Command(BaseCommand):
                             sql = f.read()
                             cursor.execute(sql)
             except Exception as e:
-                print e
-                print 'Could not connect to db'
+                print(e)
+                print('Could not connect to db')
 
         def load_datatypes(package_dir):
             load_extensions(package_dir, 'datatypes', 'datatype')
@@ -559,7 +559,7 @@ class Command(BaseCommand):
 
             try:
                 zip_file = os.path.join(unzip_into_dir,"source_data.zip")
-                urllib.urlretrieve(source, zip_file)
+                urllib.request.urlretrieve(source, zip_file)
                 unzip_file(zip_file, unzip_into_dir)
             except:
                 pass
@@ -581,37 +581,37 @@ class Command(BaseCommand):
             if setup_db.lower() in ('t', 'true', 'y', 'yes'):
                 self.setup_db(settings.PACKAGE_NAME)
 
-        print 'loading package_settings.py'
+        print('loading package_settings.py')
         load_package_settings(package_location)
-        print 'loading preliminary sql'
+        print('loading preliminary sql')
         load_preliminary_sql(package_location)
-        print 'loading system settings'
+        print('loading system settings')
         load_system_settings(package_location)
-        print 'loading widgets'
+        print('loading widgets')
         load_widgets(package_location)
-        print 'loading card components'
+        print('loading card components')
         load_card_components(package_location)
-        print 'loading plugins'
+        print('loading plugins')
         load_plugins(package_location)
-        print 'loading reports'
+        print('loading reports')
         load_reports(package_location)
-        print 'loading functions'
+        print('loading functions')
         load_functions(package_location)
-        print 'loading datatypes'
+        print('loading datatypes')
         load_datatypes(package_location)
-        print 'loading concepts'
+        print('loading concepts')
         load_concepts(package_location, overwrite_concepts, stage_concepts)
-        print 'loading resource models and branches'
+        print('loading resource models and branches')
         load_graphs(package_location)
-        print 'loading resource to resource constraints'
+        print('loading resource to resource constraints')
         load_resource_to_resource_constraints(package_location)
-        print 'loading map layers'
+        print('loading map layers')
         load_map_layers(package_location)
-        print 'loading business data - resource instances and relationships'
+        print('loading business data - resource instances and relationships')
         load_business_data(package_location)
-        print 'loading resource views'
+        print('loading resource views')
         load_resource_views(package_location)
-        print 'loading package css'
+        print('loading package css')
         root = settings.APP_ROOT if settings.APP_ROOT is not None else os.path.join(settings.ROOT_DIR, 'app')
         css_source = os.path.join(package_location, 'extensions', 'css')
         if os.path.exists(css_source):
@@ -870,7 +870,7 @@ class Command(BaseCommand):
                 data = resource_exporter.export(graph_id=graph, resourceinstanceids=None)
             except MissingGraphException as e:
 
-                print utils.print_message('No resource graph specified. Please rerun this command with the \'-g\' parameter populated.')
+                print((utils.print_message('No resource graph specified. Please rerun this command with the \'-g\' parameter populated.')))
 
                 sys.exit()
 
@@ -901,7 +901,7 @@ class Command(BaseCommand):
         if data_source == '':
             data_source = settings.BUSINESS_DATA_FILES
 
-        if isinstance(data_source, basestring):
+        if isinstance(data_source, str):
             data_source = [data_source]
 
         create_collections = False
@@ -909,16 +909,16 @@ class Command(BaseCommand):
             create_concepts = str(create_concepts).lower()
             if create_concepts == 'create':
                 create_collections = True
-                print 'Creating new collections . . .'
+                print('Creating new collections . . .')
             elif create_concepts == 'append':
-                print 'Appending to existing collections . . .'
+                print('Appending to existing collections . . .')
             create_concepts = True
 
         if len(data_source) > 0:
             for source in data_source:
                 path = utils.get_valid_path(source)
                 if path is not None:
-                    print 'Importing {0}. . .'.format(path)
+                    print(('Importing {0}. . .'.format(path)))
                     BusinessDataImporter(path, config_file).import_business_data(overwrite=overwrite, bulk=bulk_load, create_concepts=create_concepts, create_collections=create_collections)
                 else:
                     utils.print_message('No file found at indicated location: {0}'.format(source))
@@ -936,7 +936,7 @@ class Command(BaseCommand):
             utils.print_message('No overwrite option indicated. Please rerun command with \'-ow\' parameter.')
             sys.exit()
 
-        if isinstance(data_source, basestring):
+        if isinstance(data_source, str):
             data_source = [data_source]
 
         if len(data_source) > 0:
@@ -958,7 +958,7 @@ class Command(BaseCommand):
         """
         Imports business data relations
         """
-        if isinstance(data_source, basestring):
+        if isinstance(data_source, str):
             data_source = [data_source]
 
         for path in data_source:
@@ -983,7 +983,7 @@ class Command(BaseCommand):
         if data_source == '':
             data_source = settings.RESOURCE_GRAPH_LOCATIONS
 
-        if isinstance(data_source, basestring):
+        if isinstance(data_source, str):
             data_source = [data_source]
 
         for path in data_source:
@@ -1089,7 +1089,7 @@ class Command(BaseCommand):
                         tileserver_layer.map_source = map_source
                         tileserver_layer.save()
                     except IntegrityError as e:
-                        print "Cannot save tile server layer: {0} already exists".format(layer_name)
+                        print(("Cannot save tile server layer: {0} already exists".format(layer_name)))
 
 
     def add_mapbox_layer(self, layer_name=False, mapbox_json_path=False, layer_icon='fa fa-globe', is_basemap=False):
@@ -1100,13 +1100,13 @@ class Command(BaseCommand):
                     for layer in data['layers']:
                         if 'source' in layer:
                             layer['source'] = layer['source'] + '-' + layer_name
-                    for source_name, source_dict in data['sources'].iteritems():
+                    for source_name, source_dict in list(data['sources'].items()):
                         map_source = models.MapSource.objects.get_or_create(name=source_name + '-' + layer_name, source=source_dict)
                     map_layer = models.MapLayer(name=layer_name, layerdefinitions=data['layers'], isoverlay=(not is_basemap), icon=layer_icon)
                     try:
                         map_layer.save()
                     except IntegrityError as e:
-                        print "Cannot save layer: {0} already exists".format(layer_name)
+                        print(("Cannot save layer: {0} already exists".format(layer_name)))
 
 
     def delete_tileserver_layer(self, layer_name=False):
@@ -1122,7 +1122,7 @@ class Command(BaseCommand):
             try:
                 mapbox_layer = models.MapLayer.objects.get(name=layer_name)
             except ObjectDoesNotExist:
-                print "error: no mapbox layer named \"{}\"".format(layer_name)
+                print(("error: no mapbox layer named \"{}\"".format(layer_name)))
                 return
             all_sources = [i.get('source') for i in mapbox_layer.layerdefinitions]
             ## remove duplicates and None
@@ -1147,7 +1147,7 @@ class Command(BaseCommand):
         if source == '':
             utils.print_message('No data source indicated. Please rerun command with \'-s\' parameter.')
 
-        if isinstance(source, basestring):
+        if isinstance(source, str):
             source = [source]
 
         for path in source:

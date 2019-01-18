@@ -82,7 +82,7 @@ class Tile(models.TileModel):
 
         if args:
             if isinstance(args[0], dict):
-                for key, value in args[0].iteritems():
+                for key, value in list(args[0].items()):
                     if not (key == 'tiles'):
                         setattr(self, key, value)
 
@@ -137,7 +137,7 @@ class Tile(models.TileModel):
         if self.tile_collects_data() is True and data != {}:
 
             utc_date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
-            timestamp_utc = unicode(datetime.datetime.now(pytz.utc).strftime(utc_date_format))
+            timestamp_utc = str(datetime.datetime.now(pytz.utc).strftime(utc_date_format))
 
             provisionaledit =  {
                 "value": data,
@@ -198,7 +198,7 @@ class Tile(models.TileModel):
 
     def check_for_missing_nodes(self, request):
         missing_nodes = []
-        for nodeid, value in self.data.iteritems():
+        for nodeid, value in list(self.data.items()):
             datatype_factory = DataTypeFactory()
             node = models.Node.objects.get(nodeid=nodeid)
             datatype = datatype_factory.get_instance(node.datatype)
@@ -215,7 +215,7 @@ class Tile(models.TileModel):
             raise ValidationError(message, (', ').join(missing_nodes))
 
     def validate(self, errors=None):
-        for nodeid, value in self.data.iteritems():
+        for nodeid, value in list(self.data.items()):
             datatype_factory = DataTypeFactory()
             node = models.Node.objects.get(nodeid=nodeid)
             datatype = datatype_factory.get_instance(node.datatype)
@@ -362,7 +362,7 @@ class Tile(models.TileModel):
 
     def is_blank(self):
         if self.data != {}:
-            if len([item for item in self.data.values() if item != None]) > 0:
+            if len([item for item in list(self.data.values()) if item != None]) > 0:
                 return False
 
         child_tiles_are_blank = True
@@ -431,7 +431,7 @@ class Tile(models.TileModel):
     def filter_by_perm(self, user, perm):
         if user:
             if self.nodegroup_id is not None and user.has_perm(perm, self.nodegroup):
-                self.tiles = filter(lambda tile: tile.filter_by_perm(user, perm), self.tiles)
+                self.tiles = [tile for tile in self.tiles if tile.filter_by_perm(user, perm)]
             else:
                 return None
         return self

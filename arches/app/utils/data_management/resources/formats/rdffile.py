@@ -4,7 +4,7 @@ import json
 import uuid
 import datetime
 from django.core.urlresolvers import reverse
-from format import Writer, Reader
+from .format import Writer, Reader
 from arches.app.models import models
 from arches.app.models.resource import Resource
 from arches.app.models.graph import Graph as GraphProxy
@@ -19,9 +19,9 @@ from rdflib.namespace import RDF, RDFS
 from pyld.jsonld import compact, frame, from_rdf, to_rdf, expand
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 
 class RdfWriter(Writer):
@@ -136,7 +136,7 @@ class RdfWriter(Writer):
             return pkg
 
         # Build the graph:
-        for resourceinstanceid, tiles in self.resourceinstances.iteritems():
+        for resourceinstanceid, tiles in list(self.resourceinstances.items()):
             graph_info = get_graph_parts(self.graph_id)
 
             # Deal with root edges:
@@ -240,7 +240,7 @@ class JsonLdWriter(RdfWriter):
         # simulate omitGraph:
         if '@graph' in js and len(js['@graph']) == 1:
             # merge up
-            for (k, v) in js['@graph'][0].items():
+            for (k, v) in list(js['@graph'][0].items()):
                 js[k] = v
             del js['@graph']
 
@@ -343,7 +343,7 @@ class JsonLdReader(Reader):
     def findOntologyProperties(self, o):
         keys = []
         try:
-            for key in o.keys():
+            for key in list(o.keys()):
                 if key in self.ontologyproperties:
                     keys.append(key)
         except:
@@ -442,8 +442,8 @@ class JsonLdReader(Reader):
             def json_data_is_valid(node, json_ld_node):
                 datatype = self.datatype_factory.get_instance(node.datatype)
                 value = datatype.from_rdf(json_ld_node)
-                print 'in json_data_is_valid'
-                print datatype.validate(value)
+                print('in json_data_is_valid')
+                print((datatype.validate(value)))
                 return len(datatype.validate(value)) == 0
 
             if len(found) > 1:
@@ -567,8 +567,8 @@ class JsonLdReader(Reader):
                         else:
                             self.tiles[parent_tileid].tiles.append(self.tiles[tileid])
 
-                    print 'finding value'
-                    print jsonld_node
+                    print('finding value')
+                    print(jsonld_node)
                     if (branch['node'].datatype != 'semantic'):
                         # if (branch['node'].datatype == 'number'):
                         #     print 'number'
@@ -576,7 +576,7 @@ class JsonLdReader(Reader):
                         #     ipdb.set_trace()
                         datatype = self.datatype_factory.get_instance(branch['node'].datatype)
                         value = datatype.from_rdf(jsonld_node)
-                        print ('value found! : ', value)
+                        print(('value found! : ', value))
                         self.tiles[tileid].data[str(branch['node'].nodeid)] = value
 
                     # if '@value' in jsonld_node:

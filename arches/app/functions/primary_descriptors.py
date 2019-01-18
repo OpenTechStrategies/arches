@@ -17,6 +17,6 @@ class PrimaryDescriptorsFunction(BaseFunction):
                             value = datatype.get_display_value(tile, node)
                             config['string_template'] = config['string_template'].replace('<%s>' % node.name, value)
         except ValueError as e:
-            print e, 'invalid nodegroupid participating in descriptor function.'
+            print((e, 'invalid nodegroupid participating in descriptor function.'))
 
         return config['string_template']

@@ -81,7 +81,7 @@ class Card(models.CardModel):
         self.ontologyproperty = None
         if args:
             if isinstance(args[0], dict):
-                for key, value in args[0].iteritems():
+                for key, value in list(args[0].items()):
                     if key not in ('cards', 'widgets', 'nodes', 'is_editable', 'nodegroup'):
                         setattr(self, key, value)
 

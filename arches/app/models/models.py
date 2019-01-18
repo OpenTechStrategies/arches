@@ -8,7 +8,7 @@
 # Also note: You'll have to insert the output of 'django-admin sqlcustom [app_label]'
 # into your database.
 
-from __future__ import unicode_literals
+
 
 import os
 import json
@@ -290,8 +290,8 @@ class Function(models.Model):
             if module != None:
                 break
         if import_success == False:
-            print 'Failed to import ' + mod_path
-            print import_error
+            print(('Failed to import ' + mod_path))
+            print(import_error)
 
         func = getattr(module, self.classname)
         return func

@@ -37,9 +37,9 @@ from rdflib import RDF
 from rdflib.namespace import SKOS, DCTERMS
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 
 def userCanAccessMobileSurvey(request, surveyid=None):
@@ -102,7 +102,7 @@ class APIBase(View):
         }
         if not format and accept in format_values:
             get_params['format'] = format_values[accept]
-        for key, value in request.META.iteritems():
+        for key, value in list(request.META.items()):
             if key.startswith('HTTP_X_ARCHES_'):
                 if key.replace('HTTP_X_ARCHES_', '').lower() not in request.GET:
                     get_params[key.replace('HTTP_X_ARCHES_', '').lower()] = value
@@ -127,7 +127,7 @@ class Sync(APIBase):
             formatted = traceback.format_exception(exc_type, exc_value, exc_traceback)
             if len(formatted):
                 for message in formatted:
-                    print message
+                    print(message)
             ret = {'Syncfailed': {'stacktrace': formatted}}
 
         return JSONResponse(ret, status=500)
@@ -329,7 +329,7 @@ class Resources(APIBase):
                     reader.read_resource(data, resourceid=resourceid)
                     if reader.errors:
                         response = []
-                        for value in reader.errors.itervalues():
+                        for value in list(reader.errors.values()):
                             response.append(value.message)
                         return JSONResponse(data, indent=indent, status=400, reason=response)
                     else:
@@ -358,7 +358,7 @@ class Resources(APIBase):
                 reader.read_resource(data)
                 if reader.errors:
                     response = []
-                    for value in reader.errors.itervalues():
+                    for value in list(reader.errors.values()):
                         response.append(value.message)
                     return JSONResponse(data, indent=indent, status=400, reason=response)
                 else:

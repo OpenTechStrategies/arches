@@ -42,7 +42,7 @@ class ResourceImportReporter:
 
     def update_resources_saved(self, count=1):
         self.resources_saved += count
-        print _('{0} of {1} resources saved'.format(self.resources_saved, self.resources))
+        print((_('{0} of {1} resources saved'.format(self.resources_saved, self.resources))))
 
     def update_tiles(self, count=1):
         self.total_tiles += count
@@ -52,19 +52,19 @@ class ResourceImportReporter:
 
     def update_relations_saved(self, count=1):
         self.relations_saved += count
-        print _('{0} of {1} relations saved'.format(self.relations_saved, self.relations))
+        print((_('{0} of {1} relations saved'.format(self.relations_saved, self.relations))))
 
     def report_results(self):
         if self.resources > 0:
             result = "Resources for Import: {0}, Resources Saved: {1}, Tiles for Import: {2}, Tiles Saved: {3}, Relations for Import: {4}, Relations Saved: {5}"
-            print result.format(
+            print((result.format(
                     self.resources,
                     self.resources_saved,
                     self.total_tiles,
                     self.tiles_saved,
                     self.relations,
                     self.relations_saved
-                    )
+                    )))
 
 class Reader(object):
 
@@ -90,7 +90,7 @@ class Reader(object):
         for relation_count, relation in enumerate(relations):
             relation_count = relation_count + 2
             if relation_count % 500 == 0:
-                print '{0} relations saved'.format(str(relation_count))
+                print(('{0} relations saved'.format(str(relation_count))))
 
 
             def validate_resourceinstanceid(resourceinstanceid, key):
@@ -131,7 +131,7 @@ class Reader(object):
                 relation = ResourceXResource(
                     resourceinstanceidfrom = Resource(resourceinstancefrom),
                     resourceinstanceidto = Resource(resourceinstanceto),
-                    relationshiptype = unicode(relation['relationshiptype']),
+                    relationshiptype = str(relation['relationshiptype']),
                     datestarted = relation['datestarted'],
                     dateended = relation['dateended'],
                     notes = relation['notes']
@@ -142,9 +142,9 @@ class Reader(object):
 
     def report_errors(self):
         if len(self.errors) == 0:
-            print _("No import errors")
+            print((_("No import errors")))
         else:
-            print _("***** Errors occured during import. Some data may not have been imported. For more information, check resource import error log: ") + settings.RESOURCE_IMPORT_LOG
+            print((_("***** Errors occured during import. Some data may not have been imported. For more information, check resource import error log: ") + settings.RESOURCE_IMPORT_LOG))
             log_nums = [0]
             if os.path.isfile(settings.RESOURCE_IMPORT_LOG):
                 if os.path.getsize(settings.RESOURCE_IMPORT_LOG)/1000000 > 5:
@@ -167,7 +167,7 @@ class Reader(object):
                 try:
                     f.write(_(timestamp + ' ' + '{0}: {1}\n'.format(error['type'], error['message'])))
                 except TypeError as e:
-                    f.write(timestamp + ' ' + e + unicode(error))
+                    f.write(timestamp + ' ' + e + str(error))
 
 
 class Writer(object):
@@ -316,13 +316,13 @@ class Writer(object):
         """
         If multiple values are found for a column, joins them into a semi-colon concatenated string.
         """
-        for k, v in template_record.iteritems():
+        for k, v in list(template_record.items()):
             if type(v) == list:
                 v.sort()
                 try:
                     template_record[k] = ("; ").join(v)
                 except:
-                    unicode_vals = [unicode(x) for x in v]
+                    unicode_vals = [str(x) for x in v]
                     template_record[k] = ("; ").join(unicode_vals)
         return template_record
 

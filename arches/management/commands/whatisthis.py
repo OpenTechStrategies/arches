@@ -39,16 +39,16 @@ class Command(BaseCommand):
             return False
         
         ## print summary of found objects
-        print(80*"=")
-        print("This UUID is the primary key for {} object{}:".format(
-            len(objs),"s" if len(objs) > 1 else ""))
+        print((80*"="))
+        print(("This UUID is the primary key for {} object{}:".format(
+            len(objs),"s" if len(objs) > 1 else "")))
         for o in objs:
-            print(80*"-")
+            print((80*"-"))
             print(o)
-            keys = vars(o).keys()
+            keys = list(vars(o).keys())
             keys.sort()
             for k in keys:
                 print(k)
-                print("  {}".format(vars(o)[k]))
-        print(80*"=")
+                print(("  {}".format(vars(o)[k])))
+        print((80*"="))
         return objs

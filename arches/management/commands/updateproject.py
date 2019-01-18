@@ -6,7 +6,7 @@ from arches.management.commands import utils
 from arches.app.models import models
 from arches.app.models.system_settings import settings
 from django.core.management.base import BaseCommand, CommandError
-import urllib, json
+import urllib.request, urllib.parse, urllib.error, json
 
 
 class Command(BaseCommand):
@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
         if self.overwite_existing_file(packages_path, "A package.json file already exists. Would you like to overwrite it with the latest? If you have not manually modified this file since creating this project, the answer is probably 'yes'") == True:
             url = "https://raw.githubusercontent.com/archesproject/arches/stable/{0}/package.json".format(version)
-            response = urllib.urlopen(url)
+            response = urllib.request.urlopen(url)
             data = json.loads(response.read())
             with open(packages_path, 'w') as f:
                 json.dump(data, f, indent=4)
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 os.chdir(settings.APP_ROOT)
                 subprocess.call("yarn install", shell=True)
             except Exception as e:
-                print e
+                print(e)
 
     def upgrade_to_v4_2_0(self):
         self.update_yarn_depenencies('4.2.x')

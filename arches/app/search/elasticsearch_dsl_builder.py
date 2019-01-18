@@ -61,7 +61,7 @@ class Query(Dsl):
             }
         }
 
-        for key, value in kwargs.iteritems():
+        for key, value in list(kwargs.items()):
             self.dsl[key]  = value
 
     def add_query(self, dsl=None):

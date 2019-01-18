@@ -16,7 +16,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import uuid
 import logging
 from datetime import datetime
@@ -93,7 +93,7 @@ class SearchEngine(object):
         """
 
         kwargs = self._add_prefix(**kwargs)
-        print 'deleting index : %s' % kwargs.get('index')
+        print(('deleting index : %s' % kwargs.get('index')))
         return self.es.indices.delete(ignore=[400, 404], **kwargs)
 
     def search(self, **kwargs):
@@ -154,12 +154,12 @@ class SearchEngine(object):
 
         self.es.indices.create(index=index, ignore=400)
         self.es.indices.put_mapping(index=index, doc_type=doc_type, body=body)
-        print 'creating index : %s/%s' % (index, doc_type)
+        print(('creating index : %s/%s' % (index, doc_type)))
 
     def create_index(self, **kwargs):
         kwargs = self._add_prefix(**kwargs)
         self.es.indices.create(**kwargs)
-        print 'creating index : %s' % kwargs.get('index', '')
+        print(('creating index : %s' % kwargs.get('index', '')))
 
     def index_data(self, index=None, doc_type=None, body=None, idfield=None, id=None, **kwargs):
         """

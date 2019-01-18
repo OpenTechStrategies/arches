@@ -44,9 +44,9 @@ from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_pe
 from rdflib import Graph as RDFGraph
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 
 def get_ontology_namespaces():
@@ -102,7 +102,7 @@ class GraphSettingsView(GraphBaseView):
     def post(self, request, graphid):
         graph = Graph.objects.get(graphid=graphid)
         data = JSONDeserializer().deserialize(request.body)
-        for key, value in data.get('graph').iteritems():
+        for key, value in list(data.get('graph').items()):
             if key in ['iconclass', 'name', 'author', 'description', 'isresource',
                        'ontology_id', 'version',  'subtitle', 'isactive', 'color',
                        'jsonldcontext', 'config', 'template_id']:
@@ -113,7 +113,7 @@ class GraphSettingsView(GraphBaseView):
         try:
             node.datatype = data['graph']['root']['datatype']
         except KeyError as e:
-            print e, 'Cannot find root node datatype'
+            print((e, 'Cannot find root node datatype'))
         node.ontologyclass = data.get('ontology_class') if data.get('graph').get('ontology_id') is not None else None
         node.name = graph.name
         graph.root.name = node.name

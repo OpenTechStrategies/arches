@@ -270,7 +270,7 @@ class ResourceEditorView(MapBaseManagerView):
             geocoding_providers = models.Geocoder.objects.all()
             required_widgets = []
 
-            widget_datatypes = [v.datatype for k, v in graph.nodes.iteritems()]
+            widget_datatypes = [v.datatype for k, v in list(graph.nodes.items())]
             widgets = widgets.filter(datatype__in=widget_datatypes)
 
             if resource_instance_exists == True:
@@ -348,7 +348,7 @@ class ResourceEditLogView(BaseManagerView):
 
     def getEditConceptValue(self, values):
         if values != None:
-            for k, v in values.iteritems():
+            for k, v in list(values.items()):
                 try:
                     uuid.UUID(v)
                     v = models.Value.objects.get(pk=v).value
@@ -692,7 +692,7 @@ class RelatedResourcesView(BaseManagerView):
             try:
                 ret = models.ResourceXResource.objects.get(pk=resourcexid).delete()
             except:
-                print 'resource relation does not exist'
+                print('resource relation does not exist')
         start = request.GET.get('start', 0)
         se.es.indices.refresh(index=se._add_prefix("resource_relations"))
         resource = Resource.objects.get(pk=root_resourceinstanceid[0])
@@ -754,7 +754,7 @@ class RelatedResourcesView(BaseManagerView):
                 )
                 rr.save()
             else:
-                print 'relationship not permitted'
+                print('relationship not permitted')
 
         for relationshipid in relationships_to_update:
             rr = models.ResourceXResource.objects.get(pk=relationshipid)

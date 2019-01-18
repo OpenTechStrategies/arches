@@ -17,9 +17,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import os
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import json
-from urlparse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 from arches.management.commands import utils
 from arches.app.models.mobile_survey import MobileSurvey
 from arches.app.models.system_settings import settings
@@ -49,7 +49,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options['operation'] == 'list_surveys':
             for mobile_survey in MobileSurvey.objects.all():
-                print("{0}: {1} ({2})".format(mobile_survey.name, mobile_survey.id, 'Active' if mobile_survey.active else 'Inactive'))
+                print(("{0}: {1} ({2})".format(mobile_survey.name, mobile_survey.id, 'Active' if mobile_survey.active else 'Inactive')))
 
         if options['operation'] == 'delete_surveys':
             self.delete_associated_surveys()
@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
     def sync_survey(self, uuid):
         mobile_survey = MobileSurvey.objects.get(id=uuid)
-        print("Syncing {0} from CouchDB to PostgreSQL").format(mobile_survey)
+        print((("Syncing {0} from CouchDB to PostgreSQL").format(mobile_survey)))
         mobile_survey.push_edits_to_db()
 
     def delete_associated_surveys(self):
@@ -90,7 +90,7 @@ class Command(BaseCommand):
 
     def create_associated_surveys(self):
         for mobile_survey in MobileSurvey.objects.all():
-            print "Writing", mobile_survey, "to CouchDB"
+            print(("Writing", mobile_survey, "to CouchDB"))
             mobile_survey.save()
 
     def rebuild_couch_surveys(self):

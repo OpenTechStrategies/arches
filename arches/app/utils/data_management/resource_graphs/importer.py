@@ -43,7 +43,7 @@ class GraphImportReporter:
         else:
             result = "Saved Branch: {0}"
 
-        print result.format(self.name)
+        print((result.format(self.name)))
 
 
 class GraphImportException(Exception):
@@ -81,7 +81,7 @@ def import_graph(graphs, overwrite_graphs=True):
                 graph = Graph(resource)
                 ontology_classes = [str(f['source']) for f in OntologyClass.objects.all().values('source')]
 
-                for node in graph.nodes.values():
+                for node in list(graph.nodes.values()):
                     if resource['ontology_id'] is not None:
                         if node.ontologyclass not in ontology_classes:
                             errors.append('The ontology class of this node does not exist in the indicated ontology scheme.')
@@ -105,7 +105,7 @@ def import_graph(graphs, overwrite_graphs=True):
                         graph.save()
                         reporter.update_graphs_saved()
                     else:
-                        overwrite_input = raw_input('Overwrite {0} (Y/N) ? '.format(graph.name))
+                        overwrite_input = eval(input('Overwrite {0} (Y/N) ? '.format(graph.name)))
                         if overwrite_input.lower() in ('t', 'true', 'y', 'yes'):
                             graph.save()
                         else:
@@ -130,7 +130,7 @@ def import_graph(graphs, overwrite_graphs=True):
                 except:
                     pass
             except Exception as e:
-                print e
+                print(e)
 
         return errors, reporter
 

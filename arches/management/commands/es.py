@@ -108,7 +108,7 @@ class Command(BaseCommand):
             os.rename(os.path.join(es_config_directory, 'elasticsearch.yml'), os.path.join(es_config_directory, 'elasticsearch.yml.orig'))
         except: pass
 
-        os.chmod(os.path.join(install_location, file_name_wo_extention, 'bin', 'elasticsearch'), 0755)
+        os.chmod(os.path.join(install_location, file_name_wo_extention, 'bin', 'elasticsearch'), 0o755)
 
         with open(os.path.join(es_config_directory, 'elasticsearch.yml'), 'w') as f:
             f.write('# ----------------- FOR TESTING ONLY -----------------')
@@ -121,7 +121,7 @@ class Command(BaseCommand):
             f.write('\nhttp.cors.allow-origin: "*"')
             f.write('\n')
 
-        print 'Elasticsearch installed at %s' % os.path.join(install_location, file_name_wo_extention)
+        print(('Elasticsearch installed at %s' % os.path.join(install_location, file_name_wo_extention)))
 
     # def start(self, install_location=None):
     #     """

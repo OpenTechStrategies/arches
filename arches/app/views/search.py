@@ -48,9 +48,9 @@ from arches.app.utils.permission_backend import get_nodegroups_by_perm
 
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 class SearchView(MapBaseManagerView):
 
@@ -530,7 +530,7 @@ def build_search_results_dsl(request):
         grouped_queries = [grouped_query]
         for index, advanced_filter in enumerate(advanced_filters):
             tile_query = Bool()
-            for key, val in advanced_filter.iteritems():
+            for key, val in list(advanced_filter.items()):
                 if key != 'op':
                     node = models.Node.objects.get(pk=key)
                     if request.user.has_perm('read_nodegroup', node.nodegroup):
@@ -608,7 +608,7 @@ def export_results(request):
     csvwriter = csv.DictWriter(dest, delimiter=',', fieldnames=['id1','id2','type'])
     csvwriter.writeheader()
     for csv_record in related_resources:
-        csvwriter.writerow({k:v.encode('utf8') for k,v in csv_record.items()})
+        csvwriter.writerow({k:v.encode('utf8') for k,v in list(csv_record.items())})
     results.append({'name':csv_name, 'outputfile': dest})
     zipped_results = exporter.zip_response(results, '{0}_{1}_export.zip'.format(settings.PACKAGE_NAME, format))
     return zipped_results

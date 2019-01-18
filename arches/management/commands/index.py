@@ -44,7 +44,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['delete'] != '':
-            print 'delete: '+ options['delete']
+            print(('delete: '+ options['delete']))
             if options['delete'] == 'all':
                 self.delete_index('maplayers')
                 self.delete_index('entity')
@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 self.delete_index(options['delete'])
 
         if options['index'] != '':
-            print 'index: '+ options['index']
+            print(('index: '+ options['index']))
             cursor = connection.cursor()
 
             if options['index'] == 'concept' or options['index'] == 'all':
@@ -111,7 +111,7 @@ class Command(BaseCommand):
         concepts = _findNarrowerConcept('00000000-0000-0000-0000-000000000003')
 
         all_concepts = []
-        for key, concept in concepts['all_concepts'].iteritems():
+        for key, concept in list(concepts['all_concepts'].items()):
             all_concepts.append({'conceptid': key, 'labels': concept['labels'], 'left': concept['left'], 'right': concept['right']})
 
         self.index(all_concepts, 'concept', 'all', 'conceptid')
@@ -147,12 +147,12 @@ class Command(BaseCommand):
                 se.bulk_index(index, type, bulkitems)
             except Exception as detail:
                 errorlist = bulkitems
-                print 'bulk inset failed'
+                print('bulk inset failed')
 
         if detail != '':
-            print "\n\nException detail: %s " % (detail)
-            print "There was a problem indexing the following items:"
-            print errorlist
+            print(("\n\nException detail: %s " % (detail)))
+            print("There was a problem indexing the following items:")
+            print(errorlist)
 
     def index_concepts_by_entitytypeid(self, entitytypeid):
         entitytype = archesmodels.EntityTypes.objects.get(pk = entitytypeid)
