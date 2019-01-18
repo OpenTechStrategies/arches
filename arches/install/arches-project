@@ -6,7 +6,6 @@ import subprocess
 import codecs
 import os
 import sys
-import imp
 import errno
 from importlib import import_module
 import django
