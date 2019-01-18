@@ -97,7 +97,7 @@ def download_file(url, file_name):
     u = urllib.request.urlopen(url)
     f = open(file_name, 'wb')
     meta = u.info()
-    file_size = int(meta.getheaders("Content-Length")[0])
+    file_size = [int(a[1]) for a in meta._headers if a[0]=="Content-Length"][0]
     print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
     file_size_dl = 0
@@ -123,7 +123,8 @@ def unzip_file(file_name, unzip_location):
 def download_elasticsearch(install_dir):
     url = get_elasticsearch_download_url(install_dir)
     file_name = url.split('/')[-1]
-    if not os.path.isfile(os.path.join(install_dir, file_name)):
+    if (not os.path.isfile(os.path.join(install_dir, file_name))
+        or os.stat(os.path.join(install_dir, file_name)).st_size == 0):
         download_file(url, os.path.join(install_dir, file_name))
 
 def get_elasticsearch_download_url(install_dir):
