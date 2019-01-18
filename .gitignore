@@ -1,4 +1,5 @@
 *.pyc
+venv3
 virtualenv/ENV*
 tests/elasticsearch
 tests/logs
