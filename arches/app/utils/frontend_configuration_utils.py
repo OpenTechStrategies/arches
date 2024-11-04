@@ -124,6 +124,7 @@ def _generate_webpack_configuration():
         json.dump(
             {
                 "_comment": "This is a generated file. Do not edit directly.",
+                "APP_RELATIVE_PATH": os.path.relpath(app_root_path),
                 "APP_ROOT": app_root_path,
                 "ARCHES_APPLICATIONS": arches_app_names,
                 "ARCHES_APPLICATIONS_PATHS": dict(
