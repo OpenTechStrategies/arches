@@ -32,18 +32,18 @@ def _generate_frontend_configuration_directory():
 
 
 def _generate_urls_json():
-    def generate_human_readable_urls(patterns, prefix="", namespace="", result={}):
+    def generate_human_readable_urls(patterns, prefix="", namespace=""):
         def join_paths(*args):
             components = []
 
             for index, segment in enumerate(args):
-                if index == 0:  # only strip trailing slash for the first segment
+                if index == 0:  # Only strip trailing slash for the first segment
                     segment = segment.rstrip("/")
                 elif (
                     index == len(args) - 1
-                ):  # only strip leading slash for the last segment
+                ):  # Only strip leading slash for the last segment
                     segment = segment.lstrip("/")
-                else:  # strip both slashes for middle segments
+                else:  # Strip both slashes for middle segments
                     segment = segment.strip("/")
 
                 components.append(segment)
@@ -63,37 +63,43 @@ def _generate_urls_json():
                 regex = re.sub(r"\(\?:[^\)]+\)", "", regex)
 
                 # Remove character sets (e.g., [0-9])
-                regex = re.sub(r"\[[^\]]+\]", "", regex)
+                regex = re.sub(r"\[[^\]]]+\]", "", regex)
 
                 # Remove backslashes (used to escape special characters in regex)
                 regex = regex.replace("\\", "")
 
-                # Remove regex-specific special characters (^, $, +, *, ?, (), etc.)
+                # Remove regex-specific special characters
                 regex = re.sub(r"[\^\$\+\*\?\(\)]", "", regex)
 
                 return regex
 
+        result = {}
+
         for pattern in patterns:
             if isinstance(pattern, URLPattern):
-                if pattern.name:
-                    result[f"{namespace}{pattern.name}"] = "/" + join_paths(
-                        prefix, interpolate_route(pattern.pattern)
-                    )
+                url_name = f"{namespace}{pattern.name}"
+                url_path = "/" + join_paths(prefix, interpolate_route(pattern.pattern))
+                result[url_name] = url_path
+
             elif isinstance(pattern, URLResolver):
-                current_namespace = namespace + (
-                    f":{pattern.namespace}:" if pattern.namespace else ""
+                current_namespace = (
+                    f"{namespace}{pattern.namespace}:"
+                    if pattern.namespace
+                    else namespace
                 )
 
                 if isinstance(
                     pattern.pattern, LocalePrefixPattern
-                ):  # handles i18n_patterns
+                ):  # Handles i18n_patterns
                     new_prefix = join_paths(prefix, "{language_code}")
                 else:
                     new_prefix = join_paths(prefix, interpolate_route(pattern.pattern))
 
-                generate_human_readable_urls(
-                    pattern.url_patterns, new_prefix, current_namespace, result
+                sub_result = generate_human_readable_urls(
+                    pattern.url_patterns, new_prefix, current_namespace
                 )
+                result.update(sub_result)
+
         return result
 
     resolver = get_resolver()
