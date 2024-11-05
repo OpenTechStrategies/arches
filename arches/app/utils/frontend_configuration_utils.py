@@ -34,7 +34,21 @@ def _generate_frontend_configuration_directory():
 def _generate_urls_json():
     def generate_human_readable_urls(patterns, prefix="", namespace="", result={}):
         def join_paths(*args):
-            return "/".join(filter(None, (arg.strip("/") for arg in args)))
+            components = []
+
+            for index, segment in enumerate(args):
+                if index == 0:  # only strip trailing slash for the first segment
+                    segment = segment.rstrip("/")
+                elif (
+                    index == len(args) - 1
+                ):  # only strip leading slash for the last segment
+                    segment = segment.lstrip("/")
+                else:  # strip both slashes for middle segments
+                    segment = segment.strip("/")
+
+                components.append(segment)
+
+            return "/".join(filter(None, components))
 
         def interpolate_route(pattern):
             if isinstance(pattern, RoutePattern):
@@ -57,7 +71,7 @@ def _generate_urls_json():
                 # Remove regex-specific special characters (^, $, +, *, ?, (), etc.)
                 regex = re.sub(r"[\^\$\+\*\?\(\)]", "", regex)
 
-                return regex.strip("/")
+                return regex
 
         for pattern in patterns:
             if isinstance(pattern, URLPattern):
@@ -85,7 +99,7 @@ def _generate_urls_json():
     resolver = get_resolver()
     human_readable_urls = generate_human_readable_urls(resolver.url_patterns)
 
-    # manual additions
+    # Manual additions
     human_readable_urls["static_url"] = settings.STATIC_URL
     human_readable_urls["media_url"] = settings.MEDIA_URL
 
