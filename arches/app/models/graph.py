@@ -30,7 +30,7 @@ from arches.app.models.system_settings import settings
 from arches.app.datatypes.datatypes import DataTypeFactory
 from arches.app.etl_modules.bulk_data_deletion import BulkDataDeletion
 from arches.app.utils.betterJSONSerializer import JSONSerializer, JSONDeserializer
-from arches.app.utils.editable_future_graph import update_editable_future_nodegroups
+from arches.app.utils import editable_future_graph_utils
 from arches.app.search.search_engine_factory import SearchEngineFactory
 from arches.app.utils.i18n import LanguageSynchronizer
 from django.utils.translation import gettext as _
@@ -2430,304 +2430,81 @@ class Graph(models.GraphModel):
             raise Exception(_("No identifiable future Graph"))
 
         with transaction.atomic():
-            self.root.set_relatable_resources(
-                [
-                    node.pk
-                    for node in editable_future_graph.root.get_relatable_resources()
-                ]
+            current_nodegroups = self.get_nodegroups(force_recalculation=True)
+            editable_future_nodegroups = editable_future_graph.get_nodegroups(
+                force_recalculation=True
             )
-
-            previous_card_ids = {str(card.pk) for card in self.cards.values()}
-            previous_node_ids = {str(node.pk) for node in self.nodes.values()}
-            previous_edge_ids = {str(edge.pk) for edge in self.edges.values()}
-            previous_widget_ids = {str(widget.pk) for widget in self.widgets.values()}
-
-            self.cards = {}
-            self.nodes = {}
-            self.edges = {}
-            self.widgets = {}
 
             # BEGIN update related models
-            # Iterates over cards, nodes, and edges of the editable_future_graph. If the item
-            # has a `source_identifier` attribute, it represents an item related to the source
-            # graph ( the graph mapped to `self` ); we iterate over the item attributes and map
-            # them to source item. If the item does not have a `source_identifier` attribute, it
-            # has been newly created; we update the `graph_id` to match the source graph. We are
-            # not saving in this block so updates can accur in any order.
-            update_editable_future_nodegroups(
-                editable_future_graph.get_nodegroups(force_recalculation=True)
+            EXCLUDED_NODEGROUP_KEYS = ["nodegroupid", "parentnodegroup_id"]
+            EXCLUDED_WIDGET_KEYS = [
+                "_state",
+                "id",
+                "node_id",
+                "card_id",
+                "source_identifier_id",
+            ]
+            EXCLUDED_CARD_KEYS = [
+                "graph_id",
+                "cardid",
+                "nodegroup_id",
+                "source_identifier_id",
+            ]
+            EXCLUDED_EDGE_KEYS = [
+                "domainnode_id",
+                "edgeid",
+                "graph_id",
+                "rangenode_id",
+                "source_identifier_id",
+            ]
+            EXCLUDED_NODE_KEYS = [
+                "graph_id",
+                "nodeid",
+                "nodegroup_id",
+                "source_identifier_id",
+            ]
+            EXCLUDED_GRAPH_ATTRIBUTES_KEYS = [
+                "_state",
+                "graphid",
+                "cards",
+                "nodes",
+                "edges",
+                "widgets",
+                "root",
+                "source_identifier",
+                "source_identifier_id",
+                "resource_instance_lifecycle",
+                "resource_instance_lifecycle_id",
+                "publication_id",
+                "_nodegroups_to_delete",
+                "_functions",
+                "_card_constraints",
+                "_constraints_x_nodes",
+                "serialized_graph",
+            ]
+
+            editable_future_graph_utils.update_nodegroups(
+                self, editable_future_graph, EXCLUDED_NODEGROUP_KEYS
             )
-
-            for future_widget in list(editable_future_graph.widgets.values()):
-                source_widget = future_widget.source_identifier
-
-                if future_widget.source_identifier_id:
-                    for key in vars(source_widget).keys():
-                        if key not in [
-                            "_state",
-                            "id",
-                            "node_id",
-                            "card_id",
-                            "source_identifier_id",
-                        ]:
-                            setattr(source_widget, key, getattr(future_widget, key))
-
-                    if future_widget.card.source_identifier_id:
-                        source_widget.card_id = future_widget.card.source_identifier_id
-                    if future_widget.node.source_identifier_id:
-                        source_widget.node_id = future_widget.node.source_identifier_id
-
-                    self.widgets[source_widget.pk] = source_widget
-                else:  # newly-created widget
-                    future_widget.source_identifier_id = None
-
-                    if future_widget.card.source_identifier_id:
-                        future_widget.card_id = future_widget.card.source_identifier_id
-                    if future_widget.node.source_identifier_id:
-                        future_widget.node_id = future_widget.node.source_identifier_id
-
-                    del editable_future_graph.widgets[future_widget.pk]
-                    self.widgets[future_widget.pk] = future_widget
-
-            for future_card in list(editable_future_graph.cards.values()):
-                future_card_nodegroup_node = models.Node.objects.get(
-                    pk=future_card.nodegroup.pk
-                )
-
-                if future_card.source_identifier:
-                    source_card = future_card.source_identifier
-
-                    for key in vars(source_card).keys():
-                        if key not in [
-                            "graph_id",
-                            "cardid",
-                            "nodegroup_id",
-                            "source_identifier_id",
-                        ]:
-                            if (
-                                key == "config"
-                                and str(future_card.component_id)
-                                == "2f9054d8-de57-45cd-8a9c-58bbb1619030"
-                            ):  # grouping card
-                                grouped_card_ids = []
-                                for grouped_card_id in future_card.config[
-                                    "groupedCardIds"
-                                ]:
-                                    grouped_card = Card.objects.get(pk=grouped_card_id)
-                                    grouped_card_ids.append(
-                                        str(grouped_card.source_identifier_id)
-                                    )
-
-                                source_card.config["groupedCardIds"] = grouped_card_ids
-
-                                sorted_widget_ids = []
-                                for node_id in future_card.config["sortedWidgetIds"]:
-                                    sorted_widget = models.Node.objects.get(pk=node_id)
-                                    sorted_widget_ids.append(
-                                        str(sorted_widget.source_identifier_id)
-                                    )
-
-                                source_card.config["sortedWidgetIds"] = (
-                                    sorted_widget_ids
-                                )
-                            else:
-                                setattr(source_card, key, getattr(future_card, key))
-
-                    source_card.nodegroup_id = future_card_nodegroup_node.nodegroup_id
-                    if future_card_nodegroup_node.source_identifier_id:
-                        source_card.nodegroup_id = (
-                            future_card_nodegroup_node.source_identifier_id
-                        )
-
-                    self.cards[source_card.pk] = source_card
-                else:  # newly-created card
-                    future_card.graph_id = self.pk
-                    future_card.source_identifier_id = None
-
-                    future_card.nodegroup_id = future_card_nodegroup_node.nodegroup_id
-                    if future_card_nodegroup_node.source_identifier_id:
-                        future_card.nodegroup_id = (
-                            future_card_nodegroup_node.source_identifier_id
-                        )
-
-                    del editable_future_graph.cards[future_card.pk]
-                    self.cards[future_card.pk] = future_card
-
-            for future_edge in list(editable_future_graph.edges.values()):
-                if future_edge.source_identifier_id:
-                    source_edge = future_edge.source_identifier
-
-                    for key in vars(source_edge).keys():
-                        if key not in [
-                            "domainnode_id",
-                            "edgeid",
-                            "graph_id",
-                            "rangenode_id",
-                            "source_identifier_id",
-                        ]:
-                            setattr(source_edge, key, getattr(future_edge, key))
-
-                    source_edge.domainnode_id = future_edge.domainnode_id
-                    if future_edge.domainnode.source_identifier:
-                        source_edge.domainnode_id = (
-                            future_edge.domainnode.source_identifier.pk
-                        )
-
-                    source_edge.rangenode_id = future_edge.rangenode_id
-                    if future_edge.rangenode.source_identifier:
-                        source_edge.rangenode_id = (
-                            future_edge.rangenode.source_identifier.pk
-                        )
-
-                    self.edges[source_edge.pk] = source_edge
-                else:  # newly-created edge
-                    future_edge.graph_id = self.pk
-                    future_edge.source_identfier_id = None
-
-                    if future_edge.domainnode.source_identifier_id:
-                        future_edge.domainnode_id = (
-                            future_edge.domainnode.source_identifier_id
-                        )
-
-                    if future_edge.rangenode.source_identifier_id:
-                        future_edge.rangenode_id = (
-                            future_edge.rangenode.source_identifier_id
-                        )
-
-                    del editable_future_graph.edges[future_edge.pk]
-                    self.edges[future_edge.pk] = future_edge
-
-            for future_node in list(editable_future_graph.nodes.values()):
-                future_node_nodegroup_node = (
-                    models.Node.objects.get(pk=future_node.nodegroup.pk)
-                    if future_node.nodegroup
-                    else None
-                )
-
-                if future_node.source_identifier:
-                    source_node = future_node.source_identifier
-
-                    for key in vars(source_node).keys():
-                        if key not in [
-                            "graph_id",
-                            "nodeid",
-                            "nodegroup_id",
-                            "source_identifier_id",
-                        ]:
-                            setattr(source_node, key, getattr(future_node, key))
-
-                    source_node.nodegroup_id = future_node.nodegroup_id
-                    if (
-                        future_node_nodegroup_node
-                        and future_node_nodegroup_node.source_identifier_id
-                    ):
-                        source_node.nodegroup_id = (
-                            future_node_nodegroup_node.source_identifier_id
-                        )
-
-                    self.nodes[source_node.pk] = source_node
-                else:  # newly-created node
-                    future_node.graph_id = self.pk
-                    future_node.source_identifier_id = None
-
-                    if (
-                        future_node_nodegroup_node
-                        and future_node_nodegroup_node.source_identifier_id
-                    ):
-                        future_node.nodegroup_id = (
-                            future_node_nodegroup_node.source_identifier_id
-                        )
-
-                    del editable_future_graph.nodes[future_node.pk]
-                    self.nodes[future_node.pk] = future_node
+            editable_future_graph_utils.update_widgets(
+                self, editable_future_graph, EXCLUDED_WIDGET_KEYS
+            )
+            editable_future_graph_utils.update_cards(
+                self, editable_future_graph, EXCLUDED_CARD_KEYS
+            )
+            editable_future_graph_utils.update_edges(
+                self, editable_future_graph, EXCLUDED_EDGE_KEYS
+            )
+            editable_future_graph_utils.update_nodes(
+                self, editable_future_graph, EXCLUDED_NODE_KEYS
+            )
             # END update related models
 
             # BEGIN copy attrs from editable_future_graph to source_graph
-            for key, value in vars(editable_future_graph).items():
-                if key not in [
-                    "_state",
-                    "graphid",
-                    "cards",
-                    "nodes",
-                    "edges",
-                    "widgets",
-                    "root",
-                    "source_identifier",
-                    "source_identifier_id",
-                    "resource_instance_lifecycle",
-                    "resource_instance_lifecycle_id",
-                    "publication_id",
-                    "_nodegroups_to_delete",
-                    "_functions",
-                    "_card_constraints",
-                    "_constraints_x_nodes",
-                    "serialized_graph",
-                ]:
-                    setattr(self, key, value)
-
-            self.root = self.nodes[self.root.pk]
+            editable_future_graph_utils.update_source_graph(
+                self, editable_future_graph, EXCLUDED_GRAPH_ATTRIBUTES_KEYS
+            )
             # END copy attrs from editable_future_graph to source_graph
-
-            # BEGIN delete superflous models
-            # Compares UUIDs between models related to the source graph and models related to
-            # the editable_future_graph. If the item related to the source graph exists, but the item
-            # related to the editable_future_graph does not exist, the item related to the source graph
-            # should be deleted.
-            updated_widget_ids = {
-                str(widget.pk) for widget in editable_future_graph.widgets.values()
-            }
-
-            updated_card_ids = {
-                str(card.source_identifier_id)
-                for card in editable_future_graph.cards.values()
-            }
-
-            updated_edge_ids = {
-                str(edge.source_identifier_id)
-                for edge in editable_future_graph.edges.values()
-            }
-
-            updated_node_ids = {
-                str(node.source_identifier_id)
-                for node in editable_future_graph.nodes.values()
-            }
-            updated_node_ids.add(str(self.root.pk))
-
-            models.CardXNodeXWidget.objects.filter(
-                pk__in=set(previous_widget_ids - updated_widget_ids)
-                | {widget.pk for widget in editable_future_graph.widgets.values()}
-            ).delete()
-
-            models.CardModel.objects.filter(
-                pk__in=set(previous_card_ids - updated_card_ids)
-                | {card.pk for card in editable_future_graph.cards.values()}
-            ).delete()
-
-            models.Edge.objects.filter(
-                pk__in=set(previous_edge_ids - updated_edge_ids)
-                | {edge.pk for edge in editable_future_graph.edges.values()}
-            ).delete()
-
-            models.Node.objects.filter(
-                pk__in=set(previous_node_ids - updated_node_ids)
-                | {node.pk for node in editable_future_graph.nodes.values()}
-            ).delete()
-            # END delete superflous models
-
-            # BEGIN save related models
-            # save order is _very_ important!
-            for widget in self.widgets.values():
-                widget.save()
-
-            for card in self.cards.values():
-                card.save()
-
-            for edge in self.edges.values():
-                edge.save()
-
-            for node in self.nodes.values():
-                node.save()
-            # END save related models
 
             self.save(validate=False)
 
@@ -2740,21 +2517,14 @@ class Graph(models.GraphModel):
 
             editable_future_graph.delete()
 
-            graph_from_database = type(self).objects.get(
-                pk=self.pk
-            )  # returns an updated copy of self
-            graph_from_database.create_editable_future_graph()
+            # delete any nodegroups that are no longer associated with the graph
+            for nodegroup in current_nodegroups + editable_future_nodegroups:
+                if not models.Node.objects.filter(pk=nodegroup.pk).exists():
+                    nodegroup.delete()
 
-            # TODO: This is a temporary fix to remove nodegroups that are no longer in use. It should be replaced with a more performant solution.
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    DELETE FROM node_groups
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM nodes WHERE nodes.nodeid = node_groups.nodegroupid
-                    );
-                    """
-                )
+            # returns an updated copy of self
+            graph_from_database = type(self).objects.get(pk=self.pk)
+            graph_from_database.create_editable_future_graph()
 
             return graph_from_database
 
