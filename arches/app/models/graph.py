@@ -22,6 +22,7 @@ import uuid
 from copy import deepcopy
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, connection
+from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
 from arches.app.const import IntegrityCheck
 from arches.app.models import models
@@ -30,6 +31,7 @@ from arches.app.models.system_settings import settings
 from arches.app.datatypes.datatypes import DataTypeFactory
 from arches.app.etl_modules.bulk_data_deletion import BulkDataDeletion
 from arches.app.utils.betterJSONSerializer import JSONSerializer, JSONDeserializer
+from arches.app.utils.editable_future_graph import update_editable_future_nodegroups
 from arches.app.search.search_engine_factory import SearchEngineFactory
 from arches.app.utils.i18n import LanguageSynchronizer
 from django.utils.translation import gettext as _
@@ -2428,34 +2430,6 @@ class Graph(models.GraphModel):
         except:
             raise Exception(_("No identifiable future Graph"))
 
-        def _update_source_nodegroup_hierarchy(nodegroup):
-            if not nodegroup:
-                return None
-
-            node = models.Node.objects.get(pk=nodegroup.pk)
-            if node.source_identifier_id:
-                source_nodegroup = models.NodeGroup.objects.get(
-                    pk=node.source_identifier_id
-                )
-
-                source_nodegroup.cardinality = nodegroup.cardinality
-                source_nodegroup.legacygroupid = nodegroup.legacygroupid
-
-                if nodegroup.parentnodegroup_id:
-                    nodegroup_parent_node = models.Node.objects.get(
-                        pk=nodegroup.parentnodegroup_id
-                    )
-
-                    if nodegroup_parent_node.source_identifier_id:
-                        source_nodegroup.parentnodegroup_id = (
-                            nodegroup_parent_node.source_identifier_id
-                        )
-
-                source_nodegroup.save()
-
-            if nodegroup.parentnodegroup:
-                _update_source_nodegroup_hierarchy(nodegroup=nodegroup.parentnodegroup)
-
         with transaction.atomic():
             self.root.set_relatable_resources(
                 [
@@ -2464,14 +2438,10 @@ class Graph(models.GraphModel):
                 ]
             )
 
-            previous_card_ids = [str(card.pk) for card in self.cards.values()]
-            previous_node_ids = [str(node.pk) for node in self.nodes.values()]
-            previous_edge_ids = [str(edge.pk) for edge in self.edges.values()]
-            previous_widget_ids = [str(widget.pk) for widget in self.widgets.values()]
-            previous_nodegroup_ids = [
-                str(nodegroup.pk)
-                for nodegroup in self.get_nodegroups(force_recalculation=True)
-            ]
+            previous_card_ids = {str(card.pk) for card in self.cards.values()}
+            previous_node_ids = {str(node.pk) for node in self.nodes.values()}
+            previous_edge_ids = {str(edge.pk) for edge in self.edges.values()}
+            previous_widget_ids = {str(widget.pk) for widget in self.widgets.values()}
 
             self.cards = {}
             self.nodes = {}
@@ -2485,6 +2455,10 @@ class Graph(models.GraphModel):
             # them to source item. If the item does not have a `source_identifier` attribute, it
             # has been newly created; we update the `graph_id` to match the source graph. We are
             # not saving in this block so updates can accur in any order.
+            update_editable_future_nodegroups(
+                editable_future_graph.get_nodegroups(force_recalculation=True)
+            )
+
             for future_widget in list(editable_future_graph.widgets.values()):
                 source_widget = future_widget.source_identifier
 
@@ -2580,8 +2554,6 @@ class Graph(models.GraphModel):
                     del editable_future_graph.cards[future_card.pk]
                     self.cards[future_card.pk] = future_card
 
-                _update_source_nodegroup_hierarchy(future_card.nodegroup)
-
             for future_edge in list(editable_future_graph.edges.values()):
                 if future_edge.source_identifier_id:
                     source_edge = future_edge.source_identifier
@@ -2642,7 +2614,6 @@ class Graph(models.GraphModel):
                             "nodeid",
                             "nodegroup_id",
                             "source_identifier_id",
-                            "is_collector",
                         ]:
                             setattr(source_node, key, getattr(future_node, key))
 
@@ -2670,8 +2641,6 @@ class Graph(models.GraphModel):
 
                     del editable_future_graph.nodes[future_node.pk]
                     self.nodes[future_node.pk] = future_node
-
-                _update_source_nodegroup_hierarchy(future_node.nodegroup)
             # END update related models
 
             # BEGIN copy attrs from editable_future_graph to source_graph
@@ -2705,97 +2674,58 @@ class Graph(models.GraphModel):
             # the editable_future_graph. If the item related to the source graph exists, but the item
             # related to the editable_future_graph does not exist, the item related to the source graph
             # should be deleted.
-            updated_card_ids = [
+            updated_widget_ids = {
+                str(widget.pk) for widget in editable_future_graph.widgets.values()
+            }
+
+            updated_card_ids = {
                 str(card.source_identifier_id)
                 for card in editable_future_graph.cards.values()
-            ]
-            updated_node_ids = [
-                str(node.source_identifier_id)
-                for node in editable_future_graph.nodes.values()
-            ]
-            updated_edge_ids = [
+            }
+
+            updated_edge_ids = {
                 str(edge.source_identifier_id)
                 for edge in editable_future_graph.edges.values()
-            ]
-            updated_widget_ids = [
-                str(widget.pk) for widget in editable_future_graph.widgets.values()
-            ]
+            }
 
-            updated_node_ids.append(str(self.root.pk))
+            updated_node_ids = {
+                str(node.source_identifier_id)
+                for node in editable_future_graph.nodes.values()
+            }
+            updated_node_ids.add(str(self.root.pk))
 
-            for previous_widget_id in previous_widget_ids:
-                if previous_widget_id not in updated_widget_ids:
-                    try:
-                        widget = models.CardXNodeXWidget.objects.get(
-                            pk=previous_widget_id
-                        )
-                        widget.delete()
-                    except ObjectDoesNotExist:  # already deleted
-                        pass
+            models.CardXNodeXWidget.objects.filter(
+                pk__in=set(previous_widget_ids - updated_widget_ids)
+                | {widget.pk for widget in editable_future_graph.widgets.values()}
+            ).delete()
 
-            for previous_card_id in previous_card_ids:
-                if previous_card_id not in updated_card_ids:
-                    try:
-                        card = models.CardModel.objects.get(pk=previous_card_id)
-                        card.delete()
-                    except ObjectDoesNotExist:  # already deleted
-                        pass
+            models.CardModel.objects.filter(
+                pk__in=set(previous_card_ids - updated_card_ids)
+                | {card.pk for card in editable_future_graph.cards.values()}
+            ).delete()
 
-            for previous_node_id in previous_node_ids:
-                if previous_node_id not in updated_node_ids:
-                    try:
-                        node = models.Node.objects.get(pk=previous_node_id)
-                        node.delete()
-                    except ObjectDoesNotExist:  # already deleted
-                        pass
+            models.Edge.objects.filter(
+                pk__in=set(previous_edge_ids - updated_edge_ids)
+                | {edge.pk for edge in editable_future_graph.edges.values()}
+            ).delete()
 
-            for previous_edge_id in previous_edge_ids:
-                if previous_edge_id not in updated_edge_ids:
-                    try:
-                        edge = models.Edge.objects.get(pk=previous_edge_id)
-                        edge.delete()
-                    except ObjectDoesNotExist:  # already deleted
-                        pass
-
-            for previous_nodegroup_id in previous_nodegroup_ids:
-                try:
-                    node = models.Node.objects.get(pk=previous_nodegroup_id)
-                except (
-                    ObjectDoesNotExist
-                ):  # node has been moved, therefore empty Nodegroup
-                    nodegroup = models.NodeGroup.objects.get(pk=previous_nodegroup_id)
-                    nodegroup.delete()
+            models.Node.objects.filter(
+                pk__in=set(previous_node_ids - updated_node_ids)
+                | {node.pk for node in editable_future_graph.nodes.values()}
+            ).delete()
             # END delete superflous models
 
             # BEGIN save related models
             # save order is _very_ important!
-            for widget in editable_future_graph.widgets.values():
-                widget.delete()
             for widget in self.widgets.values():
-                try:
-                    widget_from_database = models.CardXNodeXWidget.objects.get(
-                        card_id=widget.card_id,
-                        node_id=widget.node_id,
-                        widget_id=widget.widget_id,
-                    )
-                    widget_from_database.delete()
-                except models.CardXNodeXWidget.DoesNotExist:
-                    pass
-
                 widget.save()
 
-            for card in editable_future_graph.cards.values():
-                card.delete()
             for card in self.cards.values():
                 card.save()
 
-            for edge in editable_future_graph.edges.values():
-                edge.delete()
             for edge in self.edges.values():
                 edge.save()
 
-            for node in editable_future_graph.nodes.values():
-                node.delete()
             for node in self.nodes.values():
                 node.save()
             # END save related models
@@ -2815,6 +2745,15 @@ class Graph(models.GraphModel):
                 pk=self.pk
             )  # returns an updated copy of self
             graph_from_database.create_editable_future_graph()
+
+            # TODO: This is a temporary fix to remove nodegroups that are no longer in use. It should be replaced with a more performant solution.
+            models.NodeGroup.objects.filter(
+                ~models.Q(
+                    pk__in=Subquery(
+                        models.Node.objects.values("pk").filter(pk=OuterRef("pk"))
+                    )
+                )
+            ).delete()
 
             return graph_from_database
 
