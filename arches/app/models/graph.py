@@ -22,7 +22,6 @@ import uuid
 from copy import deepcopy
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, connection
-from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
 from arches.app.const import IntegrityCheck
 from arches.app.models import models
@@ -2747,13 +2746,15 @@ class Graph(models.GraphModel):
             graph_from_database.create_editable_future_graph()
 
             # TODO: This is a temporary fix to remove nodegroups that are no longer in use. It should be replaced with a more performant solution.
-            models.NodeGroup.objects.filter(
-                ~models.Q(
-                    pk__in=Subquery(
-                        models.Node.objects.values("pk").filter(pk=OuterRef("pk"))
-                    )
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    DELETE FROM node_groups
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM nodes WHERE nodes.nodeid = node_groups.nodegroupid
+                    );
+                    """
                 )
-            ).delete()
 
             return graph_from_database
 
