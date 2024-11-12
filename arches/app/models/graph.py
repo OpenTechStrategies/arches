@@ -2430,7 +2430,6 @@ class Graph(models.GraphModel):
             raise Exception(_("No identifiable future Graph"))
 
         with transaction.atomic():
-            foo = JSONDeserializer().deserialize(JSONSerializer().serialize(self))
             serialized_editiable_future_graph = JSONDeserializer().deserialize(
                 JSONSerializer().serialize(editable_future_graph)
             )
@@ -2535,9 +2534,9 @@ class Graph(models.GraphModel):
             serialized_editiable_future_graph["root"]["source_identifier_id"] = None
 
             serialized_editiable_future_graph["has_unpublished_changes"] = False
-            serialized_editiable_future_graph["resource_instance_lifecycle_id"] = foo[
-                "resource_instance_lifecycle_id"
-            ]
+            serialized_editiable_future_graph["resource_instance_lifecycle_id"] = str(
+                self.resource_instance_lifecycle_id
+            )
             serialized_editiable_future_graph["source_identifier_id"] = None
             serialized_editiable_future_graph["graphid"] = str(self.pk)
 
