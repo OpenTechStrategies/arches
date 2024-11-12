@@ -690,8 +690,8 @@ class GraphPublicationView(View):
             try:
                 data = JSONDeserializer().deserialize(request.body)
 
-                source_graph.update_from_editable_future_graph()
-                source_graph.publish(notes=data.get("notes"), user=request.user)
+                updated_graph = source_graph.update_from_editable_future_graph()
+                updated_graph.publish(notes=data.get("notes"), user=request.user)
 
                 return JSONResponse(
                     {
