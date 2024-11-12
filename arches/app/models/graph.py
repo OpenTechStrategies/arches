@@ -2431,24 +2431,25 @@ class Graph(models.GraphModel):
 
         with transaction.atomic():
             foo = JSONDeserializer().deserialize(JSONSerializer().serialize(self))
-            bar = JSONDeserializer().deserialize(
+            serialized_editiable_future_graph = JSONDeserializer().deserialize(
                 JSONSerializer().serialize(editable_future_graph)
             )
 
-            # import pdb; pdb.set_trace()
             node_id_to_node_source_identifier_id = {
                 node["nodeid"]: node["source_identifier_id"]
-                for node in bar["nodes"]
+                for node in serialized_editiable_future_graph["nodes"]
                 if node["source_identifier_id"]
             }
 
             card_id_to_card_source_identifier_id = {
                 card["cardid"]: card["source_identifier_id"]
-                for card in bar["cards"]
+                for card in serialized_editiable_future_graph["cards"]
                 if card["source_identifier_id"]
             }
 
-            for serialized_card_x_node_x_widget in bar["cards_x_nodes_x_widgets"]:
+            for serialized_card_x_node_x_widget in serialized_editiable_future_graph[
+                "cards_x_nodes_x_widgets"
+            ]:
                 if serialized_card_x_node_x_widget["source_identifier_id"]:
                     serialized_card_x_node_x_widget["id"] = (
                         serialized_card_x_node_x_widget["source_identifier_id"]
@@ -2467,7 +2468,7 @@ class Graph(models.GraphModel):
                 if updated_node_id:
                     serialized_card_x_node_x_widget["node_id"] = updated_node_id
 
-            for serialized_card in bar["cards"]:
+            for serialized_card in serialized_editiable_future_graph["cards"]:
                 if serialized_card["source_identifier_id"]:
                     serialized_card["cardid"] = serialized_card["source_identifier_id"]
                     serialized_card["source_identifier_id"] = None
@@ -2480,7 +2481,7 @@ class Graph(models.GraphModel):
 
                 serialized_card["graph_id"] = str(self.pk)
 
-            for serialized_node in bar["nodes"]:
+            for serialized_node in serialized_editiable_future_graph["nodes"]:
                 if serialized_node["source_identifier_id"]:
                     serialized_node["nodeid"] = serialized_node["source_identifier_id"]
                     serialized_node["source_identifier_id"] = None
@@ -2493,7 +2494,7 @@ class Graph(models.GraphModel):
 
                 serialized_node["graph_id"] = str(self.pk)
 
-            for serialized_nodegroup in bar["nodegroups"]:
+            for serialized_nodegroup in serialized_editiable_future_graph["nodegroups"]:
                 updated_nodegroup_id = node_id_to_node_source_identifier_id.get(
                     serialized_nodegroup["nodegroupid"]
                 )
@@ -2508,7 +2509,7 @@ class Graph(models.GraphModel):
                         updated_parent_nodegroup_id
                     )
 
-            for serialized_edge in bar["edges"]:
+            for serialized_edge in serialized_editiable_future_graph["edges"]:
                 if serialized_edge["source_identifier_id"]:
                     serialized_edge["edgeid"] = serialized_edge["source_identifier_id"]
                     serialized_edge["source_identifier_id"] = None
@@ -2527,21 +2528,24 @@ class Graph(models.GraphModel):
 
                 serialized_edge["graph_id"] = str(self.pk)
 
-            bar["graphid"] = str(self.pk)
-            bar["has_unpublished_changes"] = False
-            bar["resource_instance_lifecycle_id"] = foo[
+            serialized_editiable_future_graph["root"]["graph_id"] = str(self.pk)
+            serialized_editiable_future_graph["root"]["nodeid"] = (
+                serialized_editiable_future_graph["root"]["source_identifier_id"]
+            )
+            serialized_editiable_future_graph["root"]["source_identifier_id"] = None
+
+            serialized_editiable_future_graph["has_unpublished_changes"] = False
+            serialized_editiable_future_graph["resource_instance_lifecycle_id"] = foo[
                 "resource_instance_lifecycle_id"
             ]
-            bar["root"]["graph_id"] = str(self.pk)
-            bar["root"]["nodeid"] = bar["root"]["source_identifier_id"]
-
-            bar["root"]["source_identifier_id"] = None
-
-            bar["source_identifier_id"] = None
+            serialized_editiable_future_graph["source_identifier_id"] = None
+            serialized_editiable_future_graph["graphid"] = str(self.pk)
 
             editable_future_graph.delete()
 
-            return self.restore_state_from_serialized_graph(bar)
+            return self.restore_state_from_serialized_graph(
+                serialized_editiable_future_graph
+            )
 
     def revert(self):
         """
@@ -2653,7 +2657,18 @@ class Graph(models.GraphModel):
             updated_graph.widgets = widget_dict
             updated_graph.is_active = self.is_active
 
-            # import pdb; pdb.set_trace()
+            relatable_resource_model_nodes = models.Node.objects.filter(
+                graph_id__in=serialized_graph["relatable_resource_model_ids"],
+                istopnode=True,
+            )
+            updated_graph.root.set_relatable_resources(
+                list(
+                    {
+                        node.source_identifier.pk if node.source_identifier else node.pk
+                        for node in relatable_resource_model_nodes
+                    }
+                )
+            )
 
             updated_graph.save()
             updated_graph.create_editable_future_graph()

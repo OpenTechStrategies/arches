@@ -207,9 +207,6 @@ class Card(models.CardModel):
                     edge.ontologyproperty = self.ontologyproperty
                 edge.save()
 
-            # self.nodegroup.cardinality = self.cardinality
-            # self.nodegroup.save()
-
             super(Card, self).save()
             for widget in self.widgets:
                 widget.save()
