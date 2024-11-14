@@ -2186,21 +2186,25 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
         editable_future_graph = updated_source_graph.create_editable_future_graph()
 
+        node = [node for node in editable_future_graph.nodes.values()][2]
+
+        # fixes flaky test
+        models.NodeGroup.objects.filter(pk=node.pk).delete()
+
         nodegroup_count_before = models.NodeGroup.objects.count()
 
-        node = [node for node in editable_future_graph.nodes.values()][2]
         source_identifier_id = node.source_identifier_id
         original_nodegroup_id = node.nodegroup_id
         updated_nodegroup_id = node.pk
 
-        models.NodeGroup.objects.update_or_create(
-            nodegroupid=str(updated_nodegroup_id),
-            defaults={
+        models.NodeGroup.objects.create(
+            **{
                 "cardinality": "n",
                 "legacygroupid": "",
+                "nodegroupid": str(updated_nodegroup_id),
                 "parentnodegroup_id": None,
-            },
-        )
+            }
+        ).save()
 
         node.nodegroup_id = updated_nodegroup_id
         node.save()
