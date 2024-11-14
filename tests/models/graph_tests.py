@@ -19,6 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 import uuid
 
 from django.contrib.auth.models import User
+from guardian.models import GroupObjectPermission, UserObjectPermission
 from tests.base_test import ArchesTestCase
 from arches.app.models import models
 from arches.app.models.graph import Graph, GraphValidationError
@@ -1208,217 +1209,6 @@ class GraphTests(ArchesTestCase):
         with self.assertRaises(GraphValidationError) as cm:
             graph.save()
 
-    def test_update_empty_graph_from_editable_future_graph(self):
-        source_graph = Graph.new(name="TEST RESOURCE")
-        editable_future_graph = (
-            source_graph.create_editable_future_graph()
-        )  # TODO: replace with db lookup after 9114 signal work
-
-        editable_future_graph.append_branch(
-            "http://www.cidoc-crm.org/cidoc-crm/E1_Entity", graphid=source_graph.pk
-        )
-        editable_future_graph.save()
-        serialized_editable_future_graph = JSONDeserializer().deserialize(
-            JSONSerializer().serialize(editable_future_graph)
-        )
-
-        updated_source_graph = source_graph.update_from_editable_future_graph()
-        serialized_updated_source_graph = JSONDeserializer().deserialize(
-            JSONSerializer().serialize(updated_source_graph)
-        )
-
-        for idx, editable_future_graph_serialized_card in enumerate(
-            serialized_editable_future_graph["cards"]
-        ):
-            updated_source_graph_serialized_card = serialized_updated_source_graph[
-                "cards"
-            ][idx]
-
-            # ensures all relevant values are equal between graphs
-            for key, value in editable_future_graph_serialized_card.items():
-                if key not in [
-                    "graph_id",
-                    "nodegroup_id",
-                    "name",
-                    "cardid",
-                    "source_identifier_id",
-                ]:
-                    if type(value) == "dict":
-                        self.assertDictEqual(
-                            value, updated_source_graph_serialized_card[key]
-                        )
-                    else:
-                        updated_value = updated_source_graph_serialized_card[key]
-                        if (
-                            updated_value == '{"en": ""}'
-                        ):  # workaround for updated str default values
-                            updated_value = ""
-
-                        self.assertEqual(value, updated_value)
-
-            # ensures all superflous values relating to `editable_future_graph` have been deleted
-            try:
-                future_card_from_database = models.CardModel.objects.get(
-                    pk=editable_future_graph_serialized_card["cardid"]
-                )
-                self.assertEqual(
-                    str(future_card_from_database.graph_id),
-                    updated_source_graph_serialized_card["graph_id"],
-                )
-            except models.CardModel.DoesNotExist:
-                pass  # card has been successfully deleted
-
-        for idx, editable_future_graph_serialized_node in enumerate(
-            serialized_editable_future_graph["nodes"]
-        ):
-            updated_source_graph_serialized_node = serialized_updated_source_graph[
-                "nodes"
-            ][idx]
-
-            # ensures all relevant values are equal between graphs
-            for key, value in editable_future_graph_serialized_node.items():
-                if key not in [
-                    "graph_id",
-                    "nodegroup_id",
-                    "nodeid",
-                    "source_identifier_id",
-                ]:
-                    if type(value) == "dict":
-                        self.assertDictEqual(
-                            value, updated_source_graph_serialized_node[key]
-                        )
-                    else:
-                        updated_value = updated_source_graph_serialized_node[key]
-                        if (
-                            updated_value == '{"en": ""}'
-                        ):  # workaround for updated str default values
-                            updated_value = ""
-
-                        self.assertEqual(value, updated_value)
-
-            # ensures all superflous values relating to `editable_future_graph` have been deleted
-            try:
-                future_node_from_database = models.Node.objects.get(
-                    pk=editable_future_graph_serialized_node["nodeid"]
-                )
-                self.assertEqual(
-                    str(future_node_from_database.graph_id),
-                    updated_source_graph_serialized_node["graph_id"],
-                )
-            except models.Node.DoesNotExist:
-                pass  # node has been successfully deleted
-
-        for idx, editable_future_graph_serialized_edge in enumerate(
-            serialized_editable_future_graph["edges"]
-        ):
-            updated_source_graph_serialized_edge = serialized_updated_source_graph[
-                "edges"
-            ][idx]
-
-            # ensures all relevant values are equal between graphs
-            for key, value in editable_future_graph_serialized_edge.items():
-                if key not in [
-                    "graph_id",
-                    "domainnode_id",
-                    "rangenode_id",
-                    "edgeid",
-                    "source_identifier_id",
-                ]:
-                    if type(value) == "dict":
-                        self.assertDictEqual(
-                            value, updated_source_graph_serialized_edge[key]
-                        )
-                    else:
-                        self.assertEqual(
-                            value, updated_source_graph_serialized_edge[key]
-                        )
-
-            # ensures all superflous values relating to `editable_future_graph` have been deleted
-            try:
-                future_edge_from_database = models.Edge.objects.get(
-                    pk=editable_future_graph_serialized_edge["edgeid"]
-                )
-                self.assertEqual(
-                    str(future_edge_from_database.graph_id),
-                    updated_source_graph_serialized_edge["graph_id"],
-                )
-            except models.Edge.DoesNotExist:
-                pass  # edge has been successfully deleted
-
-        for idx, editable_future_graph_serialized_nodegroup in enumerate(
-            serialized_editable_future_graph["nodegroups"]
-        ):
-            updated_source_graph_serialized_nodegroup = serialized_updated_source_graph[
-                "nodegroups"
-            ][idx]
-
-            # ensures all relevant values are equal between graphs
-            for key, value in editable_future_graph_serialized_nodegroup.items():
-                if key not in ["parentnodegroup_id", "nodegroupid", "legacygroupid"]:
-                    if type(value) == "dict":
-                        self.assertDictEqual(
-                            value, updated_source_graph_serialized_nodegroup[key]
-                        )
-                    else:
-                        self.assertEqual(
-                            value, updated_source_graph_serialized_nodegroup[key]
-                        )
-
-        for key, value in serialized_editable_future_graph.items():
-            if key == "name":
-                self.assertEqual(value, serialized_updated_source_graph[key])
-            elif key not in [
-                "graphid",
-                "cards",
-                "nodes",
-                "edges",
-                "nodegroups",
-                "functions",
-                "root",
-                "widgets",
-                "resource_instance_lifecycle",
-                "resource_instance_lifecycle_id",
-                "source_identifier",
-                "source_identifier_id",
-                "publication_id",
-            ]:
-                if type(value) == "dict":
-                    self.assertDictEqual(value, serialized_updated_source_graph[key])
-                else:
-                    self.assertEqual(value, serialized_updated_source_graph[key])
-
-    def test_update_graph_from_editable_future_graph_after_node_deletion(self):
-        source_graph = Graph.new(name="TEST RESOURCE")
-
-        source_graph.append_branch(
-            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
-            graphid=self.NODE_NODETYPE_GRAPHID,
-        )
-        source_graph.save()
-
-        self.assertEqual(len(source_graph.nodes), 3)
-
-        editable_future_graph = (
-            source_graph.create_editable_future_graph()
-        )  # TODO: replace with db lookup after 9114 signal work
-
-        child_node = [node for node in editable_future_graph.nodes.values()][
-            len(editable_future_graph.nodes.values()) - 1
-        ]
-        child_node_source_identifier = child_node.source_identifier_id
-
-        editable_future_graph.delete_node(child_node)
-        editable_future_graph = Graph.objects.get(
-            pk=editable_future_graph.pk
-        )  # updates from DB to refresh node list
-
-        updated_source_graph = source_graph.update_from_editable_future_graph()
-
-        with self.assertRaises(Exception):
-            models.Node.objects.get(pk=child_node_source_identifier)
-
-        self.assertEqual(len(updated_source_graph.nodes), 2)
-
     def test_add_resource_instance_lifecycle(self):
         resource_instance_lifecycle = {
             "id": "f7a0fd46-4c71-49cb-ae1e-778c96763440",
@@ -1481,3 +1271,893 @@ class GraphTests(ArchesTestCase):
         # Verify the lifecycle contains the states
         self.assertIn(state1, resource_instance_lifecycle_states)
         self.assertIn(state2, resource_instance_lifecycle_states)
+
+
+class EditableFutureGraphTests(ArchesTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.NODE_NODETYPE_GRAPHID = "22000000-0000-0000-0000-000000000001"
+        cls.SINGLE_NODE_GRAPHID = "22000000-0000-0000-0000-000000000000"
+
+        # Node Branch
+        graph_dict = {
+            "author": "Arches",
+            "color": None,
+            "deploymentdate": None,
+            "deploymentfile": None,
+            "description": "Represents a single node in a graph",
+            "graphid": cls.SINGLE_NODE_GRAPHID,
+            "iconclass": "fa fa-circle",
+            "isresource": False,
+            "name": "Node",
+            "ontology_id": "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd",
+            "subtitle": "Represents a single node in a graph.",
+            "version": "v1",
+        }
+        models.GraphModel.objects.create(**graph_dict).save()
+
+        node_dict = {
+            "config": None,
+            "datatype": "semantic",
+            "description": "Represents a single node in a graph",
+            "graph_id": cls.SINGLE_NODE_GRAPHID,
+            "isrequired": False,
+            "issearchable": True,
+            "istopnode": True,
+            "name": "Node",
+            "nodegroup_id": None,
+            "nodeid": "20000000-0000-0000-0000-100000000000",
+            "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
+        }
+        models.Node.objects.create(**node_dict).save()
+
+        # Node/Node Type Branch
+        graph_dict = {
+            "author": "Arches",
+            "color": None,
+            "deploymentdate": None,
+            "deploymentfile": None,
+            "description": "Represents a node and node type pairing",
+            "graphid": cls.NODE_NODETYPE_GRAPHID,
+            "iconclass": "fa fa-angle-double-down",
+            "isresource": False,
+            "name": "Node/Node Type",
+            "ontology_id": "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd",
+            "subtitle": "Represents a node and node type pairing",
+            "version": "v1",
+        }
+        models.GraphModel.objects.create(**graph_dict).save()
+
+        nodegroup_dict = {
+            "cardinality": "n",
+            "legacygroupid": "",
+            "nodegroupid": "20000000-0000-0000-0000-100000000001",
+            "parentnodegroup_id": None,
+        }
+        models.NodeGroup.objects.create(**nodegroup_dict).save()
+
+        card_dict = {
+            "active": True,
+            "cardid": "bf9ea150-3eaa-11e8-8b2b-c3a348661f61",
+            "description": "Represents a node and node type pairing",
+            "graph_id": cls.NODE_NODETYPE_GRAPHID,
+            "helpenabled": False,
+            "helptext": None,
+            "helptitle": None,
+            "instructions": "",
+            "name": "Node/Node Type",
+            "nodegroup_id": "20000000-0000-0000-0000-100000000001",
+            "sortorder": None,
+            "visible": True,
+        }
+        models.CardModel.objects.create(**card_dict).save()
+
+        nodes = [
+            {
+                "config": None,
+                "datatype": "string",
+                "description": "",
+                "graph_id": cls.NODE_NODETYPE_GRAPHID,
+                "isrequired": False,
+                "issearchable": True,
+                "istopnode": True,
+                "name": "Node",
+                "nodegroup_id": "20000000-0000-0000-0000-100000000001",
+                "nodeid": "20000000-0000-0000-0000-100000000001",
+                "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
+            },
+            {
+                "config": {"rdmCollection": None},
+                "datatype": "concept",
+                "description": "",
+                "graph_id": cls.NODE_NODETYPE_GRAPHID,
+                "isrequired": False,
+                "issearchable": True,
+                "istopnode": False,
+                "name": "Node Type",
+                "nodegroup_id": "20000000-0000-0000-0000-100000000001",
+                "nodeid": "20000000-0000-0000-0000-100000000002",
+                "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E55_Type",
+            },
+        ]
+
+        for node in nodes:
+            models.Node.objects.create(**node).save()
+
+        edges_dict = {
+            "description": None,
+            "domainnode_id": "20000000-0000-0000-0000-100000000001",
+            "edgeid": "22200000-0000-0000-0000-000000000001",
+            "graph_id": cls.NODE_NODETYPE_GRAPHID,
+            "name": None,
+            "ontologyproperty": "http://www.cidoc-crm.org/cidoc-crm/P2_has_type",
+            "rangenode_id": "20000000-0000-0000-0000-100000000002",
+        }
+        models.Edge.objects.create(**edges_dict).save()
+
+        graph = Graph.new()
+        graph.name = "TEST GRAPH"
+        graph.subtitle = "ARCHES TEST GRAPH"
+        graph.author = "Arches"
+        graph.description = "ARCHES TEST GRAPH"
+        graph.ontology_id = "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd"
+        graph.version = "v1.0.0"
+        graph.iconclass = "fa fa-building"
+        graph.nodegroups = []
+        graph.root.ontologyclass = "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity"
+        graph.save()
+
+        graph.root.name = "ROOT NODE"
+        graph.root.description = "Test Root Node"
+        graph.root.datatype = "semantic"
+        graph.root.save()
+
+        cls.source_graph = graph
+        cls.editable_future_graph = graph.create_editable_future_graph()
+
+        cls.rootNode = graph.root
+
+    def _compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+        self, serialized_updated_source_graph, serialized_editable_future_graph
+    ):
+        def are_dicts_equal(dict_1, dict_2, ignore_keys):
+            def filter_and_sort(entity):
+                """Recursively filter out ignored keys from a entity and sort by key."""
+                if isinstance(entity, dict):
+                    return {
+                        key: filter_and_sort(value)
+                        for key, value in entity.items()
+                        if key not in ignore_keys
+                    }
+                elif isinstance(entity, list):
+                    return [filter_and_sort(item) for item in entity]
+                else:
+                    return entity
+
+            dict_1_filtered = filter_and_sort(dict_1)
+            dict_2_filtered = filter_and_sort(dict_2)
+
+            return dict_1_filtered == dict_2_filtered
+
+        serialized_updated_source_nodes = {
+            (
+                node["source_identifier_id"]
+                if node.get("source_identifier_id") not in [None, "None"]
+                else node["nodeid"]
+            ): node
+            for node in serialized_updated_source_graph["nodes"]
+        }
+
+        serialized_editable_future_nodes = {
+            (
+                node["source_identifier_id"]
+                if node.get("source_identifier_id") not in [None, "None"]
+                else node["nodeid"]
+            ): node
+            for node in serialized_editable_future_graph["nodes"]
+        }
+
+        self.assertTrue(
+            are_dicts_equal(
+                serialized_updated_source_nodes,
+                serialized_editable_future_nodes,
+                [
+                    "graph_id",
+                    "nodeid",
+                    "nodegroup_id",
+                    "source_identifier_id",
+                ],
+            )
+        )
+
+        serialized_updated_source_edges = {
+            (
+                edge["source_identifier_id"]
+                if edge.get("source_identifier_id") not in [None, "None"]
+                else edge["edgeid"]
+            ): edge
+            for edge in serialized_updated_source_graph["edges"]
+        }
+
+        serialized_editable_future_edges = {
+            (
+                edge["source_identifier_id"]
+                if edge.get("source_identifier_id") not in [None, "None"]
+                else edge["edgeid"]
+            ): edge
+            for edge in serialized_editable_future_graph["edges"]
+        }
+
+        self.assertTrue(
+            are_dicts_equal(
+                serialized_updated_source_edges,
+                serialized_editable_future_edges,
+                [
+                    "graph_id",
+                    "edgeid",
+                    "domainnode_id",
+                    "rangenode_id",
+                    "source_identifier_id",
+                ],
+            )
+        )
+
+        serialized_updated_source_cards = {
+            (
+                card["source_identifier_id"]
+                if card.get("source_identifier_id") not in [None, "None"]
+                else card["cardid"]
+            ): card
+            for card in serialized_updated_source_graph["cards"]
+        }
+
+        serialized_editable_future_cards = {
+            (
+                card["source_identifier_id"]
+                if card.get("source_identifier_id") not in [None, "None"]
+                else card["cardid"]
+            ): card
+            for card in serialized_editable_future_graph["cards"]
+        }
+
+        self.assertTrue(
+            are_dicts_equal(
+                serialized_updated_source_cards,
+                serialized_editable_future_cards,
+                [
+                    "graph_id",
+                    "cardid",
+                    "nodegroup_id",
+                    "source_identifier_id",
+                ],
+            )
+        )
+
+        serialized_updated_source_cards_x_nodes_x_widgets = {
+            (
+                card_x_node_x_widget["source_identifier_id"]
+                if card_x_node_x_widget.get("source_identifier_id")
+                not in [None, "None"]
+                else card_x_node_x_widget["id"]
+            ): card_x_node_x_widget
+            for card_x_node_x_widget in serialized_updated_source_graph[
+                "cards_x_nodes_x_widgets"
+            ]
+        }
+
+        serialized_editable_future_cards_x_nodes_x_widgets = {
+            (
+                card_x_node_x_widget["source_identifier_id"]
+                if card_x_node_x_widget.get("source_identifier_id")
+                not in [None, "None"]
+                else card_x_node_x_widget["id"]
+            ): card_x_node_x_widget
+            for card_x_node_x_widget in serialized_editable_future_graph[
+                "cards_x_nodes_x_widgets"
+            ]
+        }
+
+        self.assertTrue(
+            are_dicts_equal(
+                serialized_updated_source_cards_x_nodes_x_widgets,
+                serialized_editable_future_cards_x_nodes_x_widgets,
+                [
+                    "graph_id",
+                    "id",
+                    "card_id",
+                    "node_id",
+                    "source_identifier_id",
+                ],
+            )
+        )
+
+        self.assertTrue(
+            are_dicts_equal(
+                serialized_updated_source_graph,
+                serialized_editable_future_graph,
+                [
+                    "graphid",
+                    "cards",
+                    "nodes",
+                    "edges",
+                    "nodegroups",
+                    "functions",
+                    "root",
+                    "widgets",
+                    "cards_x_nodes_x_widgets",
+                    "resource_instance_lifecycle",
+                    "resource_instance_lifecycle_id",
+                    "source_identifier",
+                    "source_identifier_id",
+                    "publication_id",
+                ],
+            )
+        )
+
+    def test_update_empty_graph_from_editable_future_graph(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+    def test_update_graph_with_multiple_nodes_and_edges(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.SINGLE_NODE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = updated_source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+
+        serialized_updated_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_updated_editable_future_graph
+        )
+
+    def test_update_graph_with_permissions(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+
+        nodegroup = updated_source_graph.get_nodegroups()[:1][0]
+
+        GroupObjectPermission.objects.create(
+            group_id=1, content_object=nodegroup, permission_id=93
+        )
+        UserObjectPermission.objects.create(
+            user_id=2, content_object=nodegroup, permission_id=94
+        )
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+    def test_update_graph_with_relatable_resources(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.root.set_relatable_resources(
+            [editable_future_graph.root.pk]
+        )
+        editable_future_graph.root.save()
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        self.assertTrue(len(updated_source_graph.root.get_relatable_resources()))
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+    def test_create_editable_future_graphs_does_not_pollute_database(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        updated_source_graph.create_editable_future_graph()
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_deleting_source_graph_deletes_editable_future_graph_and_all_related_models(
+        self,
+    ):
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+
+        updated_source_graph.delete()
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_revert_editable_future_graph(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        source_graph.revert()
+
+        editable_future_graph = models.Graph.objects.get(
+            source_identifier_id=source_graph.pk
+        )
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_update_nodegroup(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        nodegroup = editable_future_graph.get_nodegroups()[:1][0]
+        nodegroup.cardinality = "1"
+        nodegroup.save()
+
+        updated_source_graph = updated_source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+        nodegroup = updated_source_graph.get_nodegroups()[:1][0]
+        self.assertEqual(nodegroup.cardinality, "1")
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_update_node(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        editable_future_graph.root.name = "UPDATED_NODE_NAME"
+
+        updated_source_graph = updated_source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+        self.assertEqual(updated_source_graph.root.name, "UPDATED_NODE_NAME")
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_update_card(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        card = [card for card in editable_future_graph.cards.values()][0]
+        card.description = "UPDATED_CARD_DESCRIPTION"
+        card.save()
+
+        updated_source_graph = updated_source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+        updated_card = [card for card in updated_source_graph.cards.values()][0]
+        self.assertEqual(
+            updated_card.description.value, '{"en": "UPDATED_CARD_DESCRIPTION"}'
+        )
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_update_widget(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.append_branch(
+            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        card = [card for card in editable_future_graph.cards.values()][0]
+        card_x_node_x_widget = models.CardXNodeXWidget.objects.create(
+            card=card,
+            node_id=card.nodegroup_id,
+            widget=models.Widget.objects.first(),
+            label="Widget name",
+        )
+
+        editable_future_graph.widgets[card_x_node_x_widget.pk] = card_x_node_x_widget
+
+        editable_future_graph.save()
+
+        updated_source_graph = updated_source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        nodegroup_count_before = models.NodeGroup.objects.count()
+        node_count_before = models.Node.objects.count()
+        edge_count_before = models.Edge.objects.count()
+        card_count_before = models.CardModel.objects.count()
+        card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+
+        widget = [widget for widget in editable_future_graph.widgets.values()][0]
+        widget.label = "UPDATED_WIDGET_NAME"
+        widget.save()
+
+        updated_source_graph = updated_source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
+
+        updated_widget = [widget for widget in editable_future_graph.widgets.values()][
+            0
+        ]
+        self.assertEqual(updated_widget.label.value, '{"en": "UPDATED_WIDGET_NAME"}')
+
+        nodegroup_count_after = models.NodeGroup.objects.count()
+        node_count_after = models.Node.objects.count()
+        edge_count_after = models.Edge.objects.count()
+        card_count_after = models.CardModel.objects.count()
+        card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+
+        self.assertEqual(nodegroup_count_before, nodegroup_count_after)
+        self.assertEqual(node_count_before, node_count_after)
+        self.assertEqual(edge_count_before, edge_count_after)
+        self.assertEqual(card_count_before, card_count_after)
+        self.assertEqual(
+            card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+
+    def test_update_from_editable_future_graph_does_not_affect_resources(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        nodegroup = models.NodeGroup.objects.create()
+        string_node = models.Node.objects.create(
+            graph=source_graph,
+            nodegroup=nodegroup,
+            name="String Node",
+            datatype="string",
+            istopnode=False,
+        )
+        resource_instance_node = models.Node.objects.create(
+            graph=source_graph,
+            nodegroup=nodegroup,
+            name="Resource Node",
+            datatype="resource-instance",
+            istopnode=False,
+        )
+
+        resource = models.ResourceInstance.objects.create(graph=source_graph)
+        tile = models.TileModel.objects.create(
+            nodegroup_id=nodegroup.pk,
+            resourceinstance=resource,
+            data={
+                str(string_node.pk): {
+                    "en": {"value": "test value", "direction": "ltr"},
+                },
+                str(resource_instance_node.pk): {
+                    "resourceId": str(resource.pk),
+                    "ontologyProperty": "",
+                    "inverseOntologyProperty": "",
+                },
+            },
+            sortorder=0,
+        )
+
+        serialized_resource = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(resource)
+        )
+        serialized_tile = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(tile)
+        )
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        resource_from_database = models.ResourceInstance.objects.get(pk=resource.pk)
+        tile_from_database = models.TileModel.objects.get(pk=tile.pk)
+
+        serialized_resource_from_database = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(resource_from_database)
+        )
+        serialized_tile_from_database = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(tile_from_database)
+        )
+
+        self.assertEqual(serialized_resource, serialized_resource_from_database)
+        self.assertEqual(serialized_tile, serialized_tile_from_database)
