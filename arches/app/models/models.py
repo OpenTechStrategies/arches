@@ -858,34 +858,67 @@ class Node(models.Model):
         relatable_resource_ids = [
             r2r.resourceclassfrom
             for r2r in Resource2ResourceConstraint.objects.filter(
-                resourceclassto_id=self.nodeid
+                resourceclassto_id=(
+                    self.source_identifier_id
+                    if self.source_identifier_id
+                    else self.nodeid
+                )
             )
             if r2r.resourceclassfrom is not None
         ]
         relatable_resource_ids = relatable_resource_ids + [
             r2r.resourceclassto
             for r2r in Resource2ResourceConstraint.objects.filter(
-                resourceclassfrom_id=self.nodeid
+                resourceclassfrom_id=(
+                    self.source_identifier_id
+                    if self.source_identifier_id
+                    else self.nodeid
+                )
             )
             if r2r.resourceclassto is not None
         ]
-        return relatable_resource_ids
+        return list(set(relatable_resource_ids))
 
     def set_relatable_resources(self, new_ids):
-        old_ids = [res.nodeid for res in self.get_relatable_resources()]
-        for old_id in old_ids:
-            if old_id not in new_ids:
-                Resource2ResourceConstraint.objects.filter(
-                    Q(resourceclassto_id=self.nodeid)
-                    | Q(resourceclassfrom_id=self.nodeid),
-                    Q(resourceclassto_id=old_id) | Q(resourceclassfrom_id=old_id),
-                ).delete()
-        for new_id in new_ids:
-            if new_id not in old_ids:
-                new_r2r = Resource2ResourceConstraint.objects.create(
-                    resourceclassfrom_id=self.nodeid, resourceclassto_id=new_id
+        new_ids = set(new_ids)
+        old_ids = set()
+
+        for res in self.get_relatable_resources():
+            if res.source_identifier_id:
+                old_ids.add(res.source_identifier_id)
+            if res.nodeid:
+                old_ids.add(res.nodeid)
+
+        self_ids = set()
+        if self.source_identifier_id:
+            self_ids.add(self.source_identifier_id)
+        if self.nodeid:
+            self_ids.add(self.nodeid)
+
+        old_ids.discard(None)
+        self_ids.discard(None)
+
+        old_ids_to_delete = old_ids - new_ids
+        new_ids_to_create = new_ids - old_ids
+
+        if old_ids_to_delete and self_ids:
+            Resource2ResourceConstraint.objects.filter(
+                (
+                    Q(resourceclassto_id__in=self_ids)
+                    & Q(resourceclassfrom_id__in=old_ids_to_delete)
                 )
-                new_r2r.save()
+                | (
+                    Q(resourceclassto_id__in=old_ids_to_delete)
+                    & Q(resourceclassfrom_id__in=self_ids)
+                )
+            ).delete()
+
+        for new_id in new_ids_to_create:
+            new_r2r = Resource2ResourceConstraint(
+                resourceclassfrom_id=self.source_identifier_id or self.nodeid,
+                resourceclassto_id=new_id,
+            )
+            new_r2r.save()
 
     def serialize(self, fields=None, exclude=None, **kwargs):
         ret = JSONSerializer().handle_model(
@@ -1110,7 +1143,7 @@ class Resource2ResourceConstraint(models.Model):
         blank=True,
         null=True,
         related_name="resxres_contstraint_classes_from",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
     )
     resourceclassto = models.ForeignKey(
         Node,
@@ -1118,7 +1151,7 @@ class Resource2ResourceConstraint(models.Model):
         blank=True,
         null=True,
         related_name="resxres_contstraint_classes_to",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
     )
 
     def __init__(self, *args, **kwargs):
