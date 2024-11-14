@@ -1698,9 +1698,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         source_graph.save()
         editable_future_graph = source_graph.create_editable_future_graph()
 
-        editable_future_graph.root.set_relatable_resources(
-            [editable_future_graph.root.pk]
-        )
+        editable_future_graph.root.set_relatable_resources([source_graph.root.pk])
         editable_future_graph.root.save()
         editable_future_graph.save()
 
