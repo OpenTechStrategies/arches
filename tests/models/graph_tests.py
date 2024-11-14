@@ -1765,6 +1765,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         edge_count_before = models.Edge.objects.count()
         card_count_before = models.CardModel.objects.count()
         card_x_node_x_widget_count_before = models.CardXNodeXWidget.objects.count()
+        resource_2_resource_constraints_count_before = (
+            models.Resource2ResourceConstraint.objects.count()
+        )
 
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
         source_graph.save()
@@ -1786,6 +1789,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         edge_count_after = models.Edge.objects.count()
         card_count_after = models.CardModel.objects.count()
         card_x_node_x_widget_count_after = models.CardXNodeXWidget.objects.count()
+        resource_2_resource_constraints_count_after = (
+            models.Resource2ResourceConstraint.objects.count()
+        )
 
         self.assertEqual(nodegroup_count_before, nodegroup_count_after)
         self.assertEqual(node_count_before, node_count_after)
@@ -1793,6 +1799,10 @@ class EditableFutureGraphTests(ArchesTestCase):
         self.assertEqual(card_count_before, card_count_after)
         self.assertEqual(
             card_x_node_x_widget_count_before, card_x_node_x_widget_count_after
+        )
+        self.assertEqual(
+            resource_2_resource_constraints_count_before,
+            resource_2_resource_constraints_count_after,
         )
 
     def test_revert_editable_future_graph(self):
@@ -2160,7 +2170,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         self.assertEqual(serialized_resource, serialized_resource_from_database)
         self.assertEqual(serialized_tile, serialized_tile_from_database)
 
-    def test_foo(self):
+    def test_placing_node_in_separate_card_does_not_pollute_database(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
         source_graph.save()
         editable_future_graph = source_graph.create_editable_future_graph()
