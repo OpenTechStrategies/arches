@@ -15,9 +15,12 @@ define([
 
         self.resource_data = ko.observableArray([]);
         self.relatable_resources = ko.computed(function() {
-            return _.each(self.resource_data(), function(resource) {
-                resource.isRelatable = ko.observable(resource.is_relatable);
-            }).filter(resource => !resource.graph.source_identifier_id);
+            return _.each(
+                self.resource_data().sort((a, b) => a.graph.name.localeCompare(b.graph.name)),
+                function(resource) {
+                    resource.isRelatable = ko.observable(resource.is_relatable);
+                }
+            ).filter(resource => !resource.graph.source_identifier_id);
         });
 
         self.designerViewModel = params.designerViewModel;
