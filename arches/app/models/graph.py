@@ -1707,9 +1707,15 @@ class Graph(models.GraphModel):
                     "user_permissions"
                 ].values():
                     for serialized_user_permission in serialized_user_permission_list:
+                        serialized_user_permission["content_object"] = (
+                            models.NodeGroup.objects.get(
+                                pk=serialized_user_permission["object_pk"]
+                            )
+                        )
                         updated_user_permission = UserObjectPermission(
                             **serialized_user_permission
                         )
+
                         updated_user_permission.save()
 
             if "group_permissions" in serialized_graph:
@@ -1727,9 +1733,15 @@ class Graph(models.GraphModel):
                     "group_permissions"
                 ].values():
                     for serialized_group_permission in serialized_group_permission_list:
+                        serialized_group_permission["content_object"] = (
+                            models.NodeGroup.objects.get(
+                                pk=serialized_group_permission["object_pk"]
+                            )
+                        )
                         updated_group_permission = GroupObjectPermission(
                             **serialized_group_permission
                         )
+
                         updated_group_permission.save()
 
     def get_user_permissions(self, force_recalculation=False):
@@ -2423,23 +2435,26 @@ class Graph(models.GraphModel):
         removes the editable future graph and related resources, then creates
         an editable future graph from the updated graph.
         """
-        serialized_editiable_future_graph = JSONDeserializer().deserialize(
+        serialized_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(self)
+        )
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(editable_future_graph)
         )
 
         node_id_to_node_source_identifier_id = {
             node["nodeid"]: node["source_identifier_id"]
-            for node in serialized_editiable_future_graph["nodes"]
+            for node in serialized_editable_future_graph["nodes"]
             if node["source_identifier_id"]
         }
 
         card_id_to_card_source_identifier_id = {
             card["cardid"]: card["source_identifier_id"]
-            for card in serialized_editiable_future_graph["cards"]
+            for card in serialized_editable_future_graph["cards"]
             if card["source_identifier_id"]
         }
 
-        for serialized_card_x_node_x_widget in serialized_editiable_future_graph[
+        for serialized_card_x_node_x_widget in serialized_editable_future_graph[
             "cards_x_nodes_x_widgets"
         ]:
             if serialized_card_x_node_x_widget["source_identifier_id"]:
@@ -2460,7 +2475,7 @@ class Graph(models.GraphModel):
             if updated_node_id:
                 serialized_card_x_node_x_widget["node_id"] = updated_node_id
 
-        for serialized_card in serialized_editiable_future_graph["cards"]:
+        for serialized_card in serialized_editable_future_graph["cards"]:
             if serialized_card["source_identifier_id"]:
                 serialized_card["cardid"] = serialized_card["source_identifier_id"]
                 serialized_card["source_identifier_id"] = None
@@ -2471,9 +2486,9 @@ class Graph(models.GraphModel):
             if source_nodegroup_id:
                 serialized_card["nodegroup_id"] = source_nodegroup_id
 
-            serialized_card["graph_id"] = str(self.pk)
+            serialized_card["graph_id"] = serialized_source_graph["graphid"]
 
-        for serialized_node in serialized_editiable_future_graph["nodes"]:
+        for serialized_node in serialized_editable_future_graph["nodes"]:
             if serialized_node["source_identifier_id"]:
                 serialized_node["nodeid"] = serialized_node["source_identifier_id"]
                 serialized_node["source_identifier_id"] = None
@@ -2484,9 +2499,9 @@ class Graph(models.GraphModel):
             if updated_nodegroup_id:
                 serialized_node["nodegroup_id"] = updated_nodegroup_id
 
-            serialized_node["graph_id"] = str(self.pk)
+            serialized_node["graph_id"] = serialized_source_graph["graphid"]
 
-        for serialized_nodegroup in serialized_editiable_future_graph["nodegroups"]:
+        for serialized_nodegroup in serialized_editable_future_graph["nodegroups"]:
             updated_nodegroup_id = node_id_to_node_source_identifier_id.get(
                 serialized_nodegroup["nodegroupid"]
             )
@@ -2499,7 +2514,7 @@ class Graph(models.GraphModel):
             if updated_nodegroup_id:
                 serialized_nodegroup["parentnodegroup_id"] = updated_parent_nodegroup_id
 
-        for serialized_edge in serialized_editiable_future_graph["edges"]:
+        for serialized_edge in serialized_editable_future_graph["edges"]:
             if serialized_edge["source_identifier_id"]:
                 serialized_edge["edgeid"] = serialized_edge["source_identifier_id"]
                 serialized_edge["source_identifier_id"] = None
@@ -2516,23 +2531,48 @@ class Graph(models.GraphModel):
             if source_range_node_id:
                 serialized_edge["rangenode_id"] = source_range_node_id
 
-            serialized_edge["graph_id"] = str(self.pk)
+            serialized_edge["graph_id"] = serialized_source_graph["graphid"]
 
-        serialized_editiable_future_graph["root"]["graph_id"] = str(self.pk)
-        serialized_editiable_future_graph["root"]["nodeid"] = (
-            serialized_editiable_future_graph["root"]["source_identifier_id"]
+        serialized_editable_future_graph["root"]["graph_id"] = serialized_source_graph[
+            "graphid"
+        ]
+        serialized_editable_future_graph["root"]["nodeid"] = (
+            serialized_editable_future_graph["root"]["source_identifier_id"]
         )
-        serialized_editiable_future_graph["root"]["source_identifier_id"] = None
+        serialized_editable_future_graph["root"]["source_identifier_id"] = None
 
-        serialized_editiable_future_graph["has_unpublished_changes"] = False
-        serialized_editiable_future_graph["resource_instance_lifecycle_id"] = str(
-            self.resource_instance_lifecycle_id
+        serialized_editable_future_graph["graphid"] = serialized_source_graph["graphid"]
+        serialized_editable_future_graph["has_unpublished_changes"] = False
+        serialized_editable_future_graph["resource_instance_lifecycle_id"] = (
+            serialized_source_graph["resource_instance_lifecycle_id"]
         )
-        serialized_editiable_future_graph["source_identifier_id"] = None
-        serialized_editiable_future_graph["graphid"] = str(self.pk)
+        serialized_editable_future_graph["source_identifier_id"] = None
+
+        serialized_editable_future_graph["group_permissions"] = {
+            key: value
+            for key, value in serialized_source_graph["group_permissions"].items()
+            if key in node_id_to_node_source_identifier_id.values()
+        }
+        serialized_editable_future_graph["user_permissions"] = {
+            key: value
+            for key, value in serialized_source_graph["user_permissions"].items()
+            if key in node_id_to_node_source_identifier_id.values()
+        }
+
+        serialized_editable_future_graph["relatable_resource_model_ids"] = [
+            (
+                serialized_source_graph["graphid"]
+                if relatable_resource_model_id
+                == serialized_editable_future_graph["graphid"]
+                else relatable_resource_model_id
+            )
+            for relatable_resource_model_id in serialized_editable_future_graph[
+                "relatable_resource_model_ids"
+            ]
+        ]
 
         return self.restore_state_from_serialized_graph(
-            serialized_editiable_future_graph
+            serialized_editable_future_graph
         )
 
     def revert(self):
@@ -2627,6 +2667,8 @@ class Graph(models.GraphModel):
             updated_graph = Graph(serialized_graph)
             updated_graph.widgets = widget_dict
             updated_graph.is_active = self.is_active
+
+            updated_graph.update_permissions(serialized_graph)
 
             relatable_resource_model_nodes = models.Node.objects.filter(
                 graph_id__in=serialized_graph["relatable_resource_model_ids"],
