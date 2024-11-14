@@ -2194,12 +2194,12 @@ class EditableFutureGraphTests(ArchesTestCase):
         updated_nodegroup_id = node.pk
 
         models.NodeGroup.objects.update_or_create(
-            **{
+            nodegroupid=str(updated_nodegroup_id),
+            defaults={
                 "cardinality": "n",
                 "legacygroupid": "",
-                "nodegroupid": str(updated_nodegroup_id),
                 "parentnodegroup_id": None,
-            }
+            },
         )
 
         node.nodegroup_id = updated_nodegroup_id
