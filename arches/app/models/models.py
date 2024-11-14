@@ -855,29 +855,20 @@ class Node(models.Model):
         )
 
     def get_relatable_resources(self):
-        relatable_resource_ids = [
-            r2r.resourceclassfrom
-            for r2r in Resource2ResourceConstraint.objects.filter(
-                resourceclassto_id=(
-                    self.source_identifier_id
-                    if self.source_identifier_id
-                    else self.nodeid
-                )
-            )
-            if r2r.resourceclassfrom is not None
-        ]
-        relatable_resource_ids = relatable_resource_ids + [
-            r2r.resourceclassto
-            for r2r in Resource2ResourceConstraint.objects.filter(
-                resourceclassfrom_id=(
-                    self.source_identifier_id
-                    if self.source_identifier_id
-                    else self.nodeid
-                )
-            )
-            if r2r.resourceclassto is not None
-        ]
-        return list(set(relatable_resource_ids))
+        primary_id = self.source_identifier_id or self.nodeid
+
+        relatable_resources = Resource2ResourceConstraint.objects.filter(
+            Q(resourceclassto_id=primary_id) | Q(resourceclassfrom_id=primary_id)
+        )
+
+        unique_ids = set()
+        for r2r in relatable_resources:
+            if r2r.resourceclassfrom is not None:
+                unique_ids.add(r2r.resourceclassfrom)
+            if r2r.resourceclassto is not None:
+                unique_ids.add(r2r.resourceclassto)
+
+        return list(unique_ids)
 
     def set_relatable_resources(self, new_ids):
         new_ids = set(new_ids)
