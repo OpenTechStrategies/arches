@@ -2243,3 +2243,29 @@ class EditableFutureGraphTests(ArchesTestCase):
 
         # the source_graph nodegroup and the editable_future_graph nodegroup have been deleted
         self.assertEqual(nodegroup_count_before, models.NodeGroup.objects.count())
+
+    def test_can_update_graph_slug(self):
+        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph.save()
+        editable_future_graph = source_graph.create_editable_future_graph()
+
+        editable_future_graph.slug = "test-resource"
+        editable_future_graph.save()
+
+        updated_source_graph = source_graph.update_from_editable_future_graph(
+            editable_future_graph=editable_future_graph
+        )
+        editable_future_graph = updated_source_graph.create_editable_future_graph()
+
+        serialized_editable_future_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(editable_future_graph)
+        )
+        serialized_updated_source_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(updated_source_graph)
+        )
+
+        self.assertEqual(serialized_updated_source_graph["slug"], "test-resource")
+
+        self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
+            serialized_updated_source_graph, serialized_editable_future_graph
+        )
