@@ -559,6 +559,21 @@ class GeoHashGridAgg(Aggregation):
         self.agg[self.name][self.type]["precision"] = self.precision
 
 
+class GeoTileGridAgg(Aggregation):
+    """
+    https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-geotilegrid-aggregation.html
+
+    """
+
+    def __init__(self, **kwargs):
+        self.precision = kwargs.get("precision", 5)
+        self.size = kwargs.get("size", 10000)
+        super(GeoTileGridAgg, self).__init__(type="geotile_grid", **kwargs)
+        self.agg[self.name][self.type]["precision"] = self.precision
+        self.agg[self.name][self.type]["field"] = self.field
+        self.agg[self.name][self.type]["size"] = self.size
+
+
 class GeoBoundsAgg(Aggregation):
     """
     https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-geohashgrid-aggregation.html
