@@ -2313,22 +2313,17 @@ class Graph(models.GraphModel):
                 .exclude(source_identifier__isnull=False)
                 .filter(slug=self.slug)
             )
-            if (
-                first_matching_graph := graphs_with_matching_slug.first()
-            ) and first_matching_graph.graphid != self.graphid:
-                if self.source_identifier_id:
-                    if self.source_identifier_id != first_matching_graph.graphid:
-                        raise GraphValidationError(
-                            _(
-                                "Another resource model already uses the slug '{self.slug}'"
-                            ).format(**locals()),
-                            1007,
-                        )
-                else:
+            if (first_matching_graph := graphs_with_matching_slug.first()) and str(
+                first_matching_graph.graphid
+            ) != str(self.graphid):
+                if (
+                    not self.source_identifier_id
+                    or self.source_identifier_id != first_matching_graph.graphid
+                ):
                     raise GraphValidationError(
                         _(
-                            "Another resource model already uses the slug '{self.slug}'"
-                        ).format(**locals()),
+                            "Another resource model already uses the slug '{slug}'"
+                        ).format(slug=self.slug),
                         1007,
                     )
 
