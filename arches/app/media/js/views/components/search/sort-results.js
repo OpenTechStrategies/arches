@@ -1,3 +1,5 @@
+const { filter } = require("underscore");
+
 define([
     'jquery',
     'underscore',
@@ -12,12 +14,20 @@ define([
             options.name = 'Sort Results';
             BaseFilter.prototype.initialize.call(this, options);
 
-            this.filter = ko.observable('');
-            this.order = ko.observable('name');
+            this.filterx = ko.observable('');
+            this.order = ko.observable('');
+
+            this.combinedFilterOrder = ko.computed(() => {
+                return this.filterx() + "-" + this.order()
+            });
 
             this.searchFilterVms[componentName](this);
             
-            this.filter.subscribe(function(){
+            this.filterx.subscribe(function(){
+                this.updateQuery();
+            }, this);
+
+            this.order.subscribe(function(){
                 this.updateQuery();
             }, this);
 
@@ -26,10 +36,10 @@ define([
 
         updateQuery: function() {
             var queryObj = this.query();
-            if(this.filter() === '') {
+            if(this.filterx() === '' && this.order() === '') {
                 delete queryObj[componentName];
             } else {
-                queryObj[componentName] = this.filter();
+                queryObj[componentName] = this.combinedFilterOrder();
             }
             this.query(queryObj);
         },
@@ -37,12 +47,12 @@ define([
         restoreState: function(){
             var query = this.query();
             if (componentName in query) {
-                this.filter(query[componentName]);
+                this.filterx(query[componentName].split("-")[0]);
             }
         },
 
         clear: function(){
-            this.filter('');
+            this.combinedFilterOrder({});
         }
         
     });
