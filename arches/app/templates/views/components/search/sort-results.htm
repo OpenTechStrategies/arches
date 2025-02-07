@@ -2,9 +2,8 @@
 {% load i18n %}
 
 <!-- Sort Results Selector-->
-<select 
-    style="text-align-last:unset;" 
-    data-bind="
+<form autocomplete="off">
+    <select style="text-align-last:unset;" data-bind="
         options: [
             {'id':'', 'name':$root.translations.unsorted}, 
             {'id':'asc', 'name':$root.translations.ascending}, 
@@ -22,5 +21,24 @@
             'data-label': $root.translations.sortSearchResults
         }
     ">
-</select>
+    </select>
+    <select style="text-align-last:unset;" data-bind="
+    options: [
+        {'id':'name', 'name':'Resource name'}, 
+        {'id':'custom', 'name':'Custom'}, 
+    ],
+    optionsText: 'name', 
+    optionsValue: 'id',
+    select2Query: {
+        select2Config:{
+            value: order,
+            allowClear: false,
+            minimumResultsForSearch: -1
+    }},
+    attr: {
+        'data-label': $root.translations.sortSearchResults
+    }
+">
+    </select>
+<form autocomplete="off"></form>
 <!-- End Sort Results Selector-->
