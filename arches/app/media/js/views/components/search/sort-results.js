@@ -13,6 +13,8 @@ define([
             BaseFilter.prototype.initialize.call(this, options);
 
             this.filter = ko.observable('');
+            this.order = ko.observable('name');
+
             this.searchFilterVms[componentName](this);
             
             this.filter.subscribe(function(){
