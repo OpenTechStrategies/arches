@@ -14,16 +14,16 @@ define([
             options.name = 'Sort Results';
             BaseFilter.prototype.initialize.call(this, options);
 
-            this.filterx = ko.observable('');
+            this.filter = ko.observable('');
             this.order = ko.observable('');
 
             this.combinedFilterOrder = ko.computed(() => {
-                return this.filterx() + "-" + this.order()
+                return this.filter() + "-" + this.order()
             });
 
             this.searchFilterVms[componentName](this);
             
-            this.filterx.subscribe(function(){
+            this.filter.subscribe(function(){
                 this.updateQuery();
             }, this);
 
@@ -36,7 +36,7 @@ define([
 
         updateQuery: function() {
             var queryObj = this.query();
-            if(this.filterx() === '' && this.order() === '') {
+            if(this.filter() === '' && this.order() === '') {
                 delete queryObj[componentName];
             } else {
                 queryObj[componentName] = this.combinedFilterOrder();
@@ -47,7 +47,7 @@ define([
         restoreState: function(){
             var query = this.query();
             if (componentName in query) {
-                this.filterx(query[componentName].split("-")[0]);
+                this.filter(query[componentName].split("-")[0]);
             }
         },
 
