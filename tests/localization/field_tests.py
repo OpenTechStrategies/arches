@@ -8,6 +8,7 @@ from arches.app.models.fields.i18n import (
     I18n_JSON,
     I18n_JSONField,
 )
+from arches.app.models.models import Node
 from tests.base_test import ArchesTestCase
 from django.contrib.gis.db import models
 from django.utils import translation
@@ -15,6 +16,11 @@ from django.db import connection
 
 # these tests can be run from the command line via
 # python manage.py test tests.localization.field_tests --settings="tests.test_settings"
+
+
+class I18nTextFieldFilterTests(ArchesTestCase):
+    def test_filter_related_model_i18n_text_field(self):
+        self.assertEqual(Node.objects.filter(graph__name__en="Graph Name").count(), 0)
 
 
 class Customi18nTextFieldTests(ArchesTestCase):
