@@ -22,6 +22,37 @@ class Command(BaseCommand):  # pragma: no cover
             self.stdout.write("Operation aborted.")
 
     def update_to_v8(self):
+        # Updates github workflows
+        if os.path.exists(
+            os.path.join(settings.APP_ROOT, "..", ".github", "workflows", "main.yml")
+        ):
+            self.stderr.write(
+                "Existing .github/workflows/main.yml detected. "
+                "Manually reconcile existing file with new template.",
+            )
+        else:
+            self.stdout.write("Copying .github/workflows/main.yml directory to project")
+
+            os.makedirs(
+                os.path.join(settings.APP_ROOT, "..", ".github", "workflows"),
+                exist_ok=True,
+            )
+
+            shutil.copy(
+                os.path.join(
+                    settings.ROOT_DIR,
+                    "install",
+                    "arches-templates",
+                    ".github",
+                    "workflows",
+                    "main.yml",
+                ),
+                os.path.join(
+                    settings.APP_ROOT, "..", ".github", "workflows", "main.yml"
+                ),
+            )
+            self.stdout.write("Done!")
+
         # Replaces vitest config files
         self.stdout.write("Updating vitest configuration files...")
 
