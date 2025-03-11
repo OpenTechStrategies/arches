@@ -851,6 +851,7 @@ class Graph(models.GraphModel):
         """
 
         branch_graph = Graph(graphid)
+        print(self.nodes)
         nodeToAppendTo = self.nodes[uuid.UUID(str(nodeid))] if nodeid else self.root
 
         if skip_validation or self.can_append(branch_graph, nodeToAppendTo):
@@ -2519,6 +2520,12 @@ class Graph(models.GraphModel):
             )
             if updated_nodegroup_id:
                 serialized_nodegroup["parentnodegroup_id"] = updated_parent_nodegroup_id
+
+            updated_grouping_node_id = node_id_to_node_source_identifier_id.get(
+                serialized_nodegroup["grouping_node_id"]
+            )
+            if updated_grouping_node_id:
+                serialized_nodegroup["grouping_node_id"] = updated_grouping_node_id
 
         # update edges
         for serialized_edge in serialized_editable_future_graph["edges"]:

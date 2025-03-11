@@ -1313,7 +1313,7 @@ class EditableFutureGraphTests(ArchesTestCase):
             "isrequired": False,
             "issearchable": True,
             "istopnode": True,
-            "name": "Node",
+            "name": "Single Node",
             "nodegroup_id": None,
             "nodeid": "20000000-0000-0000-0000-100000000000",
             "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
@@ -1645,9 +1645,16 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
         editable_future_graph = updated_source_graph.create_editable_future_graph()
 
+        for node in list(editable_future_graph.nodes.values()):
+            if node.name == "Node Type":
+                node_type_node = JSONDeserializer().deserialize(
+                    JSONSerializer().serialize(node)
+                )
+
         editable_future_graph.append_branch(
-            "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
+            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
             graphid=self.SINGLE_NODE_GRAPHID,
+            nodeid=node_type_node["nodeid"],
         )
         editable_future_graph.save()
 
@@ -2123,17 +2130,15 @@ class EditableFutureGraphTests(ArchesTestCase):
         nodegroup = models.NodeGroup.objects.create()
         string_node = models.Node.objects.create(
             graph=source_graph,
-            nodegroup=nodegroup,
             name="String Node",
             datatype="string",
-            istopnode=False,
+            istopnode=True,
         )
         resource_instance_node = models.Node.objects.create(
             graph=source_graph,
-            nodegroup=nodegroup,
             name="Resource Node",
             datatype="resource-instance",
-            istopnode=False,
+            istopnode=True,
         )
 
         resource = models.ResourceInstance.objects.create(graph=source_graph)
