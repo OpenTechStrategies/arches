@@ -851,7 +851,6 @@ class Graph(models.GraphModel):
         """
 
         branch_graph = Graph(graphid)
-        print(self.nodes)
         nodeToAppendTo = self.nodes[uuid.UUID(str(nodeid))] if nodeid else self.root
 
         if skip_validation or self.can_append(branch_graph, nodeToAppendTo):
