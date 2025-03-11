@@ -1075,6 +1075,7 @@ class Graph(models.GraphModel):
             copy_of_self.root = root_node
             copy_of_self.name = root_node.name
             copy_of_self.isresource = False
+            copy_of_self.resource_instance_lifecycle = None
             copy_of_self.subtitle = ""
             copy_of_self.description = ""
             copy_of_self.author = ""
@@ -1110,7 +1111,9 @@ class Graph(models.GraphModel):
             if is_collector:
                 old_nodegroup_id = node.nodegroup_id
                 node.nodegroup = models.NodeGroup(
-                    pk=node.pk, cardinality=node.nodegroup.cardinality
+                    pk=node.pk,
+                    cardinality=node.nodegroup.cardinality,
+                    grouping_node=node,
                 )
                 if old_nodegroup_id not in nodegroup_map:
                     nodegroup_map[old_nodegroup_id] = node.nodegroup_id
@@ -1283,7 +1286,8 @@ class Graph(models.GraphModel):
             new_node.fieldname = node["fieldname"]
         self.populate_null_nodegroups()
 
-        # new_node will always have a nodegroup id even it if was set to None becuase populate_null_nodegroups
+        # new_node will always have a nodegroup id even if if was set to None
+        # because populate_null_nodegroups
         # will populate the nodegroup id with the parent nodegroup
         # add/remove a card if a nodegroup was added/removed
         if new_node.nodegroup_id != old_node.nodegroup_id:
@@ -1316,7 +1320,7 @@ class Graph(models.GraphModel):
 
     def delete_node(self, node=None):
         """
-        deletes a node and all if it's children from a graph
+        deletes a node and all of its children from a graph
 
         Arguments:
         node -- a node id or Node model to delete from the graph
@@ -1841,6 +1845,8 @@ class Graph(models.GraphModel):
         """
         get a nodegroup from an id by first looking through the nodes and cards associated with this graph.
         if not found then get the nodegroup instance from the database, otherwise return a new instance of a nodegroup
+        This is also the method responsible for setting the grouping_node_id
+        on the nodegroup when the first (collector) node is created.
 
         Keyword Arguments
 
@@ -1848,13 +1854,19 @@ class Graph(models.GraphModel):
         nodegroups_list -- list of nodegroups from which to filter
         """
 
+        found = None
         for nodegroup in nodegroups_list or self.get_nodegroups():
             if str(nodegroup.nodegroupid) == str(nodegroupid):
-                return nodegroup
-        try:
-            return models.NodeGroup.objects.get(pk=nodegroupid)
-        except models.NodeGroup.DoesNotExist:
-            return models.NodeGroup(pk=nodegroupid)
+                found = nodegroup
+                break
+        else:
+            try:
+                found = models.NodeGroup.objects.get(pk=nodegroupid)
+            except models.NodeGroup.DoesNotExist:
+                found = models.NodeGroup(pk=nodegroupid, grouping_node_id=nodegroupid)
+
+        found.grouping_node_id = found.nodegroupid
+        return found
 
     def get_root_nodegroup(self):
         """

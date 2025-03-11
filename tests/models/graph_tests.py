@@ -142,6 +142,10 @@ class GraphTests(ArchesTestCase):
         for node in nodes:
             models.Node.objects.create(**node).save()
 
+        models.NodeGroup.objects.filter(
+            pk="20000000-0000-0000-0000-100000000001"
+        ).update(grouping_node_id="20000000-0000-0000-0000-100000000001")
+
         edges_dict = {
             "description": None,
             "domainnode_id": "20000000-0000-0000-0000-100000000001",
@@ -164,6 +168,7 @@ class GraphTests(ArchesTestCase):
         graph.nodegroups = []
         graph.root.ontologyclass = "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity"
         graph.save()
+        cls.test_graph = graph
 
         graph.root.name = "ROOT NODE"
         graph.root.description = "Test Root Node"
@@ -279,7 +284,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(graphid=self.rootNode.graph_id)
+        graph = self.test_graph
         graph.append_branch(
             "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -492,6 +497,9 @@ class GraphTests(ArchesTestCase):
         )
         collector_graph.save()
 
+    def test_node_creation_sets_grouping_node(self):
+        self.assertEqual(self.rootNode.nodegroup.grouping_node, self.rootNode)
+
     def test_node_update(self):
         """
         test to make sure that node groups and card are properly managed
@@ -503,7 +511,7 @@ class GraphTests(ArchesTestCase):
         # number of nodegroups then remove the appended branches group and reconfirm that
         # the proper number of groups are properly relfected in the graph
 
-        graph = Graph.objects.get(pk=self.rootNode.graph.graphid)
+        graph = self.test_graph
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -577,7 +585,7 @@ class GraphTests(ArchesTestCase):
 
         # test moving a single node to another branch
         # this node should be grouped with it's new parent nodegroup
-        graph = Graph.objects.get(pk=self.rootNode.graph.graphid)
+        graph = self.test_graph
         branch_one = graph.append_branch(
             "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -666,7 +674,7 @@ class GraphTests(ArchesTestCase):
         for node in list(branch_two.nodes.values()):
             node.datatype = "semantic"
         graph.save()
-        graph = Graph.objects.get(pk=self.rootNode.graph.graphid)
+        graph.refresh_from_database()
         tree = graph.get_tree()
 
         self.assertEqual(len(tree["children"]), 1)
@@ -701,7 +709,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(pk=self.rootNode.graph.graphid)
+        graph = self.test_graph
         ret = graph.get_valid_ontology_classes(nodeid=self.rootNode.nodeid)
         self.assertTrue(len(ret) == 1)
 
@@ -718,7 +726,7 @@ class GraphTests(ArchesTestCase):
         """
 
         self.rootNode.graph.ontology_id = None
-        graph = Graph.objects.get(pk=self.rootNode.graph.graphid)
+        graph = self.test_graph
 
         graph.ontology_id = None
         ret = graph.get_valid_ontology_classes(nodeid=self.rootNode.nodeid)
@@ -731,7 +739,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(pk=self.rootNode.graph.graphid)
+        graph = self.test_graph
         graph.clear_ontology_references()
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1058,7 +1066,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(graphid=self.rootNode.graph_id)
+        graph = self.test_graph
         new_node = graph.add_node(
             {"nodeid": uuid.uuid1(), "datatype": "semantic"}
         )  # A blank node with no ontology class is specified
@@ -1081,7 +1089,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(graphid=self.rootNode.graph_id)
+        graph = self.test_graph
         new_node = graph.add_node(
             {
                 "nodeid": uuid.uuid1(),
@@ -1108,7 +1116,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(graphid=self.rootNode.graph_id)
+        graph = self.test_graph
         graph.append_branch(None, graphid=self.NODE_NODETYPE_GRAPHID)
 
         with self.assertRaises(GraphValidationError) as cm:
@@ -1122,7 +1130,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(graphid=self.rootNode.graph_id)
+        graph = self.test_graph
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -1139,7 +1147,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.objects.get(graphid=self.rootNode.graph_id)
+        graph = self.test_graph
         graph.append_branch("some invalid property", graphid=self.NODE_NODETYPE_GRAPHID)
 
         with self.assertRaises(GraphValidationError) as cm:
