@@ -2239,6 +2239,16 @@ class SpatialView(models.Model):
         }
 
 
+class UserPreferences(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    key = models.TextField(blank=True, null=True)
+    config = JSONField(blank=False, null=False)
+
+    class Meta:
+        managed = True
+        db_table = "user_preferences"
+
+
 # Import proxy models to ensure they are always discovered.
 # For example, if the urls.py module is not imported because a management command
 # skips system checks, the coincidental importing of the Graph(Proxy)Model
