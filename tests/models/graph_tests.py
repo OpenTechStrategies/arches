@@ -974,7 +974,7 @@ class GraphTests(ArchesTestCase):
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=graph.graphid,
         )
-        resource_graph.save()
+        resource_graph.save()  # `new()` doesn't persist to the database
 
         self.assertEqual(len(resource_graph.get_cards()), 2)
 
@@ -1007,7 +1007,7 @@ class GraphTests(ArchesTestCase):
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
         )
-        resource_graph.save()
+        resource_graph.save()  # `new()` doesn't persist to the database
 
         self.assertEqual(len(resource_graph.cards), 1)
         the_card = next(iter(list(resource_graph.cards.values())))
@@ -1429,24 +1429,17 @@ class EditableFutureGraphTests(ArchesTestCase):
     def _compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
         self, serialized_updated_source_graph, serialized_editable_future_graph
     ):
-        def are_dicts_equal(dict_1, dict_2, ignore_keys):
-            def filter_and_sort(entity):
-                """Recursively filter out ignored keys from a entity and sort by key."""
-                if isinstance(entity, dict):
-                    return {
-                        key: filter_and_sort(value)
-                        for key, value in entity.items()
-                        if key not in ignore_keys
-                    }
-                elif isinstance(entity, list):
-                    return [filter_and_sort(item) for item in entity]
-                else:
-                    return entity
-
-            dict_1_filtered = filter_and_sort(dict_1)
-            dict_2_filtered = filter_and_sort(dict_2)
-
-            return dict_1_filtered == dict_2_filtered
+        def filter_and_sort(entity, ignore_keys):
+            if isinstance(entity, dict):
+                return {
+                    key: filter_and_sort(value, ignore_keys)
+                    for key, value in entity.items()
+                    if key not in ignore_keys
+                }
+            elif isinstance(entity, list):
+                return [filter_and_sort(item, ignore_keys) for item in entity]
+            else:
+                return entity
 
         serialized_updated_source_nodes = {
             (
@@ -1456,7 +1449,6 @@ class EditableFutureGraphTests(ArchesTestCase):
             ): node
             for node in serialized_updated_source_graph["nodes"]
         }
-
         serialized_editable_future_nodes = {
             (
                 node["source_identifier_id"]
@@ -1465,19 +1457,17 @@ class EditableFutureGraphTests(ArchesTestCase):
             ): node
             for node in serialized_editable_future_graph["nodes"]
         }
-
-        self.assertTrue(
-            are_dicts_equal(
-                serialized_updated_source_nodes,
-                serialized_editable_future_nodes,
-                [
-                    "graph_id",
-                    "nodeid",
-                    "nodegroup_id",
-                    "source_identifier_id",
-                ],
+        with self.subTest("nodes"):
+            self.assertEqual(
+                filter_and_sort(
+                    serialized_updated_source_nodes,
+                    ["graph_id", "nodeid", "nodegroup_id", "source_identifier_id"],
+                ),
+                filter_and_sort(
+                    serialized_editable_future_nodes,
+                    ["graph_id", "nodeid", "nodegroup_id", "source_identifier_id"],
+                ),
             )
-        )
 
         serialized_updated_source_edges = {
             (
@@ -1487,7 +1477,6 @@ class EditableFutureGraphTests(ArchesTestCase):
             ): edge
             for edge in serialized_updated_source_graph["edges"]
         }
-
         serialized_editable_future_edges = {
             (
                 edge["source_identifier_id"]
@@ -1496,20 +1485,29 @@ class EditableFutureGraphTests(ArchesTestCase):
             ): edge
             for edge in serialized_editable_future_graph["edges"]
         }
-
-        self.assertTrue(
-            are_dicts_equal(
-                serialized_updated_source_edges,
-                serialized_editable_future_edges,
-                [
-                    "graph_id",
-                    "edgeid",
-                    "domainnode_id",
-                    "rangenode_id",
-                    "source_identifier_id",
-                ],
+        with self.subTest("edges"):
+            self.assertEqual(
+                filter_and_sort(
+                    serialized_updated_source_edges,
+                    [
+                        "graph_id",
+                        "edgeid",
+                        "domainnode_id",
+                        "rangenode_id",
+                        "source_identifier_id",
+                    ],
+                ),
+                filter_and_sort(
+                    serialized_editable_future_edges,
+                    [
+                        "graph_id",
+                        "edgeid",
+                        "domainnode_id",
+                        "rangenode_id",
+                        "source_identifier_id",
+                    ],
+                ),
             )
-        )
 
         serialized_updated_source_cards = {
             (
@@ -1519,7 +1517,6 @@ class EditableFutureGraphTests(ArchesTestCase):
             ): card
             for card in serialized_updated_source_graph["cards"]
         }
-
         serialized_editable_future_cards = {
             (
                 card["source_identifier_id"]
@@ -1528,19 +1525,17 @@ class EditableFutureGraphTests(ArchesTestCase):
             ): card
             for card in serialized_editable_future_graph["cards"]
         }
-
-        self.assertTrue(
-            are_dicts_equal(
-                serialized_updated_source_cards,
-                serialized_editable_future_cards,
-                [
-                    "graph_id",
-                    "cardid",
-                    "nodegroup_id",
-                    "source_identifier_id",
-                ],
+        with self.subTest("cards"):
+            self.assertEqual(
+                filter_and_sort(
+                    serialized_updated_source_cards,
+                    ["graph_id", "cardid", "nodegroup_id", "source_identifier_id"],
+                ),
+                filter_and_sort(
+                    serialized_editable_future_cards,
+                    ["graph_id", "cardid", "nodegroup_id", "source_identifier_id"],
+                ),
             )
-        )
 
         serialized_updated_source_cards_x_nodes_x_widgets = {
             (
@@ -1553,7 +1548,6 @@ class EditableFutureGraphTests(ArchesTestCase):
                 "cards_x_nodes_x_widgets"
             ]
         }
-
         serialized_editable_future_cards_x_nodes_x_widgets = {
             (
                 card_x_node_x_widget["source_identifier_id"]
@@ -1565,47 +1559,63 @@ class EditableFutureGraphTests(ArchesTestCase):
                 "cards_x_nodes_x_widgets"
             ]
         }
-
-        self.assertTrue(
-            are_dicts_equal(
-                serialized_updated_source_cards_x_nodes_x_widgets,
-                serialized_editable_future_cards_x_nodes_x_widgets,
-                [
-                    "graph_id",
-                    "id",
-                    "card_id",
-                    "node_id",
-                    "source_identifier_id",
-                ],
+        with self.subTest("cards_x_nodes_x_widgets"):
+            self.assertEqual(
+                filter_and_sort(
+                    serialized_updated_source_cards_x_nodes_x_widgets,
+                    ["graph_id", "id", "card_id", "node_id", "source_identifier_id"],
+                ),
+                filter_and_sort(
+                    serialized_editable_future_cards_x_nodes_x_widgets,
+                    ["graph_id", "id", "card_id", "node_id", "source_identifier_id"],
+                ),
             )
-        )
 
-        self.assertTrue(
-            are_dicts_equal(
-                serialized_updated_source_graph,
-                serialized_editable_future_graph,
-                [
-                    "graphid",
-                    "cards",
-                    "nodes",
-                    "edges",
-                    "nodegroups",
-                    "functions",
-                    "root",
-                    "widgets",
-                    "cards_x_nodes_x_widgets",
-                    "resource_instance_lifecycle",
-                    "resource_instance_lifecycle_id",
-                    "source_identifier",
-                    "source_identifier_id",
-                    "publication_id",
-                ],
+        with self.subTest("graph"):
+            self.assertEqual(
+                filter_and_sort(
+                    serialized_updated_source_graph,
+                    [
+                        "graphid",
+                        "cards",
+                        "nodes",
+                        "edges",
+                        "nodegroups",
+                        "functions",
+                        "root",
+                        "widgets",
+                        "cards_x_nodes_x_widgets",
+                        "resource_instance_lifecycle",
+                        "resource_instance_lifecycle_id",
+                        "source_identifier",
+                        "source_identifier_id",
+                        "publication_id",
+                    ],
+                ),
+                filter_and_sort(
+                    serialized_editable_future_graph,
+                    [
+                        "graphid",
+                        "cards",
+                        "nodes",
+                        "edges",
+                        "nodegroups",
+                        "functions",
+                        "root",
+                        "widgets",
+                        "cards_x_nodes_x_widgets",
+                        "resource_instance_lifecycle",
+                        "resource_instance_lifecycle_id",
+                        "source_identifier",
+                        "source_identifier_id",
+                        "publication_id",
+                    ],
+                ),
             )
-        )
 
     def test_update_empty_graph_from_editable_future_graph(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1631,7 +1641,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_graph_with_multiple_nodes_and_edges(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1675,7 +1685,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_graph_with_permissions(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1710,7 +1720,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_graph_with_relatable_resources(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.root.set_relatable_resources([source_graph.root.pk])
@@ -1737,7 +1747,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_create_editable_future_graphs_does_not_pollute_database(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1785,7 +1795,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1822,7 +1832,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_revert_editable_future_graph(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup_count_before = models.NodeGroup.objects.count()
@@ -1870,7 +1880,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_nodegroup(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1929,7 +1939,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_node(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1985,7 +1995,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_card(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2046,7 +2056,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_widget(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2124,15 +2134,17 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_from_editable_future_graph_does_not_affect_resources(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup = models.NodeGroup.objects.create()
         string_node = models.Node.objects.create(
+            pk=nodegroup.pk,
             graph=source_graph,
             name="String Node",
             datatype="string",
-            istopnode=True,
+            istopnode=False,
+            nodegroup=nodegroup,
         )
         resource_instance_node = models.Node.objects.create(
             graph=source_graph,
@@ -2185,7 +2197,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_placing_node_in_separate_card_does_not_pollute_database(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2259,7 +2271,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_can_update_graph_slug(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         # test adding slug
@@ -2308,7 +2320,7 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_can_update_other_data_in_graph_with_slug(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()
+        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.slug = "test-resource"

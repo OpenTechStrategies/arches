@@ -1689,63 +1689,106 @@ class Graph(models.GraphModel):
             "user_permissions" in serialized_graph
             or "group_permissions" in serialized_graph
         ):
-            graph_from_database_query = Graph.objects.filter(pk=self.pk)
-            graph_from_database = None
+            graph_from_database = Graph.objects.filter(pk=self.pk).first()
 
-            if len(graph_from_database_query):
-                graph_from_database = graph_from_database_query[0]
-
-            if "user_permissions" in serialized_graph:
-                # first, delete all existing user permissions for graph
-                if graph_from_database:
+            if graph_from_database:
+                # update user permissions
+                if "user_permissions" in serialized_graph:
+                    # first, delete all existing user permissions for graph
                     user_permissions = graph_from_database.get_user_permissions(
                         force_recalculation=True
-                    )  # may not need force_recacluation
+                    )
+
+                    user_permission_ids_to_delete = []
                     for user_permission_list in user_permissions.values():
                         for user_permission in user_permission_list:
-                            user_permission.delete()
+                            user_permission_ids_to_delete.append(user_permission.pk)
 
-                # then, create permissions from serialized permissions
-                for serialized_user_permission_list in serialized_graph[
-                    "user_permissions"
-                ].values():
-                    for serialized_user_permission in serialized_user_permission_list:
-                        serialized_user_permission["content_object"] = (
-                            models.NodeGroup.objects.get(
-                                pk=serialized_user_permission["object_pk"]
-                            )
+                    if user_permission_ids_to_delete:
+                        UserObjectPermission.objects.filter(
+                            pk__in=user_permission_ids_to_delete
+                        ).delete()
+
+                    # then, create permissions from serialized permissions
+                    user_permissions = []
+                    for user_permission_list in serialized_graph[
+                        "user_permissions"
+                    ].values():
+                        user_permissions.extend(user_permission_list)
+
+                    user_permission_nodegroups = models.NodeGroup.objects.filter(
+                        pk__in={
+                            user_permission["object_pk"]
+                            for user_permission in user_permissions
+                        }
+                    )
+                    user_permission_nodgroup_id_to_nodegroup = {
+                        nodegroup.pk: nodegroup
+                        for nodegroup in user_permission_nodegroups
+                    }
+
+                    user_permissions_to_create = []
+                    for user_permission in user_permissions:
+                        user_permission["content_object"] = (
+                            user_permission_nodgroup_id_to_nodegroup[
+                                user_permission["object_pk"]
+                            ]
                         )
-                        updated_user_permission = UserObjectPermission(
-                            **serialized_user_permission
+                        user_permissions_to_create.append(
+                            UserObjectPermission(**user_permission)
                         )
 
-                        updated_user_permission.save()
+                    UserObjectPermission.objects.bulk_create(user_permissions_to_create)
 
-            if "group_permissions" in serialized_graph:
-                # first, delete all existing group permissions for graph
-                if graph_from_database:
+                # update group permissions
+                if "group_permissions" in serialized_graph:
+                    # first, delete all existing group permissions for graph
                     group_permissions = graph_from_database.get_group_permissions(
                         force_recalculation=True
-                    )  # may not need force_recacluation
+                    )
+
+                    group_permission_ids_to_delete = []
                     for group_permission_list in group_permissions.values():
                         for group_permission in group_permission_list:
-                            group_permission.delete()
+                            group_permission_ids_to_delete.append(group_permission.pk)
 
-                # then, create permissions from serialized permissions
-                for serialized_group_permission_list in serialized_graph[
-                    "group_permissions"
-                ].values():
-                    for serialized_group_permission in serialized_group_permission_list:
-                        serialized_group_permission["content_object"] = (
-                            models.NodeGroup.objects.get(
-                                pk=serialized_group_permission["object_pk"]
-                            )
+                    if group_permission_ids_to_delete:
+                        GroupObjectPermission.objects.filter(
+                            pk__in=group_permission_ids_to_delete
+                        ).delete()
+
+                    # then, create permissions from serialized permissions
+                    group_permissions = []
+                    for group_permission_list in serialized_graph[
+                        "group_permissions"
+                    ].values():
+                        group_permissions.extend(group_permission_list)
+
+                    group_permission_nodegroups = models.NodeGroup.objects.filter(
+                        pk__in={
+                            group_permission["object_pk"]
+                            for group_permission in group_permissions
+                        }
+                    )
+                    group_permission_nodgroup_id_to_nodegroup = {
+                        nodegroup.pk: nodegroup
+                        for nodegroup in group_permission_nodegroups
+                    }
+
+                    group_permissions_to_create = []
+                    for group_permission in group_permissions:
+                        group_permission["content_object"] = (
+                            group_permission_nodgroup_id_to_nodegroup[
+                                group_permission["object_pk"]
+                            ]
                         )
-                        updated_group_permission = GroupObjectPermission(
-                            **serialized_group_permission
+                        user_permissions_to_create.append(
+                            GroupObjectPermission(**group_permission)
                         )
 
-                        updated_group_permission.save()
+                    GroupObjectPermission.objects.bulk_create(
+                        group_permissions_to_create
+                    )
 
     def get_user_permissions(self, force_recalculation=False):
         """
