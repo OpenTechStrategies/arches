@@ -724,6 +724,13 @@ class Graph(models.GraphModel):
         return self
 
     def delete(self):
+        self.delete_associated_entities()
+        super(Graph, self).delete()
+
+    def delete_associated_entities(self):
+        """
+        Deletes all associated cards, cards_x_nodes_x_widgets, edges, nodes, and nodegroups
+        """
         with transaction.atomic():
             try:
                 editable_future_graph = Graph.objects.get(
@@ -748,7 +755,7 @@ class Graph(models.GraphModel):
             for widget in self.widgets.values():
                 widget.delete()
 
-        super(Graph, self).delete()
+        return self
 
     def delete_instances(self, userid=None, verbose=False):
         """
@@ -1722,7 +1729,7 @@ class Graph(models.GraphModel):
                             for user_permission in user_permissions
                         }
                     )
-                    user_permission_nodgroup_id_to_nodegroup = {
+                    user_permission_nodegroup_id_to_nodegroup = {
                         nodegroup.pk: nodegroup
                         for nodegroup in user_permission_nodegroups
                     }
@@ -1730,7 +1737,7 @@ class Graph(models.GraphModel):
                     user_permissions_to_create = []
                     for user_permission in user_permissions:
                         user_permission["content_object"] = (
-                            user_permission_nodgroup_id_to_nodegroup[
+                            user_permission_nodegroup_id_to_nodegroup[
                                 user_permission["object_pk"]
                             ]
                         )
@@ -1770,7 +1777,7 @@ class Graph(models.GraphModel):
                             for group_permission in group_permissions
                         }
                     )
-                    group_permission_nodgroup_id_to_nodegroup = {
+                    group_permission_nodegroup_id_to_nodegroup = {
                         nodegroup.pk: nodegroup
                         for nodegroup in group_permission_nodegroups
                     }
@@ -1778,7 +1785,7 @@ class Graph(models.GraphModel):
                     group_permissions_to_create = []
                     for group_permission in group_permissions:
                         group_permission["content_object"] = (
-                            group_permission_nodgroup_id_to_nodegroup[
+                            group_permission_nodegroup_id_to_nodegroup[
                                 group_permission["object_pk"]
                             ]
                         )
@@ -2656,9 +2663,7 @@ class Graph(models.GraphModel):
             if editable_future_graph:
                 editable_future_graph.delete()
 
-            # ensures any resources that were related to the source graph are not deleted
-            self.pk = uuid.uuid4()
-            self.delete()
+            self.delete_associated_entities()
 
             for serialized_nodegroup in serialized_graph["nodegroups"]:
                 for key, value in serialized_nodegroup.items():
