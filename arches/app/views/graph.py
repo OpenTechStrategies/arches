@@ -863,7 +863,8 @@ class ModelHistoryView(GraphBaseView):
 
         try:
             graph.restore_state_from_serialized_graph(serialized_graph=serialized_graph)
-        except:
+        except Exception as e:
+            logger.exception(e)
             return JSONErrorResponse(JSONSerializer().serialize({"success": False}))
 
         return JSONResponse(JSONSerializer().serialize({"success": True}))
