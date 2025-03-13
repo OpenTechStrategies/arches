@@ -974,6 +974,7 @@ class GraphTests(ArchesTestCase):
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=graph.graphid,
         )
+        resource_graph.save()
 
         self.assertEqual(len(resource_graph.get_cards()), 2)
 
@@ -1006,6 +1007,7 @@ class GraphTests(ArchesTestCase):
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
         )
+        resource_graph.save()
 
         self.assertEqual(len(resource_graph.cards), 1)
         the_card = next(iter(list(resource_graph.cards.values())))
