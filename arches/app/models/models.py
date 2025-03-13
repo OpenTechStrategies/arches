@@ -2240,6 +2240,7 @@ class SpatialView(models.Model):
 
 
 class UserPreferences(models.Model):
+    userpreferenceid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     key = models.TextField(blank=True, null=True)
     config = JSONField(blank=False, null=False)
