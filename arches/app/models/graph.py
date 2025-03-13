@@ -727,6 +727,8 @@ class Graph(models.GraphModel):
         self.delete_associated_entities()
         super(Graph, self).delete()
 
+        return self
+
     def delete_associated_entities(self):
         """
         Deletes all associated cards, cards_x_nodes_x_widgets, edges, nodes, and nodegroups

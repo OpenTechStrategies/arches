@@ -974,7 +974,6 @@ class GraphTests(ArchesTestCase):
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=graph.graphid,
         )
-        resource_graph.save()  # `new()` doesn't persist to the database
 
         self.assertEqual(len(resource_graph.get_cards()), 2)
 
@@ -1007,7 +1006,6 @@ class GraphTests(ArchesTestCase):
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
         )
-        resource_graph.save()  # `new()` doesn't persist to the database
 
         self.assertEqual(len(resource_graph.cards), 1)
         the_card = next(iter(list(resource_graph.cards.values())))
@@ -1615,7 +1613,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_empty_graph_from_editable_future_graph(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1641,7 +1638,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_graph_with_multiple_nodes_and_edges(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1685,7 +1681,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_graph_with_permissions(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1720,7 +1715,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_graph_with_relatable_resources(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.root.set_relatable_resources([source_graph.root.pk])
@@ -1747,7 +1741,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_create_editable_future_graphs_does_not_pollute_database(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1795,7 +1788,6 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1832,7 +1824,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_revert_editable_future_graph(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup_count_before = models.NodeGroup.objects.count()
@@ -1880,7 +1871,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_nodegroup(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1939,7 +1929,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_node(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1995,7 +1984,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_card(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2056,7 +2044,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_widget(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2134,7 +2121,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_update_from_editable_future_graph_does_not_affect_resources(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup = models.NodeGroup.objects.create()
@@ -2197,7 +2183,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_placing_node_in_separate_card_does_not_pollute_database(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2271,7 +2256,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_can_update_graph_slug(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         # test adding slug
@@ -2320,7 +2304,6 @@ class EditableFutureGraphTests(ArchesTestCase):
 
     def test_can_update_other_data_in_graph_with_slug(self):
         source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
-        source_graph.save()  # `new()` doesn't persist to the database
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.slug = "test-resource"
