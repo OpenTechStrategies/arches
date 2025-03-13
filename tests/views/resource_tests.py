@@ -327,14 +327,6 @@ class ResourceViewTests(ArchesTestCase):
         self.assertEqual(edit.status_code, 200)
         self.assertEqual(delete.status_code, 200)
 
-    def test_resource_report_missing_resource(self):
-        self.client.login(username="sam", password="Test12345!")
-        with self.assertLogs("django.request", level="WARNING"):
-            response = self.client.get(
-                reverse("resource_report", kwargs={"resourceid": str(uuid.uuid4())})
-            )
-        self.assertEqual(response.status_code, 404)
-
     def test_get_related_resource(self):
         se = SearchEngineFactory().create()
         user = User.objects.get(username="admin")
@@ -376,14 +368,10 @@ class ResourceViewTests(ArchesTestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-    def test_resource_report_for_missing_resource(self):
-        self.client.login(username="admin", password="admin")
-        resource = Resource.objects.get(resourceinstanceid=self.resource_instance_id)
-        resource.delete()
+    def test_resource_report_missing_resource(self):
+        self.client.login(username="sam", password="Test12345!")
         with self.assertLogs("django.request", level="WARNING"):
             response = self.client.get(
-                reverse(
-                    "resource_report", kwargs={"resourceid": self.resource_instance_id}
-                )
+                reverse("resource_report", kwargs={"resourceid": str(uuid.uuid4())})
             )
         self.assertEqual(response.status_code, 404)
