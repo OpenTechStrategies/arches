@@ -15,7 +15,7 @@ from arches.app.models.models import ResourceInstance
 class InstancePermissionsAPITest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.graph = Graph.new(
+        cls.graph = Graph.objects.create_graph(
             name="INSTANCE_PERMISSIONS_TEST_GRAPH",
             is_resource=False,  # creates a nodegroup, will undo this below.
             author="ARCHES TEST",

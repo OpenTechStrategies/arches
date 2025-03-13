@@ -157,7 +157,7 @@ class GraphTests(ArchesTestCase):
         }
         models.Edge.objects.create(**edges_dict).save()
 
-        graph = Graph.new()
+        graph = Graph.objects.create_graph()
         graph.name = "TEST GRAPH"
         graph.subtitle = "ARCHES TEST GRAPH"
         graph.author = "Arches"
@@ -180,7 +180,7 @@ class GraphTests(ArchesTestCase):
     def test_new_graph(self):
         name = "TEST NEW GRAPH"
         author = "ARCHES TEST"
-        graph = Graph.new(name=name, is_resource=True, author=author)
+        graph = Graph.objects.create_graph(name=name, is_resource=True, author=author)
         self.assertEqual(graph.name, name)
         self.assertEqual(graph.author, author)
         self.assertTrue(graph.isresource)
@@ -189,7 +189,7 @@ class GraphTests(ArchesTestCase):
         self.assertEqual(len(graph.cards), 0)
         self.assertEqual(len(graph.get_nodegroups()), 0)
 
-        graph = Graph.new(name=name, is_resource=False, author=author)
+        graph = Graph.objects.create_graph(name=name, is_resource=False, author=author)
         self.assertEqual(graph.name, name)
         self.assertEqual(graph.author, author)
         self.assertFalse(graph.isresource)
@@ -314,7 +314,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.new(name="TEST RESOURCE")
+        graph = Graph.objects.create_graph(name="TEST RESOURCE")
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -485,12 +485,12 @@ class GraphTests(ArchesTestCase):
             )
         )
 
-        graph = Graph.new()
+        graph = Graph.objects.create_graph()
         graph.root.datatype = "string"
         graph.update_node(JSONSerializer().serializeToPython(graph.root))
 
         # create card collector graph to use for appending on to other graphs
-        collector_graph = Graph.new()
+        collector_graph = Graph.objects.create_graph()
         collector_graph.append_branch(
             "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -763,8 +763,7 @@ class GraphTests(ArchesTestCase):
         card_count_before = models.CardModel.objects.count()
 
         # test that data is persisited propertly when creating a new graph
-        graph = Graph.new(is_resource=False)
-        graph.create_editable_future_graph()
+        graph = Graph.objects.create_graph(is_resource=False)
 
         nodes_count_after = models.Node.objects.count()
         edges_count_after = models.Edge.objects.count()
@@ -871,7 +870,9 @@ class GraphTests(ArchesTestCase):
         test the node delete method
 
         """
-        graph = Graph.new(name="TEST", is_resource=False, author="TEST")
+        graph = Graph.objects.create_graph(
+            name="TEST", is_resource=False, author="TEST"
+        )
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -922,7 +923,9 @@ class GraphTests(ArchesTestCase):
         """
 
         # TESTING A GRAPH
-        graph = Graph.new(name="TEST", is_resource=False, author="TEST")
+        graph = Graph.objects.create_graph(
+            name="TEST", is_resource=False, author="TEST"
+        )
         graph.description = "A test description"
 
         self.assertEqual(len(graph.cards), 1)
@@ -966,7 +969,7 @@ class GraphTests(ArchesTestCase):
                 )
 
         # TESTING A RESOURCE
-        resource_graph = Graph.new(
+        resource_graph = Graph.objects.create_graph(
             name="TEST RESOURCE", is_resource=True, author="TEST"
         )
         resource_graph.description = "A test resource description"
@@ -1001,7 +1004,9 @@ class GraphTests(ArchesTestCase):
         resource_graph.delete()
 
         # TESTING A RESOURCE
-        resource_graph = Graph.new(name="TEST", is_resource=True, author="TEST")
+        resource_graph = Graph.objects.create_graph(
+            name="TEST", is_resource=True, author="TEST"
+        )
         resource_graph.description = "A test description"
         resource_graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1033,7 +1038,9 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.new(name="TEST", is_resource=False, author="TEST")
+        graph = Graph.objects.create_graph(
+            name="TEST", is_resource=False, author="TEST"
+        )
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -1050,7 +1057,9 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.new(name="TEST", is_resource=False, author="TEST")
+        graph = Graph.objects.create_graph(
+            name="TEST", is_resource=False, author="TEST"
+        )
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -1163,7 +1172,7 @@ class GraphTests(ArchesTestCase):
 
         """
 
-        graph = Graph.new()
+        graph = Graph.objects.create_graph()
         graph.name = "TEST GRAPH"
         graph.ontology = None
         graph.save()
@@ -1190,7 +1199,7 @@ class GraphTests(ArchesTestCase):
             graph.save()
 
     def test_appending_a_branch_with_an_invalid_ontology_class(self):
-        graph = Graph.new()
+        graph = Graph.objects.create_graph()
         graph.name = "TEST GRAPH"
         graph.subtitle = "ARCHES TEST GRAPH"
         graph.author = "Arches"
@@ -1241,7 +1250,7 @@ class GraphTests(ArchesTestCase):
             ],
         }
 
-        graph = Graph.new(
+        graph = Graph.objects.create_graph(
             name="RESOURCE_INSTANCE_LIFECYCLE_TEST_GRAPH",
             is_resource=True,
             author="ARCHES TEST",
@@ -1404,7 +1413,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         }
         models.Edge.objects.create(**edges_dict).save()
 
-        graph = Graph.new()
+        graph = Graph.objects.create_graph()
         graph.name = "TEST GRAPH"
         graph.subtitle = "ARCHES TEST GRAPH"
         graph.author = "Arches"
@@ -1614,7 +1623,9 @@ class EditableFutureGraphTests(ArchesTestCase):
             )
 
     def test_update_empty_graph_from_editable_future_graph(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1639,7 +1650,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_graph_with_multiple_nodes_and_edges(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1682,7 +1695,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_graph_with_permissions(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1716,7 +1731,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_graph_with_relatable_resources(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.root.set_relatable_resources([source_graph.root.pk])
@@ -1742,7 +1759,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_create_editable_future_graphs_does_not_pollute_database(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1789,7 +1808,9 @@ class EditableFutureGraphTests(ArchesTestCase):
             models.Resource2ResourceConstraint.objects.count()
         )
 
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1825,7 +1846,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_revert_editable_future_graph(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup_count_before = models.NodeGroup.objects.count()
@@ -1872,7 +1895,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_nodegroup(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1930,7 +1955,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_node(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -1985,7 +2012,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_card(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2045,7 +2074,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_widget(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2122,7 +2153,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_update_from_editable_future_graph_does_not_affect_resources(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup = models.NodeGroup.objects.create()
@@ -2184,7 +2217,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         self.assertEqual(serialized_tile, serialized_tile_from_database)
 
     def test_placing_node_in_separate_card_does_not_pollute_database(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.append_branch(
@@ -2257,7 +2292,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         self.assertEqual(nodegroup_count_before, models.NodeGroup.objects.count())
 
     def test_can_update_graph_slug(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         # test adding slug
@@ -2305,7 +2342,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
     def test_can_update_other_data_in_graph_with_slug(self):
-        source_graph = Graph.new(name="TEST RESOURCE", is_resource=True, author="TEST")
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
         editable_future_graph = source_graph.create_editable_future_graph()
 
         editable_future_graph.slug = "test-resource"

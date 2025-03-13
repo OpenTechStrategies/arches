@@ -26,6 +26,7 @@ from django.db.utils import IntegrityError
 from arches.app.const import IntegrityCheck
 from arches.app.models import models
 from arches.app.models.card import Card
+from arches.app.models.managers.graph import GraphManager
 from arches.app.models.system_settings import settings
 from arches.app.datatypes.datatypes import DataTypeFactory
 from arches.app.etl_modules.bulk_data_deletion import BulkDataDeletion
@@ -47,6 +48,8 @@ class Graph(models.GraphModel):
     Used for mapping complete resource graph objects to and from the database
 
     """
+
+    objects = GraphManager()
 
     class Meta:
         proxy = True
@@ -289,41 +292,6 @@ class Graph(models.GraphModel):
             self.add_card(card)
 
         self.populate_null_nodegroups()
-
-    @staticmethod
-    def new(name="", is_resource=False, author=""):
-        newid = uuid.uuid1()
-        nodegroup = None
-        graph_model = models.GraphModel.objects.create(
-            name=name,
-            subtitle="",
-            author=author,
-            description="",
-            version="",
-            isresource=is_resource,
-            iconclass="",
-            ontology=None,
-            slug=None,
-        )
-        if not is_resource:
-            nodegroup = models.NodeGroup.objects.create(pk=newid)
-            models.CardModel.objects.create(
-                nodegroup=nodegroup, name=name, graph=graph_model
-            )
-        root = models.Node.objects.create(
-            pk=newid,
-            name=_("Top Node"),
-            description="",
-            istopnode=True,
-            ontologyclass=None,
-            datatype="semantic",
-            nodegroup=nodegroup,
-            graph=graph_model,
-        )
-
-        graph = Graph.objects.get(pk=graph_model.graphid)
-
-        return graph
 
     def add_node(self, node, nodegroups=None):
         """
