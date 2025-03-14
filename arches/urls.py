@@ -781,6 +781,11 @@ urlpatterns = [
         api.SpatialView.as_view(),
         name="spatialview_api",
     ),
+    re_path(
+        r"^api/user_preference/(?P<identifier>%s|())/?$" % uuid_regex,
+        api.UserPreference.as_view(),
+        name="api_user_preference",
+    ),
 ]
 
 handler400 = "arches.app.views.main.custom_400"

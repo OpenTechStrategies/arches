@@ -2383,3 +2383,22 @@ class SpatialView(APIBase):
                 status=400,
             )
         return JSONResponse(status=204)
+
+
+class UserPreference(APIBase):
+    def get(self, request, identifier=None):
+        """
+        Returns specific user preference when given uuid
+        If no id specified, and depending on user permissions, returns a list of all user preferences
+        """
+
+        if identifier:
+            returned_user_preferences = models.UserPreference.objects.get(pk=identifier)
+            if not returned_user_preferences:
+                return JSONErrorResponse(
+                    _("No User Preference with this id"), status=404
+                )
+            else:
+                response_data = returned_user_preferences
+
+        return JSONResponse(response_data)

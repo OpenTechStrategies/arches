@@ -2265,7 +2265,7 @@ class SpatialView(models.Model):
         }
 
 
-class UserPreferences(models.Model):
+class UserPreference(models.Model):
     userpreferenceid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(
         User,
