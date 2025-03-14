@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                         default=uuid.uuid4, primary_key=True, serialize=False
                     ),
                 ),
-                ("key", models.TextField(blank=True, null=True)),
+                ("preferencename", models.TextField(blank=True, null=True)),
                 ("config", models.JSONField()),
                 (
                     "user",

@@ -2273,7 +2273,7 @@ class UserPreferences(models.Model):
         on_delete=models.PROTECT,
         null=False,
     )
-    key = models.TextField(blank=True, null=True)
+    preferencename = models.TextField(blank=True, null=True)
     config = JSONField(blank=False, null=False)
 
     class Meta:
