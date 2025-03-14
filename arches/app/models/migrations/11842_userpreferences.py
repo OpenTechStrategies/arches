@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("models", "11726_join_tile_nodegroup"),
+        ("models", "11570_harden_editable_future_graphs"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
