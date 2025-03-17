@@ -685,12 +685,13 @@ class GraphPublicationView(View):
             try:
                 data = JSONDeserializer().deserialize(request.body)
 
-                source_graph.update_from_editable_future_graph()
-                source_graph.publish(notes=data.get("notes"), user=request.user)
+                updated_graph = source_graph.update_from_editable_future_graph(
+                    editable_future_graph=editable_future_graph
+                )
+                updated_graph.publish(notes=data.get("notes"), user=request.user)
 
                 return JSONResponse(
                     {
-                        "graph": editable_future_graph,
                         "title": _("Success!"),
                         "message": _(
                             "The graph has been updated. Please click the OK button to reload the page."
@@ -709,7 +710,6 @@ class GraphPublicationView(View):
                 source_graph.revert()
                 return JSONResponse(
                     {
-                        "graph": editable_future_graph,
                         "title": _("Success!"),
                         "message": _(
                             "The graph has been reverted. Please click the OK button to reload the page."
@@ -734,7 +734,6 @@ class GraphPublicationView(View):
 
                 return JSONResponse(
                     {
-                        "graph": source_graph,
                         "title": _("Success!"),
                         "message": _(
                             "The published graphs have been successfully updated."
@@ -756,7 +755,6 @@ class GraphPublicationView(View):
 
                 return JSONResponse(
                     {
-                        "graph": source_graph,
                         "title": _("Success!"),
                         "message": _("The graph has been successfully restored."),
                     }
@@ -863,7 +861,8 @@ class ModelHistoryView(GraphBaseView):
 
         try:
             graph.restore_state_from_serialized_graph(serialized_graph=serialized_graph)
-        except:
+        except Exception as e:
+            logger.exception(e)
             return JSONErrorResponse(JSONSerializer().serialize({"success": False}))
 
         return JSONResponse(JSONSerializer().serialize({"success": True}))
