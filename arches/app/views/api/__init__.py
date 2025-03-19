@@ -2416,6 +2416,55 @@ class UserPreference(APIBase):
         return JSONResponse(response_data)
 
     @method_decorator(group_required("Application Administrator", raise_exception=True))
+    def post(self, request, identifier=None):
+        if identifier:
+            return JSONErrorResponse(
+                _("User Preference creation failed"),
+                _(
+                    "POST request should not have a userpreferenceid provided in the URL"
+                ),
+                status=400,
+            )
+
+        try:
+            user_pref_json = JSONDeserializer().deserialize(request.body)
+        except ValueError:
+            return JSONErrorResponse(
+                _("Invalid JSON data"),
+                _("The User Preference API was sent invalid JSON"),
+                status=400,
+            )
+
+        if user_pref_json:
+            if user_pref_json["userpreferenceid"]:
+                JSONErrorResponse(
+                    _("Incorrect User Preference json data"),
+                    _(
+                        "POST REST request should not have a userpreferenceid provided in the JSON data."
+                    ),
+                    status=400,
+                )
+            else:
+                try:
+                    models.User.objects.get(username=user_pref_json["user"])
+                except:
+                    return JSONErrorResponse(
+                        _("Invalid user"),
+                        _("The User Preference API includes an invalid user."),
+                        status=400,
+                    )
+                new_user_preference = UserPreference()
+                new_user_preference.userpreferenceid = uuid.uuid4()
+                new_user_preference.user = models.User.objects.get(
+                    username=user_pref_json["user"]
+                )
+                new_user_preference.preferencename = user_pref_json["preferencename"]
+                new_user_preference.config = user_pref_json["config"]
+                return JSONResponse(new_user_preference, status=201)
+
+        return JSONErrorResponse(_("No json request payload"), status=400)
+
+    @method_decorator(group_required("Application Administrator", raise_exception=True))
     def delete(self, request, identifier=None):
         if identifier:
             user_preference = None
