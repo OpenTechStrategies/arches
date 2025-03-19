@@ -284,3 +284,10 @@ def ensure_single_default_searchview(sender, instance, **kwargs):
             raise ValidationError(
                 "Only one search logic component can be default at a time."
             )
+
+
+@receiver(post_save, sender=models.CardModel)
+def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
+    models.GraphModel.objects.filter(pk=instance.graph_id).update(
+        has_unpublished_changes=True
+    )

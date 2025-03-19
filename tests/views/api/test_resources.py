@@ -532,8 +532,6 @@ class ResourceAPITests(ArchesTestCase):
         zeroth_card.save()
 
         self.data_type_graph.refresh_from_database()
-        self.data_type_graph.has_unpublished_changes = True
-
         self.data_type_graph.save()
         self.data_type_graph.publish()
 
