@@ -2417,8 +2417,6 @@ class Graph(models.GraphModel):
 
                     translation.deactivate()
 
-            self.serialized_graph = self.serialize()
-
             return self
 
     def create_editable_future_graph(self):
