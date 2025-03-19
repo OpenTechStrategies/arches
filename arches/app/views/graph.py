@@ -144,9 +144,7 @@ class GraphSettingsView(GraphBaseView):
             else None
         )
         node.name = graph.name
-
         graph.root.name = node.name
-        graph.has_unpublished_changes = True
 
         if node.ontologyclass:
             graph.root.ontologyclass = node.ontologyclass
@@ -487,8 +485,6 @@ class GraphDataView(View):
                         author=request.user.first_name + " " + request.user.last_name,
                         is_resource=is_resource,
                     )
-
-                    ret.publish()
 
                 elif self.action == "update_node":
                     old_node_data = graph.nodes.get(uuid.UUID(data["nodeid"]))
