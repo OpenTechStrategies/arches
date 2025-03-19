@@ -2392,6 +2392,11 @@ class UserPreference(APIBase):
         If no id specified, and depending on user permissions, returns a list of all user preferences
         """
 
+        # check user permission
+        overall_access = False
+        if request.user.groups.filter(name="Application Administrator").exists():
+            overall_access = True
+
         if identifier:
             returned_user_preferences = models.UserPreference.objects.get(pk=identifier)
             if not returned_user_preferences:
@@ -2400,5 +2405,12 @@ class UserPreference(APIBase):
                 )
             else:
                 response_data = returned_user_preferences
+        else:
+            if overall_access:  # give view to everything
+                response_data = [x for x in models.UserPreference.objects.all()]
+            else:
+                response_data = [
+                    x for x in models.UserPreference.objects.filter(user=request.user)
+                ]
 
         return JSONResponse(response_data)
