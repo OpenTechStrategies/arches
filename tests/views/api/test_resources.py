@@ -531,8 +531,6 @@ class ResourceAPITests(ArchesTestCase):
         zeroth_card.sortorder = None
         zeroth_card.save()
 
-        self.data_type_graph.refresh_from_database()
-        self.data_type_graph.save()
         self.data_type_graph.publish()
 
         self.test_prj_user.graph_publication = self.data_type_graph.publication
