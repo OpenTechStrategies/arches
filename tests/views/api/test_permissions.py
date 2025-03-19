@@ -1,20 +1,23 @@
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.db import connection
-from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from arches.app.models.graph import Graph
 from arches.app.models.models import ResourceInstance
 
+from tests.base_test import ArchesTestCase
+
 # these tests can be run from the command line via
 # python manage.py test tests.views.api.test_permissions --settings="tests.test_settings"
 
 
-class InstancePermissionsAPITest(TestCase):
+class InstancePermissionsAPITest(ArchesTestCase):
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
+
         cls.graph = Graph.objects.create_graph(
             name="INSTANCE_PERMISSIONS_TEST_GRAPH",
             is_resource=False,  # creates a nodegroup, will undo this below.

@@ -82,6 +82,7 @@ class Graph(models.GraphModel):
         self._constraints_x_nodes = []
         self.temp_node_name = _("New Node")
         self.serialized_graph = None
+        has_unpublished_changes = self.has_unpublished_changes
 
         if args:
             if isinstance(args[0], dict):
@@ -101,7 +102,7 @@ class Graph(models.GraphModel):
                         setattr(self, key, value)
 
                 try:
-                    self.update_permissions(args[0])
+                    self.update_permissions_from_serialized_graph(args[0])
                 except (
                     AttributeError
                 ):  # AttributeError happens if attempting to update permissions on a non-existent NodeGroup
@@ -157,9 +158,9 @@ class Graph(models.GraphModel):
                 if len(args) == 1 and (
                     isinstance(args[0], str) or isinstance(args[0], uuid.UUID)
                 ):
-                    for key, value in models.GraphModel.objects.get(
-                        pk=args[0]
-                    ).__dict__.items():
+                    graph_model = models.GraphModel.objects.get(pk=args[0])
+
+                    for key, value in graph_model.__dict__.items():
                         setattr(self, key, value)
 
                 has_deferred_args = False
@@ -253,12 +254,15 @@ class Graph(models.GraphModel):
                     self.add_card(card)
 
                 self.populate_null_nodegroups()
+                self.has_unpublished_changes = has_unpublished_changes
 
     def refresh_from_database(self):
         """
         Updates card, edge, and node data from the database, bypassing the
         cached version of the graph
         """
+        self.refresh_from_db()
+
         self.nodes = {}
         self.edges = {}
         self.cards = {}
@@ -291,6 +295,7 @@ class Graph(models.GraphModel):
         for card in cards:
             self.add_card(card)
 
+        self.serialized_graph = self.serialize(force_recalculation=True)
         self.populate_null_nodegroups()
 
     def add_node(self, node, nodegroups=None):
@@ -360,9 +365,12 @@ class Graph(models.GraphModel):
             self.root = node
         self.nodes[node.pk] = node
 
+        if not self.source_identifier:
+            self.has_unpublished_changes = True
+
         return node
 
-    def add_edge(self, edge):
+    def add_edge(self, edge, should_update_serialized_graph=False):
         """
         Adds an edge to this graph
 
@@ -389,9 +397,15 @@ class Graph(models.GraphModel):
         if self.ontology is None:
             edge.ontologyproperty = None
         self.edges[edge.pk] = edge
+
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
+
         return edge
 
-    def add_card_contraint(self, constraint, card):
+    def add_card_contraint(
+        self, constraint, card, should_update_serialized_graph=False
+    ):
         constraint_model = models.ConstraintModel()
         constraint_model.constraintid = constraint.get("constraintid", None)
         constraint_model.uniquetoallinstances = constraint.get(
@@ -403,7 +417,10 @@ class Graph(models.GraphModel):
             constraint_x_node = {"constraint": constraint_model, "node": nodeid}
             self._constraints_x_nodes.append(constraint_x_node)
 
-    def add_card(self, card):
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
+
+    def add_card(self, card, should_update_serialized_graph=False):
         """
         Adds a card to this graph
 
@@ -443,9 +460,12 @@ class Graph(models.GraphModel):
 
         self.cards[card.pk] = card
 
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
+
         return card
 
-    def add_function(self, function):
+    def add_function(self, function, should_update_serialized_graph=False):
         """
         Adds a FunctionXGraph record to this graph
 
@@ -461,9 +481,14 @@ class Graph(models.GraphModel):
 
         self._functions.append(function)
 
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
+
         return function
 
-    def add_resource_instance_lifecycle(self, resource_instance_lifecycle):
+    def add_resource_instance_lifecycle(
+        self, resource_instance_lifecycle, should_update_serialized_graph=False
+    ):
         """
         Adds a ResourceInstanceLifecycle to this graph
 
@@ -522,6 +547,11 @@ class Graph(models.GraphModel):
                 resource_instance_lifecycle_states, bulk=False
             )
 
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
+
+        return self.resource_instance_lifecycle
+
     def _compare(self, obj1, obj2, additional_excepted_keys=[]):
         excluded_keys = ["_state"] + additional_excepted_keys
         d1, d2 = obj1.__dict__, obj2.__dict__
@@ -562,7 +592,6 @@ class Graph(models.GraphModel):
         validate -- True to validate the graph before saving, defaults to True
 
         """
-
         if validate:
             self.validate()
 
@@ -876,6 +905,9 @@ class Graph(models.GraphModel):
             if self.ontology is None:
                 branch_copy.clear_ontology_references()
 
+            if not self.source_identifier:
+                self.has_unpublished_changes = True
+
             if return_appended_graph:
                 return self
             else:
@@ -897,7 +929,7 @@ class Graph(models.GraphModel):
             i += 1
         return temp_node_name
 
-    def append_node(self, nodeid=None):
+    def append_node(self, nodeid=None, should_update_serialized_graph=False):
         """
         Appends a single node onto this graph
 
@@ -960,9 +992,13 @@ class Graph(models.GraphModel):
                 raise GraphValidationError(
                     _("Ontology rules don't allow this node to be appended")
                 )
+
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
+
         return {"node": newNode, "edge": newEdge, "card": card, "nodegroup": nodegroup}
 
-    def clear_ontology_references(self):
+    def clear_ontology_references(self, should_update_serialized_graph=False):
         """
         removes any references to ontology classes and properties in a graph
 
@@ -973,6 +1009,9 @@ class Graph(models.GraphModel):
 
         for edge_id, edge in self.edges.items():
             edge.ontologyproperty = None
+
+        if should_update_serialized_graph:
+            self.serialized_graph = self.serialize(force_recalculation=True)
 
         self.ontology = None
 
@@ -1009,6 +1048,7 @@ class Graph(models.GraphModel):
         copy_of_self = deepcopy(self)
 
         copy_of_self.publication = None
+        copy_of_self.serialized_graph = None
 
         if root is not None:
             root["nodegroup_id"] = root["nodeid"]
@@ -1313,9 +1353,6 @@ class Graph(models.GraphModel):
             nodegroups = []
 
             tree = self.get_tree(root=node)
-            tile_count = models.TileModel.objects.filter(
-                nodegroup_id=node.nodegroup_id
-            ).count()
 
             def traverse_tree(tree):
                 nodes.append(tree["node"])
@@ -1331,6 +1368,9 @@ class Graph(models.GraphModel):
                 [nodegroup.delete() for nodegroup in nodegroups]
                 [edge.delete() for edge in edges]
                 [node.delete() for node in nodes]
+
+        super().save()
+        return self
 
     def can_append(self, graphToAppend, nodeToAppendTo):
         """
@@ -1642,6 +1682,7 @@ class Graph(models.GraphModel):
         if (
             self.serialized_graph
             and not self.source_identifier_id
+            and not self.has_unpublished_changes
             and not force_recalculation
         ):
             nodegroups = self.serialized_graph["nodegroups"]
@@ -1661,7 +1702,7 @@ class Graph(models.GraphModel):
                     pass
             return list(nodegroups)
 
-    def update_permissions(self, serialized_graph):
+    def update_permissions_from_serialized_graph(self, serialized_graph):
         if (
             "user_permissions" in serialized_graph
             or "group_permissions" in serialized_graph
@@ -1908,11 +1949,18 @@ class Graph(models.GraphModel):
             if card.nodegroup.parentnodegroup is None:
                 return card
 
-    def get_cards(self, use_raw_i18n_json=False):
+    def get_cards(self, use_raw_i18n_json=False, force_recalculation=False):
         """
         get the card data (if any) associated with this graph
 
         """
+        if (
+            self.serialized_graph
+            and not self.source_identifier_id
+            and not self.has_unpublished_changes
+            and not force_recalculation
+        ):
+            return self.serialized_graph["cards"]
 
         cards = []
         for card in self.cards.values():
@@ -1987,28 +2035,23 @@ class Graph(models.GraphModel):
         if (
             self.publication
             and not self.source_identifier_id
+            and not self.has_unpublished_changes
             and not force_recalculation
         ):
-            try:
-                published_graph = self.get_published_graph()
-                serialized_graph = published_graph.serialized_graph
-                for key in exclude:
-                    if (
-                        serialized_graph.get(key) is not None
-                    ):  # explicit None comparison so falsey values will still return
-                        serialized_graph[key] = None
+            published_graph = self.get_published_graph()
 
-                return serialized_graph
-            except:
-                self.refresh_from_database()
-                return self.serialize(
-                    fields=fields,
-                    exclude=exclude,
-                    force_recalculation=True,
-                    use_raw_i18n_json=use_raw_i18n_json,
-                    **kwargs,
-                )
+            if not published_graph:
+                return self.serialize(force_recalculation=True)
 
+            serialized_graph = published_graph.serialized_graph
+
+            for key in exclude:
+                if (
+                    serialized_graph.get(key) is not None
+                ):  # explicit None comparison so falsey values will still return
+                    serialized_graph[key] = None
+
+            return serialized_graph
         else:
             ret = JSONSerializer().handle_model(
                 self,
@@ -2376,7 +2419,12 @@ class Graph(models.GraphModel):
 
                 if self.has_unpublished_changes:
                     self.has_unpublished_changes = False
-                    self.save()
+
+                    # Update the field directly in the database, bypassing GraphModel.save()
+                    self.__class__.objects.filter(pk=self.pk).update(
+                        has_unpublished_changes=self.has_unpublished_changes
+                    )
+
                     self.create_editable_future_graph()
 
                 published_graph_edit = models.PublishedGraphEdit.objects.create(
@@ -2419,6 +2467,10 @@ class Graph(models.GraphModel):
 
                     translation.deactivate()
 
+            self.serialized_graph = self.serialize()
+
+            return self
+
     def create_editable_future_graph(self):
         """
         Creates an additional entry in the Graphs table that represents an editable version of the current graph
@@ -2440,8 +2492,12 @@ class Graph(models.GraphModel):
 
             editable_future_graph = graph_copy["copy"]
             editable_future_graph.source_identifier_id = self.graphid
-            editable_future_graph.resource_instance_lifecycle = None
-            editable_future_graph.has_unpublished_changes = False
+            editable_future_graph.resource_instance_lifecycle = (
+                None  # editable_future_graphs do not interact with `Resource` objects
+            )
+            editable_future_graph.has_unpublished_changes = (
+                False  # editable_future_graphs are never published
+            )
 
             editable_future_graph.root.set_relatable_resources(
                 [node.pk for node in self.root.get_relatable_resources()]
@@ -2577,7 +2633,6 @@ class Graph(models.GraphModel):
 
         # update graph data
         serialized_editable_future_graph["graphid"] = serialized_source_graph["graphid"]
-        serialized_editable_future_graph["has_unpublished_changes"] = False
         serialized_editable_future_graph["resource_instance_lifecycle_id"] = (
             serialized_source_graph["resource_instance_lifecycle_id"]
         )
@@ -2610,16 +2665,6 @@ class Graph(models.GraphModel):
         return self.restore_state_from_serialized_graph(
             serialized_editable_future_graph
         )
-
-    def revert(self):
-        """
-        Reverts a Graph's editable_future_graph to represent the source,
-        discarding all changes
-        """
-        self.has_unpublished_changes = False
-        self.save()
-
-        self.create_editable_future_graph()
 
     def restore_state_from_serialized_graph(self, serialized_graph):
         """
@@ -2702,7 +2747,7 @@ class Graph(models.GraphModel):
             updated_graph.widgets = widget_dict
             updated_graph.is_active = self.is_active
 
-            updated_graph.update_permissions(serialized_graph)
+            updated_graph.update_permissions_from_serialized_graph(serialized_graph)
 
             relatable_resource_model_nodes = models.Node.objects.filter(
                 graph_id__in=serialized_graph["relatable_resource_model_ids"],
@@ -2717,7 +2762,16 @@ class Graph(models.GraphModel):
                 )
             )
 
+            # first, save all the changes in the graph
             updated_graph.save()
+
+            # then manually update the model's `has_unpublished_changes` value to bypass automatic `True` assignment in `GraphModel.save()`
+            updated_graph.has_unpublished_changes = False
+
+            updated_graph.__class__.objects.filter(pk=updated_graph.pk).update(
+                has_unpublished_changes=updated_graph.has_unpublished_changes
+            )  # Update the field directly in the database, bypassing GraphModel.save()
+
             updated_graph.create_editable_future_graph()
 
             return Graph.objects.get(pk=updated_graph.pk)
@@ -2727,7 +2781,10 @@ class Graph(models.GraphModel):
         Adds a corresponding entry to the GraphXPublishedGraph table,
         and creates a PublishedGraph entry for every active language
         """
-        self.publication = None
+        if self.source_identifier_id:
+            raise RuntimeError(_("Publishing an editable_future_graph is prohibited."))
+
+        self.refresh_from_database()
 
         with transaction.atomic():
             publication = models.GraphXPublishedGraph.objects.create(
@@ -2737,7 +2794,11 @@ class Graph(models.GraphModel):
             self.publication = publication
             self.has_unpublished_changes = False
 
-            self.save(validate=False)
+            # Update the fields directly in the database, bypassing GraphModel.save()
+            self.__class__.objects.filter(pk=self.pk).update(
+                publication=self.publication,
+                has_unpublished_changes=self.has_unpublished_changes,
+            )
 
             for language_tuple in settings.LANGUAGES:
                 language = models.Language.objects.get(code=language_tuple[0])

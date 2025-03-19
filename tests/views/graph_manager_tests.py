@@ -183,6 +183,7 @@ class GraphManagerViewTests(ArchesTestCase):
             graphid=cls.NODE_NODETYPE_GRAPHID,
         )
         graph.save()
+        graph.publish()
         graph.create_editable_future_graph()
 
         cls.ROOT_ID = graph.root.nodeid

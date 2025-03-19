@@ -523,20 +523,15 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
         else:
             return True
 
-    def get_published_graph(self, language=None, raise_if_missing=False):
+    def get_published_graph(self, language=None):
         if not language:
             language = translation.get_language()
 
-        try:
-            graph = PublishedGraph.objects.get(
-                publication=self.publication, language=language
-            )
-        except PublishedGraph.DoesNotExist:
-            if raise_if_missing:
-                raise
-            graph = None
+        published_graph = PublishedGraph.objects.filter(
+            publication=self.publication, language=language
+        ).first()
 
-        return graph
+        return published_graph
 
     def save(self, **kwargs):
         if (
@@ -548,6 +543,9 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
                 settings.DEFAULT_RESOURCE_INSTANCE_LIFECYCLE_ID
             )
             add_to_update_fields(kwargs, "resource_instance_lifecycle_id")
+
+        if not self.source_identifier:
+            self.has_unpublished_changes = True
 
         super(GraphModel, self).save(**kwargs)
 

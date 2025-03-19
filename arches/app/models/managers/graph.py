@@ -19,7 +19,8 @@ class GraphManager(models.Manager):
         """
         new_id = uuid.uuid1()
         nodegroup = None
-        graph_model = arches_models.GraphModel.objects.create(
+
+        graph_model = arches_models.GraphModel(
             name=name,
             subtitle="",
             author=author,
@@ -30,6 +31,8 @@ class GraphManager(models.Manager):
             ontology=None,
             slug=None,
         )
+        graph_model.save()  # to access `save` method declared on model
+
         if not is_resource:
             nodegroup = arches_models.NodeGroup.objects.create(pk=new_id)
             arches_models.CardModel.objects.create(
@@ -39,7 +42,7 @@ class GraphManager(models.Manager):
         # root node
         arches_models.Node.objects.create(
             pk=new_id,
-            name=_("Top Node"),
+            name=name,
             description="",
             istopnode=True,
             ontologyclass=None,
@@ -49,6 +52,8 @@ class GraphManager(models.Manager):
         )
 
         graph = self.get(pk=graph_model.graphid)
+
+        graph.publish()
         graph.create_editable_future_graph()
 
         return graph

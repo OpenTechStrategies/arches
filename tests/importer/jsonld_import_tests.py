@@ -269,7 +269,6 @@ class JsonLDImportTests(ArchesTestCase):
         with self.assertRaises(ValueError):
             data = JSONDeserializer().deserialize(data)
             reader = JsonLdReader()
-            # import ipdb; ipdb.sset_trace()
             with captured_stdout():
                 reader.read_resource(data, resourceid=resource_id, graphid=graph_id)
 

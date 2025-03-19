@@ -144,7 +144,10 @@ class GraphSettingsView(GraphBaseView):
             else None
         )
         node.name = graph.name
+
         graph.root.name = node.name
+        graph.has_unpublished_changes = True
+
         if node.ontologyclass:
             graph.root.ontologyclass = node.ontologyclass
 
@@ -475,11 +478,14 @@ class GraphDataView(View):
                 data = JSONDeserializer().deserialize(request.body)
 
                 if self.action == "new_graph":
-                    isresource = data["isresource"] if "isresource" in data else False
+                    is_resource = data["isresource"] if "isresource" in data else False
 
                     ret = Graph.objects.create_graph(
-                        name=_("New Resource Model") if isresource else _("New Branch"),
+                        name=(
+                            _("New Resource Model") if is_resource else _("New Branch")
+                        ),
                         author=request.user.first_name + " " + request.user.last_name,
+                        is_resource=is_resource,
                     )
 
                     ret.publish()
@@ -535,7 +541,7 @@ class GraphDataView(View):
                         graphid=data["graphid"],
                         return_appended_graph=data.get("return_appended_graph", False),
                     )
-                    ret = ret.serialize()
+                    ret = ret.serialize(force_recalculation=True)
                     ret["nodegroups"] = graph.get_nodegroups()
                     ret["cards"] = graph.get_cards()
                     ret["widgets"] = graph.get_widgets()
@@ -708,7 +714,7 @@ class GraphPublicationView(View):
 
         elif self.action == "revert":
             try:
-                source_graph.revert()
+                source_graph.create_editable_future_graph()
                 return JSONResponse(
                     {
                         "title": _("Success!"),

@@ -216,6 +216,11 @@ def import_graph(graphs, overwrite_graphs=True, user=None):
                         graph.publication_id = publication_data["publicationid"]
                         graph.save()
 
+                        graph.has_unpublished_changes = False
+                        graph.__class__.objects.filter(pk=graph.pk).update(
+                            has_unpublished_changes=graph.has_unpublished_changes
+                        )
+
                         for language_tuple in settings.LANGUAGES:
                             language = Language.objects.get(code=language_tuple[0])
 
