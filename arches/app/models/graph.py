@@ -169,12 +169,7 @@ class Graph(models.GraphModel):
                         has_deferred_args = True
 
                 #  accessing the graph publication while deferring args results in a recursive loop
-                if (
-                    self.publication
-                    and not self.source_identifier_id
-                    and not self.has_unpublished_changes
-                    and not has_deferred_args
-                ):
+                if self.should_use_published_graph() and not has_deferred_args:
                     self.serialized_graph = (
                         self.serialize()
                     )  # reads from graph_publication table and returns serialized graph as dict
@@ -1654,12 +1649,7 @@ class Graph(models.GraphModel):
         get the nodegroups associated with this graph
 
         """
-        if (
-            self.serialized_graph
-            and not self.source_identifier_id
-            and not self.has_unpublished_changes
-            and not force_recalculation
-        ):
+        if self.should_use_published_graph() and not force_recalculation:
             nodegroups = self.serialized_graph["nodegroups"]
             for nodegroup in nodegroups:
                 if isinstance(nodegroup["nodegroupid"], str):
@@ -1792,11 +1782,7 @@ class Graph(models.GraphModel):
             ...
         },
         """
-        if (
-            self.serialized_graph
-            and not self.source_identifier_id
-            and not force_recalculation
-        ):
+        if self.should_use_published_graph() and not force_recalculation:
             user_permissions = self.serialized_graph["user_permissions"]
             return {
                 nodegroup_id: [
@@ -1839,11 +1825,7 @@ class Graph(models.GraphModel):
             ...
         },
         """
-        if (
-            self.serialized_graph
-            and not self.source_identifier_id
-            and not force_recalculation
-        ):
+        if self.should_use_published_graph() and not force_recalculation:
             group_permissions = self.serialized_graph["group_permissions"]
             return {
                 nodegroup_id: [
@@ -1929,12 +1911,7 @@ class Graph(models.GraphModel):
         get the card data (if any) associated with this graph
 
         """
-        if (
-            self.serialized_graph
-            and not self.source_identifier_id
-            and not self.has_unpublished_changes
-            and not force_recalculation
-        ):
+        if self.should_use_published_graph() and not force_recalculation:
             return self.serialized_graph["cards"]
 
         cards = []
@@ -1974,11 +1951,7 @@ class Graph(models.GraphModel):
         get the widget data (if any) associated with this graph
 
         """
-        if (
-            self.serialized_graph
-            and not self.source_identifier_id
-            and not force_recalculation
-        ):
+        if self.should_use_published_graph() and not force_recalculation:
             return self.serialized_graph["cards_x_nodes_x_widgets"]
         else:
             widgets = []
@@ -2007,12 +1980,7 @@ class Graph(models.GraphModel):
 
         """
         exclude = [] if exclude is None else exclude
-        if (
-            self.publication
-            and not self.source_identifier_id
-            and not self.has_unpublished_changes
-            and not force_recalculation
-        ):
+        if self.should_use_published_graph() and not force_recalculation:
             published_graph = self.get_published_graph()
 
             if not published_graph:
@@ -2133,7 +2101,6 @@ class Graph(models.GraphModel):
             self.serialized_graph
             and not self.source_identifier_id
             and not self.has_unpublished_changes
-            and not force_recalculation
         )
 
     def _validate_node_name(self, node):
