@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("models", "11570_harden_editable_future_graphs"),
+        ("models", "11857_spatial_view_source_identifier_filter"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
