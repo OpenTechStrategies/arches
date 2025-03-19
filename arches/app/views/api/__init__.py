@@ -2414,3 +2414,36 @@ class UserPreference(APIBase):
                 ]
 
         return JSONResponse(response_data)
+
+    @method_decorator(group_required("Application Administrator", raise_exception=True))
+    def delete(self, request, identifier=None):
+        if identifier:
+            user_preference = None
+            try:
+                user_preference = models.UserPreference.objects.get(pk=identifier)
+            except ObjectDoesNotExist:
+                return JSONErrorResponse(
+                    _("User Preference delete failed"),
+                    _("User Preference does not exist"),
+                    status=404,
+                )
+
+            try:
+                user_preference.delete()
+            except Exception as e:
+                logger.error(e)
+                return JSONErrorResponse(
+                    _("User Preference delete failed"),
+                    _("An error occurred when trying to delete the spatialview"),
+                    status=500,
+                )
+
+        else:
+            return JSONErrorResponse(
+                _("User Preference delete failed"),
+                _(
+                    "DELETE REST request requires a userpreferenceid to be provided in the URL"
+                ),
+                status=400,
+            )
+        return JSONResponse(status=204)
