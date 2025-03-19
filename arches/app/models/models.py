@@ -536,7 +536,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
     def save(self, **kwargs):
         if (
             self.isresource
-            and not self.source_identifier
+            and not self.source_identifier_id
             and not self.resource_instance_lifecycle
         ):
             self.resource_instance_lifecycle_id = (
@@ -544,7 +544,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
             )
             add_to_update_fields(kwargs, "resource_instance_lifecycle_id")
 
-        if not self.source_identifier:
+        if not self.source_identifier_id:
             self.has_unpublished_changes = True
 
         super(GraphModel, self).save(**kwargs)

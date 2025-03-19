@@ -287,7 +287,9 @@ def ensure_single_default_searchview(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=models.CardModel)
+@receiver(post_save, sender=models.Node)
+@receiver(post_save, sender=models.Edge)
 def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
-    models.GraphModel.objects.filter(pk=instance.graph_id).update(
-        has_unpublished_changes=True
-    )
+    models.GraphModel.objects.filter(
+        pk=instance.graph_id, source_identifier_id__isnull=True
+    ).update(has_unpublished_changes=True)

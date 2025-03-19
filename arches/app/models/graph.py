@@ -370,7 +370,7 @@ class Graph(models.GraphModel):
 
         return node
 
-    def add_edge(self, edge, should_update_serialized_graph=False):
+    def add_edge(self, edge):
         """
         Adds an edge to this graph
 
@@ -398,14 +398,9 @@ class Graph(models.GraphModel):
             edge.ontologyproperty = None
         self.edges[edge.pk] = edge
 
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
-
         return edge
 
-    def add_card_contraint(
-        self, constraint, card, should_update_serialized_graph=False
-    ):
+    def add_card_contraint(self, constraint, card):
         constraint_model = models.ConstraintModel()
         constraint_model.constraintid = constraint.get("constraintid", None)
         constraint_model.uniquetoallinstances = constraint.get(
@@ -417,10 +412,7 @@ class Graph(models.GraphModel):
             constraint_x_node = {"constraint": constraint_model, "node": nodeid}
             self._constraints_x_nodes.append(constraint_x_node)
 
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
-
-    def add_card(self, card, should_update_serialized_graph=False):
+    def add_card(self, card):
         """
         Adds a card to this graph
 
@@ -460,12 +452,9 @@ class Graph(models.GraphModel):
 
         self.cards[card.pk] = card
 
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
-
         return card
 
-    def add_function(self, function, should_update_serialized_graph=False):
+    def add_function(self, function):
         """
         Adds a FunctionXGraph record to this graph
 
@@ -481,14 +470,9 @@ class Graph(models.GraphModel):
 
         self._functions.append(function)
 
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
-
         return function
 
-    def add_resource_instance_lifecycle(
-        self, resource_instance_lifecycle, should_update_serialized_graph=False
-    ):
+    def add_resource_instance_lifecycle(self, resource_instance_lifecycle):
         """
         Adds a ResourceInstanceLifecycle to this graph
 
@@ -546,9 +530,6 @@ class Graph(models.GraphModel):
             self.resource_instance_lifecycle.resource_instance_lifecycle_states.set(
                 resource_instance_lifecycle_states, bulk=False
             )
-
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
 
         return self.resource_instance_lifecycle
 
@@ -929,7 +910,7 @@ class Graph(models.GraphModel):
             i += 1
         return temp_node_name
 
-    def append_node(self, nodeid=None, should_update_serialized_graph=False):
+    def append_node(self, nodeid=None):
         """
         Appends a single node onto this graph
 
@@ -993,12 +974,9 @@ class Graph(models.GraphModel):
                     _("Ontology rules don't allow this node to be appended")
                 )
 
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
-
         return {"node": newNode, "edge": newEdge, "card": card, "nodegroup": nodegroup}
 
-    def clear_ontology_references(self, should_update_serialized_graph=False):
+    def clear_ontology_references(self):
         """
         removes any references to ontology classes and properties in a graph
 
@@ -1009,9 +987,6 @@ class Graph(models.GraphModel):
 
         for edge_id, edge in self.edges.items():
             edge.ontologyproperty = None
-
-        if should_update_serialized_graph:
-            self.serialized_graph = self.serialize(force_recalculation=True)
 
         self.ontology = None
 
@@ -2152,6 +2127,14 @@ class Graph(models.GraphModel):
             return JSONSerializer().serializeToPython(
                 ret, use_raw_i18n_json=use_raw_i18n_json
             )
+
+    def should_use_published_graph(self):
+        return bool(
+            self.serialized_graph
+            and not self.source_identifier_id
+            and not self.has_unpublished_changes
+            and not force_recalculation
+        )
 
     def _validate_node_name(self, node):
         """

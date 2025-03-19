@@ -1995,6 +1995,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         source_graph = Graph.objects.create_graph(
             name="TEST RESOURCE", is_resource=True, author="TEST"
         )
+
         editable_future_graph = source_graph.create_editable_future_graph()
 
         nodegroup_count_before = models.NodeGroup.objects.count()
