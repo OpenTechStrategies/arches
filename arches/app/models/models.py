@@ -2177,7 +2177,7 @@ class SpatialView(models.Model):
         validators=[
             RegexValidator(
                 regex=r"^[a-zA-Z_]([a-zA-Z0-9_]+)$",
-                message="Slug must contain only letters, numbers and hyphens, but not begin with a number.",
+                message="Slug must contain only letters, numbers and underscores, but not begin with a number.",
                 code="nomatch",
             )
         ],
@@ -2191,7 +2191,10 @@ class SpatialView(models.Model):
         Node,
         on_delete=models.CASCADE,
         db_column="geometrynodeid",
-        limit_choices_to={"datatype": "geojson-feature-collection"},
+        limit_choices_to={
+            "datatype": "geojson-feature-collection",
+            "source_identifier__isnull": True,
+        },
         null=False,
     )
     ismixedgeometrytypes = models.BooleanField(default=False)
@@ -2218,7 +2221,10 @@ class SpatialView(models.Model):
         """
         Validate the spatial view before saving it to the database as the database triggers have proved hard to test.
         """
+        if not self.geometrynode_id:
+            return
         graph = self.geometrynode.graph
+
         try:
             node_ids = set(node["nodeid"] for node in self.attributenodes)
         except (KeyError, TypeError):
