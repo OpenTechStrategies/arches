@@ -551,7 +551,7 @@ class GraphTests(ArchesTestCase):
         # confirm that nulling out a child group will then make that group a part of the parent group
         node_to_update["nodegroup_id"] = None
         graph.update_node(node_to_update)
-        self.assertEqual(len(graph.get_nodegroups(force_recalculation=True)), 1)
+        self.assertEqual(len(graph.get_nodegroups()), 1)
         self.assertEqual(len(graph.cards), 1)
         for node in list(graph.nodes.values()):
             self.assertEqual(graph.root.nodegroup, node.nodegroup)
@@ -570,7 +570,7 @@ class GraphTests(ArchesTestCase):
         # make a node group with a single node and confirm that that node is now not part of it's parent node group
         child_nodegroup_node["nodegroup_id"] = child_nodegroup_node["nodeid"]
         graph.update_node(child_nodegroup_node)
-        self.assertEqual(len(graph.get_nodegroups(force_recalculation=True)), 2)
+        self.assertEqual(len(graph.get_nodegroups()), 2)
         for node_id, node in list(graph.nodes.items()):
             if node_id == child_nodegroup_node["nodeid"]:
                 self.assertNotEqual(graph.root.nodegroup, node.nodegroup)
@@ -581,7 +581,7 @@ class GraphTests(ArchesTestCase):
         # it's child are now not part of it's parent node group and that both nodes are grouped together
         node_to_update["nodegroup_id"] = node_to_update["nodeid"]
         graph.update_node(node_to_update)
-        self.assertEqual(len(graph.get_nodegroups(force_recalculation=True)), 3)
+        self.assertEqual(len(graph.get_nodegroups()), 3)
         children = graph.get_child_nodes(node_to_update["nodeid"])
         for child in children:
             if child.nodeid == child_nodegroup_node["nodeid"]:
@@ -592,7 +592,7 @@ class GraphTests(ArchesTestCase):
         # remove a node's node group and confirm that that node takes the node group of it's parent
         child_nodegroup_node["nodegroup_id"] = None
         graph.update_node(child_nodegroup_node)
-        self.assertEqual(len(graph.get_nodegroups(force_recalculation=True)), 2)
+        self.assertEqual(len(graph.get_nodegroups()), 2)
         children = graph.get_child_nodes(node_to_update["nodeid"])
         for child in children:
             self.assertEqual(child.nodegroup_id, node_to_update["nodegroup_id"])
