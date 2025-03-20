@@ -517,6 +517,7 @@ class GraphDataView(View):
                         graph.save(nodeid=data["nodeid"])
                     else:
                         graph.save()
+
                     ret = JSONSerializer().serializeToPython(
                         graph, force_recalculation=True
                     )
@@ -527,21 +528,20 @@ class GraphDataView(View):
                     nodeid = uuid.UUID(str(data.get("nodeid")))
                     node = graph.nodes[nodeid]
                     node.config = data["config"]
-                    ret = graph
                     node.save()
 
+                    ret = graph
+
                 elif self.action == "append_branch":
-                    ret = graph.append_branch(
+                    graph.append_branch(
                         data["property"],
                         nodeid=data["nodeid"],
                         graphid=data["graphid"],
-                        return_appended_graph=data.get("return_appended_graph", False),
+                        return_appended_graph=True,
                     )
-                    ret = ret.serialize(force_recalculation=True)
-                    ret["nodegroups"] = graph.get_nodegroups()
-                    ret["cards"] = graph.get_cards()
-                    ret["widgets"] = graph.get_widgets()
                     graph.save()
+
+                    ret = graph
 
                 elif self.action == "append_node":
                     ret = graph.append_node(nodeid=data["nodeid"])
@@ -575,9 +575,8 @@ class GraphDataView(View):
                     ret.publication = None
 
                     ret.save()
-
-                    ret.create_editable_future_graph()
                     ret.publish()
+                    ret.create_editable_future_graph()
 
                     ret.copy_functions(
                         graph, [clone_data["nodes"], clone_data["nodegroups"]]

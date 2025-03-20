@@ -169,7 +169,7 @@ class Graph(models.GraphModel):
                     edge.domainnode = self.nodes[edge.domainnode_id]
                     edge.rangenode = self.nodes[edge.rangenode_id]
 
-                self.populate_null_nodegroups()
+                # self.populate_null_nodegroups()
 
     def refresh_from_database(self):
         """
@@ -285,8 +285,7 @@ class Graph(models.GraphModel):
             if edge.rangenode_id == node.pk:
                 edge.rangenode = node
 
-        if not self.source_identifier:
-            self.has_unpublished_changes = True
+        self.has_unpublished_changes = True
 
         return node
 
@@ -318,6 +317,8 @@ class Graph(models.GraphModel):
             edge.ontologyproperty = None
         self.edges[edge.pk] = edge
 
+        self.has_unpublished_changes = True
+
         return edge
 
     def add_card_contraint(self, constraint, card):
@@ -331,6 +332,8 @@ class Graph(models.GraphModel):
         for nodeid in constraint.get("nodes", []):
             constraint_x_node = {"constraint": constraint_model, "node": nodeid}
             self._constraints_x_nodes.append(constraint_x_node)
+
+        self.has_unpublished_changes = True
 
     def add_card(self, card):
         """
@@ -371,6 +374,7 @@ class Graph(models.GraphModel):
             card.pk = uuid.uuid1()
 
         self.cards[card.pk] = card
+        self.has_unpublished_changes = True
 
         return card
 
@@ -389,6 +393,7 @@ class Graph(models.GraphModel):
         function.graph = self
 
         self._functions.append(function)
+        self.has_unpublished_changes = True
 
         return function
 
@@ -451,22 +456,9 @@ class Graph(models.GraphModel):
                 resource_instance_lifecycle_states, bulk=False
             )
 
-        return self.resource_instance_lifecycle
+        self.has_unpublished_changes = True
 
-    def _compare(self, obj1, obj2, additional_excepted_keys=[]):
-        excluded_keys = ["_state"] + additional_excepted_keys
-        d1, d2 = obj1.__dict__, obj2.__dict__
-        old, new = {}, {}
-        for k, v in list(d1.items()):
-            if k in excluded_keys:
-                continue
-            try:
-                if v != d2[k]:
-                    old.update({k: v})
-                    new.update({k: d2[k]})
-            except KeyError:
-                old.update({k: v})
-        return old, new
+        return self.resource_instance_lifecycle
 
     def update_es_node_mapping(self, node, datatype_factory, se):
         if self.isresource:
@@ -484,7 +476,7 @@ class Graph(models.GraphModel):
                 ):
                     se.create_mapping("resources", body=datatype_mapping)
 
-    def save(self, validate=True, nodeid=None):
+    def save(self, validate=True, nodeid=None, **kwargs):
         """
         Saves a graph and its nodes, edges, and nodegroups back to the db
         creates associated card objects if any of the nodegroups don't already have a card
@@ -497,7 +489,7 @@ class Graph(models.GraphModel):
             self.validate()
 
         with transaction.atomic():
-            super(Graph, self).save()
+            super(Graph, self).save(**kwargs)
             for nodegroup in self.get_nodegroups(force_recalculation=True):
                 nodegroup.save()
 
@@ -655,6 +647,8 @@ class Graph(models.GraphModel):
             for widget in self.widgets.values():
                 widget.delete()
 
+        self.has_unpublished_changes = True
+
         return self
 
     def delete_instances(self, userid=None, verbose=False):
@@ -731,6 +725,7 @@ class Graph(models.GraphModel):
 
         traverse_tree(tree)
 
+        self.has_unpublished_changes = True
         return tree
 
     def append_branch(
@@ -806,8 +801,7 @@ class Graph(models.GraphModel):
             if self.ontology is None:
                 branch_copy.clear_ontology_references()
 
-            if not self.source_identifier:
-                self.has_unpublished_changes = True
+            self.has_unpublished_changes = True
 
             if return_appended_graph:
                 return self
@@ -909,6 +903,7 @@ class Graph(models.GraphModel):
             edge.ontologyproperty = None
 
         self.ontology = None
+        self.has_unpublished_changes = True
 
     def replace_config_ids(self, config, maps=[]):
         """
@@ -1162,6 +1157,7 @@ class Graph(models.GraphModel):
                     edge.domainnode = self.nodes[uuid.UUID(str(newparentnodeid))]
                     ret["edges"].append(edge)
 
+            self.has_unpublished_changes = True
             self.populate_null_nodegroups()
             return ret
 
@@ -1227,6 +1223,8 @@ class Graph(models.GraphModel):
         except ObjectDoesNotExist:
             pass
 
+        self.has_unpublished_changes = True
+
         return {"card": new_card, "node": new_node}
 
     def delete_node(self, node=None):
@@ -1263,7 +1261,9 @@ class Graph(models.GraphModel):
                 [edge.delete() for edge in edges]
                 [node.delete() for node in nodes]
 
+        self.has_unpublished_changes = True
         super().save()
+
         return self
 
     def can_append(self, graphToAppend, nodeToAppendTo):
@@ -2360,14 +2360,19 @@ class Graph(models.GraphModel):
             # editable_future_graphs do not interact with `Resource` objects
             editable_future_graph.resource_instance_lifecycle = None
 
-            # editable_future_graphs are never published
-            editable_future_graph.has_unpublished_changes = False
-
             editable_future_graph.root.set_relatable_resources(
                 [node.pk for node in self.root.get_relatable_resources()]
             )
 
             editable_future_graph.save(validate=False)
+
+            editable_future_graph.has_unpublished_changes = False
+
+            editable_future_graph.__class__.objects.filter(
+                pk=editable_future_graph.pk
+            ).update(
+                has_unpublished_changes=editable_future_graph.has_unpublished_changes
+            )  # Update the field directly in the database, bypassing GraphModel.save()
 
             return editable_future_graph
 
@@ -2646,7 +2651,7 @@ class Graph(models.GraphModel):
         and creates a PublishedGraph entry for every active language
         """
         if self.source_identifier_id:
-            raise RuntimeError(_("Publishing an editable_future_graph is prohibited."))
+            raise RuntimeError("Publishing an editable_future_graph is prohibited.")
 
         self.refresh_from_database()
 

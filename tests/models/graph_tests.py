@@ -1744,6 +1744,7 @@ class EditableFutureGraphTests(ArchesTestCase):
                         "source_identifier",
                         "source_identifier_id",
                         "publication_id",
+                        "has_unpublished_changes",
                     ],
                 ),
                 filter_and_sort(
@@ -1763,6 +1764,7 @@ class EditableFutureGraphTests(ArchesTestCase):
                         "source_identifier",
                         "source_identifier_id",
                         "publication_id",
+                        "has_unpublished_changes",
                     ],
                 ),
             )
@@ -1771,7 +1773,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         source_graph = Graph.objects.create_graph(
             name="TEST RESOURCE", is_resource=True, author="TEST"
         )
-        editable_future_graph = source_graph.create_editable_future_graph()
+        editable_future_graph = Graph.objects.get(source_identifier=source_graph)
 
         editable_future_graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1798,7 +1800,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         source_graph = Graph.objects.create_graph(
             name="TEST RESOURCE", is_resource=True, author="TEST"
         )
-        editable_future_graph = source_graph.create_editable_future_graph()
+        editable_future_graph = Graph.objects.get(source_identifier=source_graph)
 
         editable_future_graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1809,7 +1811,6 @@ class EditableFutureGraphTests(ArchesTestCase):
         updated_source_graph = source_graph.update_from_editable_future_graph(
             editable_future_graph=editable_future_graph
         )
-        editable_future_graph = updated_source_graph.create_editable_future_graph()
 
         for node in list(editable_future_graph.nodes.values()):
             if node.name == "Node Type":
@@ -1827,6 +1828,9 @@ class EditableFutureGraphTests(ArchesTestCase):
         updated_source_graph = updated_source_graph.update_from_editable_future_graph(
             editable_future_graph=editable_future_graph
         )
+        editable_future_graph = Graph.objects.get(
+            source_identifier=updated_source_graph
+        )
 
         serialized_updated_editable_future_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(editable_future_graph)
@@ -1843,7 +1847,7 @@ class EditableFutureGraphTests(ArchesTestCase):
         source_graph = Graph.objects.create_graph(
             name="TEST RESOURCE", is_resource=True, author="TEST"
         )
-        editable_future_graph = source_graph.create_editable_future_graph()
+        editable_future_graph = Graph.objects.get(source_identifier=source_graph)
 
         editable_future_graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1863,6 +1867,8 @@ class EditableFutureGraphTests(ArchesTestCase):
         UserObjectPermission.objects.create(
             user_id=2, content_object=nodegroup, permission_id=94
         )
+        # calling `*.objects.create()` does not set dirty flag
+        updated_source_graph.has_unpublished_changes = True
 
         serialized_editable_future_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(editable_future_graph)
