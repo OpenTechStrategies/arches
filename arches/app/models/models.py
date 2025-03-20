@@ -525,8 +525,8 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
 
     def should_use_published_graph(self):
         return bool(
-            self.publication_id
-            and not self.source_identifier_id
+            self.publication
+            and not self.source_identifier
             and not self.has_unpublished_changes
         )
 
@@ -670,7 +670,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
     def save(self, **kwargs):
         if (
             self.isresource
-            and not self.source_identifier_id
+            and not self.source_identifier
             and not self.resource_instance_lifecycle
         ):
             self.resource_instance_lifecycle_id = (
