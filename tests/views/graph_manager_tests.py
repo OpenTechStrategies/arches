@@ -27,6 +27,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from urllib.parse import urlencode
 from arches.app.models.graph import Graph
+from arches.app.models import models
 from arches.app.models.models import Node, NodeGroup, GraphModel, CardModel, Edge
 from arches.app.utils.betterJSONSerializer import JSONSerializer, JSONDeserializer
 
@@ -40,157 +41,143 @@ class GraphManagerViewTests(ArchesTestCase):
         super().setUpTestData()
         cls.NODE_NODETYPE_GRAPHID = "22000000-0000-0000-0000-000000000001"
 
-        if not Graph.objects.filter(graphid=cls.NODE_NODETYPE_GRAPHID).exists():
-            # Node Branch
-            graph_dict = {
-                "author": "Arches",
-                "color": None,
-                "deploymentdate": None,
-                "deploymentfile": None,
-                "description": "Represents a single node in a graph",
-                "graphid": "22000000-0000-0000-0000-000000000000",
-                "iconclass": "fa fa-circle",
-                "isresource": False,
-                "name": "Node",
-                "ontology_id": "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd",
-                "subtitle": "Represents a single node in a graph.",
-                "version": "v1",
-            }
-            GraphModel.objects.create(**graph_dict).save()
+        cls.create_node_node_type_graph()
+        cls.create_test_graph()
 
-            node_dict = {
+        cls.appended_branch_1 = cls.test_graph.append_branch(
+            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
+            graphid=cls.NODE_NODETYPE_GRAPHID,
+        )
+        cls.appended_branch_2 = cls.test_graph.append_branch(
+            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
+            graphid=cls.NODE_NODETYPE_GRAPHID,
+        )
+
+        cls.test_graph.save()
+        cls.test_graph.publish()
+        cls.test_graph.create_editable_future_graph()
+
+        cls.ROOT_ID = cls.test_graph.root.nodeid
+        cls.GRAPH_ID = str(cls.test_graph.pk)
+        cls.NODE_COUNT = 5
+
+    @classmethod
+    def create_node_node_type_graph(cls):
+        graph_data = {
+            "author": "Arches",
+            "color": None,
+            "deploymentdate": None,
+            "deploymentfile": None,
+            "description": "Represents a node and node type pairing",
+            "graphid": cls.NODE_NODETYPE_GRAPHID,
+            "iconclass": "fa fa-angle-double-down",
+            "isresource": False,
+            "name": "Node/Node Type",
+            "ontology_id": "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd",
+            "subtitle": "Represents a node and node type pairing",
+            "version": "v1",
+        }
+        graph_model = models.GraphModel.objects.create(**graph_data)
+
+        nodegroup_data = {
+            "cardinality": "n",
+            "legacygroupid": "",
+            "nodegroupid": "20000000-0000-0000-0000-100000000001",
+            "parentnodegroup_id": None,
+        }
+        models.NodeGroup.objects.create(**nodegroup_data).save()
+
+        card_data = {
+            "active": True,
+            "cardid": "bf9ea150-3eaa-11e8-8b2b-c3a348661f61",
+            "description": "Represents a node and node type pairing",
+            "graph_id": cls.NODE_NODETYPE_GRAPHID,
+            "helpenabled": False,
+            "helptext": None,
+            "helptitle": None,
+            "instructions": "",
+            "name": "Node/Node Type",
+            "nodegroup_id": "20000000-0000-0000-0000-100000000001",
+            "sortorder": None,
+            "visible": True,
+        }
+
+        models.CardModel.objects.create(**card_data).save()
+        nodes_data = [
+            {
                 "config": None,
-                "datatype": "semantic",
-                "description": "Represents a single node in a graph",
-                "graph_id": "22000000-0000-0000-0000-000000000000",
+                "datatype": "string",
+                "description": "",
+                "graph_id": cls.NODE_NODETYPE_GRAPHID,
                 "isrequired": False,
                 "issearchable": True,
                 "istopnode": True,
                 "name": "Node",
-                "nodegroup_id": None,
-                "nodeid": "20000000-0000-0000-0000-100000000000",
-                "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
-            }
-            Node.objects.create(**node_dict).save()
-
-            # Node/Node Type Branch
-            graph_dict = {
-                "author": "Arches",
-                "color": None,
-                "deploymentdate": None,
-                "deploymentfile": None,
-                "description": "Represents a node and node type pairing",
-                "graphid": "22000000-0000-0000-0000-000000000001",
-                "iconclass": "fa fa-angle-double-down",
-                "isresource": False,
-                "name": "Node/Node Type",
-                "ontology_id": "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd",
-                "subtitle": "Represents a node and node type pairing",
-                "version": "v1",
-            }
-            GraphModel.objects.create(**graph_dict).save()
-
-            nodegroup_dict = {
-                "cardinality": "n",
-                "legacygroupid": "",
-                "nodegroupid": "20000000-0000-0000-0000-100000000001",
-                "parentnodegroup_id": None,
-            }
-            NodeGroup.objects.create(**nodegroup_dict).save()
-
-            card_dict = {
-                "active": True,
-                "cardid": "bf9ea150-3eaa-11e8-8b2b-c3a348661f61",
-                "description": "Represents a node and node type pairing",
-                "graph_id": "22000000-0000-0000-0000-000000000001",
-                "helpenabled": False,
-                "helptext": None,
-                "helptitle": None,
-                "instructions": "",
-                "name": "Node/Node Type",
                 "nodegroup_id": "20000000-0000-0000-0000-100000000001",
-                "sortorder": None,
-                "visible": True,
-            }
-            CardModel.objects.create(**card_dict).save()
+                "nodeid": "20000000-0000-0000-0000-100000000001",
+                "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
+            },
+            {
+                "config": {"rdmCollection": None},
+                "datatype": "concept",
+                "description": "",
+                "graph_id": cls.NODE_NODETYPE_GRAPHID,
+                "isrequired": False,
+                "issearchable": True,
+                "istopnode": False,
+                "name": "Node Type",
+                "nodegroup_id": "20000000-0000-0000-0000-100000000001",
+                "nodeid": "20000000-0000-0000-0000-100000000002",
+                "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E55_Type",
+            },
+        ]
 
-            nodes = [
-                {
-                    "config": None,
-                    "datatype": "string",
-                    "description": "",
-                    "graph_id": "22000000-0000-0000-0000-000000000001",
-                    "isrequired": False,
-                    "issearchable": True,
-                    "istopnode": True,
-                    "name": "Node",
-                    "nodegroup_id": "20000000-0000-0000-0000-100000000001",
-                    "nodeid": "20000000-0000-0000-0000-100000000001",
-                    "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity",
-                },
-                {
-                    "config": {"rdmCollection": None},
-                    "datatype": "concept",
-                    "description": "",
-                    "graph_id": "22000000-0000-0000-0000-000000000001",
-                    "isrequired": False,
-                    "issearchable": True,
-                    "istopnode": False,
-                    "name": "Node Type",
-                    "nodegroup_id": "20000000-0000-0000-0000-100000000001",
-                    "nodeid": "20000000-0000-0000-0000-100000000002",
-                    "ontologyclass": "http://www.cidoc-crm.org/cidoc-crm/E55_Type",
-                },
-            ]
+        for node in nodes_data:
+            models.Node.objects.create(**node).save()
 
-            for node in nodes:
-                Node.objects.create(**node).save()
+        models.NodeGroup.objects.filter(
+            pk="20000000-0000-0000-0000-100000000001"
+        ).update(grouping_node_id="20000000-0000-0000-0000-100000000001")
 
-            edges_dict = {
-                "description": None,
-                "domainnode_id": "20000000-0000-0000-0000-100000000001",
-                "edgeid": "22200000-0000-0000-0000-000000000001",
-                "graph_id": "22000000-0000-0000-0000-000000000001",
-                "name": None,
-                "ontologyproperty": "http://www.cidoc-crm.org/cidoc-crm/P2_has_type",
-                "rangenode_id": "20000000-0000-0000-0000-100000000002",
-            }
-            Edge.objects.create(**edges_dict).save()
+        edge_data = {
+            "description": None,
+            "domainnode_id": "20000000-0000-0000-0000-100000000001",
+            "edgeid": "22200000-0000-0000-0000-000000000001",
+            "graph_id": cls.NODE_NODETYPE_GRAPHID,
+            "name": None,
+            "ontologyproperty": "http://www.cidoc-crm.org/cidoc-crm/P2_has_type",
+            "rangenode_id": "20000000-0000-0000-0000-100000000002",
+        }
+        models.Edge.objects.create(**edge_data).save()
 
-        graph = Graph.objects.create_graph(is_resource=True)
-        graph.ontology_id = "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd"
-        graph.root.ontologyclass = "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity"
-        graph.name = "TEST GRAPH"
-        graph.subtitle = "ARCHES TEST GRAPH"
-        graph.author = "Arches"
-        graph.description = "ARCHES TEST GRAPH"
-        graph.ontology_id = "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd"
-        graph.version = "v1.0.0"
-        graph.iconclass = "fa fa-building"
-        graph.nodegroups = []
-        graph.root.ontologyclass = "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity"
-        graph.root.name = "ROOT NODE"
-        graph.root.description = "Test Root Node"
-        graph.root.datatype = "semantic"
-        graph.root.save()
-        graph = Graph.objects.get(graphid=graph.pk)
-        cls.appended_branch_1 = graph.append_branch(
-            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
-            graphid=cls.NODE_NODETYPE_GRAPHID,
-        )
-        cls.appended_branch_2 = graph.append_branch(
-            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
-            graphid=cls.NODE_NODETYPE_GRAPHID,
-        )
+        graph = Graph.objects.get(pk=graph_model.pk)
         graph.save()
         graph.publish()
-        graph.create_editable_future_graph()
 
-        cls.ROOT_ID = graph.root.nodeid
-        cls.GRAPH_ID = str(graph.pk)
-        cls.NODE_COUNT = 5
+    @classmethod
+    def create_test_graph(cls):
+        test_graph = Graph.objects.create_graph()
+        test_graph.name = "TEST GRAPH"
+        test_graph.subtitle = "ARCHES TEST GRAPH"
+        test_graph.author = "Arches"
+        test_graph.description = "ARCHES TEST GRAPH"
+        test_graph.ontology_id = "e6e8db47-2ccf-11e6-927e-b8f6b115d7dd"
+        test_graph.version = "v1.0.0"
+        test_graph.iconclass = "fa fa-building"
+        test_graph.nodegroups = []
+        test_graph.root.ontologyclass = (
+            "http://www.cidoc-crm.org/cidoc-crm/E1_CRM_Entity"
+        )
+        test_graph.root.name = "ROOT NODE"
+        test_graph.root.description = "Test Root Node"
+        test_graph.root.datatype = "semantic"
+        test_graph.root.save()
 
-        cls.graph = graph
+        test_graph.save()
+        test_graph.publish()
+
+        cls.test_graph = test_graph
+        cls.rootNode = test_graph.root
 
     def test_graph_manager(self):
         """
@@ -350,7 +337,9 @@ class GraphManagerViewTests(ArchesTestCase):
 
         cloned_graph = Graph.objects.get(pk=response_json["graphid"])
 
-        original_graph_node_ids = [str(node.pk) for node in self.graph.nodes.values()]
+        original_graph_node_ids = [
+            str(node.pk) for node in self.test_graph.nodes.values()
+        ]
         cloned_graph_node_ids = [str(node.pk) for node in cloned_graph.nodes.values()]
 
         self.assertFalse(set(original_graph_node_ids) & set(cloned_graph_node_ids))
@@ -364,7 +353,7 @@ class GraphManagerViewTests(ArchesTestCase):
 
         user_id = self.client.session["_auth_user_id"]
         logged_in_user = get_user_model().objects.get(pk=user_id)
-        self.graph.publish(user=logged_in_user)
+        self.test_graph.publish(user=logged_in_user)
 
         url = reverse("clone_graph", kwargs={"graphid": self.GRAPH_ID})
         post_data = {}
@@ -376,7 +365,9 @@ class GraphManagerViewTests(ArchesTestCase):
 
         cloned_graph = Graph.objects.get(pk=response_json["graphid"])
 
-        original_graph_node_ids = [str(node.pk) for node in self.graph.nodes.values()]
+        original_graph_node_ids = [
+            str(node.pk) for node in self.test_graph.nodes.values()
+        ]
         cloned_graph_node_ids = [str(node.pk) for node in cloned_graph.nodes.values()]
 
         self.assertFalse(set(original_graph_node_ids) & set(cloned_graph_node_ids))
@@ -412,7 +403,7 @@ class GraphManagerViewTests(ArchesTestCase):
     def test_branch_export_on_unpublished_graph(self):
         self.client.login(username="admin", password="admin")
         url = reverse("export_branch", kwargs={"graphid": self.GRAPH_ID})
-        node = [value for value in self.graph.nodes.values()][1]
+        node = [value for value in self.test_graph.nodes.values()][1]
         post_data = JSONSerializer().serialize(node)
         content_type = "application/x-www-form-urlencoded"
 
@@ -420,7 +411,9 @@ class GraphManagerViewTests(ArchesTestCase):
 
         exported_branch = Graph.objects.get(pk=response.json()["graphid"])
 
-        original_graph_node_ids = [str(node.pk) for node in self.graph.nodes.values()]
+        original_graph_node_ids = [
+            str(node.pk) for node in self.test_graph.nodes.values()
+        ]
         export_branch_node_ids = [
             str(node.pk) for node in exported_branch.nodes.values()
         ]
@@ -432,10 +425,10 @@ class GraphManagerViewTests(ArchesTestCase):
 
         user_id = self.client.session["_auth_user_id"]
         logged_in_user = get_user_model().objects.get(pk=user_id)
-        self.graph.publish(user=logged_in_user)
+        self.test_graph.publish(user=logged_in_user)
 
         url = reverse("export_branch", kwargs={"graphid": self.GRAPH_ID})
-        node = [value for value in self.graph.nodes.values()][1]
+        node = [value for value in self.test_graph.nodes.values()][1]
         post_data = JSONSerializer().serialize(node)
         content_type = "application/x-www-form-urlencoded"
 
@@ -443,7 +436,9 @@ class GraphManagerViewTests(ArchesTestCase):
 
         exported_branch = Graph.objects.get(pk=response.json()["graphid"])
 
-        original_graph_node_ids = [str(node.pk) for node in self.graph.nodes.values()]
+        original_graph_node_ids = [
+            str(node.pk) for node in self.test_graph.nodes.values()
+        ]
         export_branch_node_ids = [
             str(node.pk) for node in exported_branch.nodes.values()
         ]

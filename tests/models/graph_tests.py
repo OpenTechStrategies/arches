@@ -446,10 +446,9 @@ class GraphTests(ArchesTestCase):
         self.assertEqual(len(graph.cards), 1)
         self.assertEqual(len(graph.get_nodegroups()), 1)
 
-        graph = graph.append_branch(
+        graph.append_branch(
             "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
             graphid=self.NODE_NODETYPE_GRAPHID,
-            return_appended_graph=True,
         )
         graph.save()
 
@@ -2461,8 +2460,6 @@ class EditableFutureGraphTests(ArchesTestCase):
         )
 
         self.assertEqual(serialized_updated_source_graph["slug"], "test-resource")
-
-        # import pdb; pdb.set_trace()
 
         self._compare_serialized_updated_source_graph_and_serialized_editable_future_graph(
             serialized_updated_source_graph, serialized_editable_future_graph

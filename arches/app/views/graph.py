@@ -260,7 +260,7 @@ class GraphDesignerView(GraphBaseView):
             self.graph = self.editable_future_graph
 
         serialized_graph = JSONDeserializer().deserialize(
-            JSONSerializer().serialize(self.graph, force_recalculation=True)
+            JSONSerializer().serialize(self.graph)
         )
         primary_descriptor_functions = models.FunctionXGraph.objects.filter(
             graph=self.graph

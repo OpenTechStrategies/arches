@@ -791,26 +791,26 @@ define([
             viewModel.graphModel.on('select-node', function(node) {
                 viewModel.graphTree.expandParentNode(node);
             });
-            function updateGraphUnpublishedChanges() {
-                $.ajax({
-                    type: 'POST',
-                    url: arches.urls.graph_has_unpublished_changes_api(data.graph.graphid),
-                    data: {'has_unpublished_changes': true},
-                    success: function(response) {
-                        viewModel.graphHasUnpublishedChanges(response['has_unpublished_changes']);
-                    }
-                });
-            }
+            // function updateGraphUnpublishedChanges() {
+            //     $.ajax({
+            //         type: 'POST',
+            //         url: arches.urls.graph_has_unpublished_changes_api(data.graph.graphid),
+            //         data: {'has_unpublished_changes': true},
+            //         success: function(response) {
+            //             viewModel.graphHasUnpublishedChanges(response['has_unpublished_changes']);
+            //         }
+            //     });
+            // }
 
-            document.addEventListener('appendBranch', updateGraphUnpublishedChanges);
-            document.addEventListener('addChildNode', updateGraphUnpublishedChanges);
-            document.addEventListener('deleteNode', updateGraphUnpublishedChanges);
-            document.addEventListener('reorderNodes', updateGraphUnpublishedChanges);
-            document.addEventListener('reorderCards', updateGraphUnpublishedChanges);
-            document.addEventListener('cardSave', updateGraphUnpublishedChanges);
-            document.addEventListener('nodeSave', updateGraphUnpublishedChanges);
-            document.addEventListener('permissionsSave', updateGraphUnpublishedChanges);
-            document.addEventListener('graphSettingsSave', updateGraphUnpublishedChanges);
+            // document.addEventListener('appendBranch', updateGraphUnpublishedChanges);
+            // document.addEventListener('addChildNode', updateGraphUnpublishedChanges);
+            // document.addEventListener('deleteNode', updateGraphUnpublishedChanges);
+            // document.addEventListener('reorderNodes', updateGraphUnpublishedChanges);
+            // document.addEventListener('reorderCards', updateGraphUnpublishedChanges);
+            // document.addEventListener('cardSave', updateGraphUnpublishedChanges);
+            // document.addEventListener('nodeSave', updateGraphUnpublishedChanges);
+            // document.addEventListener('permissionsSave', updateGraphUnpublishedChanges);
+            // document.addEventListener('graphSettingsSave', updateGraphUnpublishedChanges);
             
             BaseManagerView.prototype.initialize.apply(this, arguments);
         }

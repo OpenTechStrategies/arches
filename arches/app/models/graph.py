@@ -81,8 +81,6 @@ class Graph(models.GraphModel):
         self._card_constraints = []
         self._constraints_x_nodes = []
         self.temp_node_name = _("New Node")
-        self.serialized_graph = None
-        has_unpublished_changes = self.has_unpublished_changes
 
         if args:
             if isinstance(args[0], dict):
@@ -155,101 +153,23 @@ class Graph(models.GraphModel):
                         args[0]["resource_instance_lifecycle"]
                     )
             else:
-                if len(args) == 1 and (
-                    isinstance(args[0], str) or isinstance(args[0], uuid.UUID)
-                ):
-                    graph_model = models.GraphModel.objects.get(pk=args[0])
-
-                    for key, value in graph_model.__dict__.items():
-                        setattr(self, key, value)
-
-                has_deferred_args = False
-                for arg in args:
-                    if type(arg) == Deferred:
-                        has_deferred_args = True
-
-                #  accessing the graph publication while deferring args results in a recursive loop
-                if self.should_use_published_graph() and not has_deferred_args:
-                    self.serialized_graph = (
-                        self.serialize()
-                    )  # reads from graph_publication table and returns serialized graph as dict
-
-                    node_slugs = []
-                    for node_dict in self.serialized_graph["nodes"]:
-                        node_slug = {}
-
-                        for key, value in node_dict.items():
-                            # filter out keys from the serialized_graph that would cause an error on instantiation
-                            if key not in ["is_collector", "parentproperty"]:
-                                if isinstance(value, str):
-                                    try:
-                                        value = uuid.UUID(value)
-                                    except ValueError:
-                                        pass
-                                node_slug[key] = value
-
-                        node_slugs.append(node_slug)
-
-                    card_slugs = []
-                    for card_dict in self.serialized_graph["cards"]:
-                        card_slug = {}
-
-                        for key, value in card_dict.items():
-                            # filter out keys from the serialized_graph that would cause an error on instantiation
-                            if key not in ["constraints", "is_editable"]:
-                                if isinstance(value, str):
-                                    try:
-                                        value = uuid.UUID(value)
-                                    except ValueError:
-                                        pass
-                                card_slug[key] = value
-
-                        card_slugs.append(card_slug)
-
-                    edge_slugs = []
-                    for edge_dict in self.serialized_graph["edges"]:
-                        edge_slug = {}
-
-                        for key, value in edge_dict.items():
-                            if isinstance(value, str):
-                                try:
-                                    value = uuid.UUID(value)
-                                except ValueError:
-                                    pass
-                            edge_slug[key] = value
-
-                        edge_slugs.append(edge_slug)
-
-                    nodes = [models.Node(**node_slug) for node_slug in node_slugs]
-                    edges = [models.Edge(**edge_dict) for edge_dict in edge_slugs]
-                    cards = [models.CardModel(**card_slug) for card_slug in card_slugs]
-                else:
-                    nodes = self.node_set.all()
-                    edges = self.edge_set.all()
-                    cards = self.cardmodel_set.all()
-
-                edge_lookup = {
-                    edge["edgeid"]: edge
-                    for edge in json.loads(JSONSerializer().serialize(edges))
+                self.cards = {card.pk: card for card in super().get_cards()}
+                self.nodes = {node.pk: node for node in super().get_nodes()}
+                self.edges = {edge.pk: edge for edge in super().get_edges()}
+                self.widgets = {
+                    card_x_node_x_widget.pk: card_x_node_x_widget
+                    for card_x_node_x_widget in super().get_cards_x_nodes_x_widgets()
                 }
-                for card in cards:
-                    widgets = list(card.cardxnodexwidget_set.all())
-                    for widget in widgets:
-                        self.widgets[widget.pk] = widget
-                node_lookup = {}
-                for node in nodes:
-                    self.add_node(node)
-                    node_lookup[str(node.nodeid)] = node
-                for edge in edges:
-                    edge_dict = edge_lookup[str(edge.edgeid)]
-                    edge.domainnode = node_lookup[edge_dict["domainnode_id"]]
-                    edge.rangenode = node_lookup[edge_dict["rangenode_id"]]
-                    self.add_edge(edge)
-                for card in cards:
-                    self.add_card(card)
+
+                for node in self.nodes.values():
+                    if node.istopnode:
+                        self.root = node
+
+                for edge in self.edges.values():
+                    edge.domainnode = self.nodes[edge.domainnode_id]
+                    edge.rangenode = self.nodes[edge.rangenode_id]
 
                 self.populate_null_nodegroups()
-                self.has_unpublished_changes = has_unpublished_changes
 
     def refresh_from_database(self):
         """
@@ -290,7 +210,6 @@ class Graph(models.GraphModel):
         for card in cards:
             self.add_card(card)
 
-        self.serialized_graph = self.serialize(force_recalculation=True)
         self.populate_null_nodegroups()
 
     def add_node(self, node, nodegroups=None):
@@ -359,6 +278,12 @@ class Graph(models.GraphModel):
         if node.istopnode:
             self.root = node
         self.nodes[node.pk] = node
+
+        for edge in self.edges.values():
+            if edge.domainnode_id == node.pk:
+                edge.domainnode = node
+            if edge.rangenode_id == node.pk:
+                edge.rangenode = node
 
         if not self.source_identifier:
             self.has_unpublished_changes = True
@@ -832,7 +757,7 @@ class Graph(models.GraphModel):
 
         """
 
-        branch_graph = Graph(graphid)
+        branch_graph = self.__class__.objects.get(pk=graphid)
         nodeToAppendTo = self.nodes[uuid.UUID(str(nodeid))] if nodeid else self.root
 
         if skip_validation or self.can_append(branch_graph, nodeToAppendTo):
@@ -1018,7 +943,6 @@ class Graph(models.GraphModel):
         copy_of_self = deepcopy(self)
 
         copy_of_self.publication = None
-        copy_of_self.serialized_graph = None
 
         if root is not None:
             root["nodegroup_id"] = root["nodeid"]
@@ -1200,7 +1124,7 @@ class Graph(models.GraphModel):
         nodegroup = None
         node = self.nodes[uuid.UUID(str(nodeid))]
 
-        graph_dict = self.serialized_graph or self.serialize()
+        graph_dict = self.serialize()
         graph_dict["nodes"] = []
         graph_dict["edges"] = []
         graph_dict["cards"] = []
@@ -1650,11 +1574,7 @@ class Graph(models.GraphModel):
 
         """
         if self.should_use_published_graph() and not force_recalculation:
-            nodegroups = self.serialized_graph["nodegroups"]
-            for nodegroup in nodegroups:
-                if isinstance(nodegroup["nodegroupid"], str):
-                    nodegroup["nodegroupid"] = uuid.UUID(nodegroup["nodegroupid"])
-            return [models.NodeGroup(**nodegroup_dict) for nodegroup_dict in nodegroups]
+            return super().get_nodegroups()
         else:
             nodegroups = set()
             for node in self.nodes.values():
@@ -1783,7 +1703,9 @@ class Graph(models.GraphModel):
         },
         """
         if self.should_use_published_graph() and not force_recalculation:
-            user_permissions = self.serialized_graph["user_permissions"]
+            published_graph = self.get_published_graph()
+            user_permissions = published_graph.serialized_graph["user_permissions"]
+
             return {
                 nodegroup_id: [
                     UserObjectPermission(**serialized_user_permission)
@@ -1826,7 +1748,9 @@ class Graph(models.GraphModel):
         },
         """
         if self.should_use_published_graph() and not force_recalculation:
-            group_permissions = self.serialized_graph["group_permissions"]
+            published_graph = self.get_published_graph()
+            group_permissions = published_graph.serialized_graph["group_permissions"]
+
             return {
                 nodegroup_id: [
                     GroupObjectPermission(**serialized_group_permission)
@@ -1912,7 +1836,7 @@ class Graph(models.GraphModel):
 
         """
         if self.should_use_published_graph() and not force_recalculation:
-            return self.serialized_graph["cards"]
+            return super().get_cards()
 
         cards = []
         for card in self.cards.values():
@@ -1952,7 +1876,7 @@ class Graph(models.GraphModel):
 
         """
         if self.should_use_published_graph() and not force_recalculation:
-            return self.serialized_graph["cards_x_nodes_x_widgets"]
+            return super().get_cards_x_nodes_x_widgets()
         else:
             widgets = []
             if self.widgets:
@@ -1982,10 +1906,6 @@ class Graph(models.GraphModel):
         exclude = [] if exclude is None else exclude
         if self.should_use_published_graph() and not force_recalculation:
             published_graph = self.get_published_graph()
-
-            if not published_graph:
-                return self.serialize(force_recalculation=True)
-
             serialized_graph = published_graph.serialized_graph
 
             for key in exclude:
@@ -2013,7 +1933,10 @@ class Graph(models.GraphModel):
                 ret.pop("relatable_resource_model_ids", None)
 
             if "cards" not in exclude:
-                cards = self.get_cards(use_raw_i18n_json=use_raw_i18n_json)
+                cards = self.get_cards(
+                    use_raw_i18n_json=use_raw_i18n_json,
+                    force_recalculation=force_recalculation,
+                )
                 ret["cards"] = sorted(
                     cards, key=lambda k: (k["sortorder"] or 0, k["cardid"] or 0)
                 )
@@ -2095,13 +2018,6 @@ class Graph(models.GraphModel):
             return JSONSerializer().serializeToPython(
                 ret, use_raw_i18n_json=use_raw_i18n_json
             )
-
-    def should_use_published_graph(self):
-        return bool(
-            self.serialized_graph
-            and not self.source_identifier_id
-            and not self.has_unpublished_changes
-        )
 
     def _validate_node_name(self, node):
         """
@@ -2440,12 +2356,12 @@ class Graph(models.GraphModel):
 
             editable_future_graph = graph_copy["copy"]
             editable_future_graph.source_identifier_id = self.graphid
-            editable_future_graph.resource_instance_lifecycle = (
-                None  # editable_future_graphs do not interact with `Resource` objects
-            )
-            editable_future_graph.has_unpublished_changes = (
-                False  # editable_future_graphs are never published
-            )
+
+            # editable_future_graphs do not interact with `Resource` objects
+            editable_future_graph.resource_instance_lifecycle = None
+
+            # editable_future_graphs are never published
+            editable_future_graph.has_unpublished_changes = False
 
             editable_future_graph.root.set_relatable_resources(
                 [node.pk for node in self.root.get_relatable_resources()]
