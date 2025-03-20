@@ -333,10 +333,9 @@ class GraphTests(ArchesTestCase):
         """
 
         graph = Graph.objects.create_graph(name="TEST RESOURCE")
-        graph = graph.append_branch(
+        graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
-            return_appended_graph=True,
         )
         graph.save()
         graph.publish()
@@ -557,11 +556,10 @@ class GraphTests(ArchesTestCase):
         for node in list(graph.nodes.values()):
             self.assertEqual(graph.root.nodegroup, node.nodegroup)
 
-        graph = graph.append_branch(
+        graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             nodeid=node_type_node["nodeid"],
             graphid=self.SINGLE_NODE_GRAPHID,
-            return_appended_graph=True,
         )
         for edge in list(graph.edges.values()):
             if str(edge.domainnode_id) == str(node_type_node["nodeid"]):
@@ -997,10 +995,9 @@ class GraphTests(ArchesTestCase):
         initial_card_count = models.CardModel.objects.count()
         initial_widget_count = models.CardXNodeXWidget.objects.count()
 
-        graph = graph.append_branch(
+        graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.NODE_NODETYPE_GRAPHID,
-            return_appended_graph=True,
         )
         graph.save()
         graph.publish()
@@ -1106,7 +1103,7 @@ class GraphTests(ArchesTestCase):
         graph = Graph.objects.create_graph(
             name="TEST", is_resource=False, author="TEST"
         )
-        graph = graph.append_branch(
+        graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
             graphid=self.SINGLE_NODE_GRAPHID,
             return_appended_graph=True,
