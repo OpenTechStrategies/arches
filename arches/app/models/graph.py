@@ -154,20 +154,24 @@ class Graph(models.GraphModel):
                     )
             else:
                 self.cards = {card.pk: card for card in super().get_cards()}
-                self.nodes = {node.pk: node for node in super().get_nodes()}
-                self.edges = {edge.pk: edge for edge in super().get_edges()}
-                self.widgets = {
-                    card_x_node_x_widget.pk: card_x_node_x_widget
-                    for card_x_node_x_widget in super().get_card_x_node_x_widgets()
-                }
 
+                self.nodes = {node.pk: node for node in super().get_nodes()}
                 for node in self.nodes.values():
                     if node.istopnode:
                         self.root = node
 
+                self.edges = {edge.pk: edge for edge in super().get_edges()}
+                # This resolves a tricky pointer issue with `append_branch`
+                # and possibly other functions as well. This block should
+                # be deleted when possible.
                 for edge in self.edges.values():
                     edge.domainnode = self.nodes[edge.domainnode_id]
                     edge.rangenode = self.nodes[edge.rangenode_id]
+
+                self.widgets = {
+                    card_x_node_x_widget.pk: card_x_node_x_widget
+                    for card_x_node_x_widget in super().get_card_x_node_x_widgets()
+                }
 
     def refresh_from_database(self):
         """
