@@ -636,7 +636,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
         else:
             return self.edge_set.all()
 
-    def get_cards_x_nodes_x_widgets(self, force_recalculation=False):
+    def get_card_x_node_x_widgets(self, force_recalculation=False):
         if self.should_use_published_graph() and not force_recalculation:
             published_graph = self.get_published_graph()
 

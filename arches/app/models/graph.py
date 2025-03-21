@@ -158,7 +158,7 @@ class Graph(models.GraphModel):
                 self.edges = {edge.pk: edge for edge in super().get_edges()}
                 self.widgets = {
                     card_x_node_x_widget.pk: card_x_node_x_widget
-                    for card_x_node_x_widget in super().get_cards_x_nodes_x_widgets()
+                    for card_x_node_x_widget in super().get_card_x_node_x_widgets()
                 }
 
                 for node in self.nodes.values():
@@ -1882,7 +1882,7 @@ class Graph(models.GraphModel):
 
         """
         if self.should_use_published_graph() and not force_recalculation:
-            return super().get_cards_x_nodes_x_widgets()
+            return super().get_card_x_node_x_widgets()
         else:
             widgets = []
             if self.widgets:
