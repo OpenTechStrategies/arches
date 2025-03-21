@@ -169,8 +169,6 @@ class Graph(models.GraphModel):
                     edge.domainnode = self.nodes[edge.domainnode_id]
                     edge.rangenode = self.nodes[edge.rangenode_id]
 
-                # self.populate_null_nodegroups()
-
     def refresh_from_database(self):
         """
         Updates card, edge, and node data from the database, bypassing the
