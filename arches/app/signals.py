@@ -294,10 +294,12 @@ def ensure_single_default_searchview(sender, instance, **kwargs):
 @receiver(post_delete, sender=models.Node)
 @receiver(post_save, sender=models.Edge)
 @receiver(post_delete, sender=models.Edge)
+@receiver(post_save, sender=models.FunctionXGraph)
+@receiver(post_delete, sender=models.FunctionXGraph)
 def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
-    models.GraphModel.objects.filter(
-        pk=instance.graph_id, source_identifier_id__isnull=True
-    ).update(has_unpublished_changes=True)
+    models.GraphModel.objects.filter(pk=instance.graph_id).update(
+        has_unpublished_changes=True
+    )
 
 
 @receiver(post_save, sender=models.NodeGroup)
@@ -307,10 +309,9 @@ def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs
     # so this signal can fail to find the node when deleting a Graphs
     try:
         node = models.Node.objects.filter(pk=sender.pk).first()
-
-        models.GraphModel.objects.filter(
-            pk=node.graph_id, source_identifier_id__isnull=True
-        ).update(has_unpublished_changes=True)
+        models.GraphModel.objects.filter(pk=node.graph_id).update(
+            has_unpublished_changes=True
+        )
     except:
         pass
 
@@ -321,18 +322,9 @@ def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs
     # CardXNodeXWidgets have no direct relation to the GraphModel objects,
     # so this signal can fail to find the node when deleting a Graphs
     try:
-        node = models.Node.objects.filter(pk=sender.pk).first()
-
-        models.GraphModel.objects.filter(
-            pk=node.graph_id, source_identifier_id__isnull=True
-        ).update(has_unpublished_changes=True)
+        node = models.Node.objects.filter(pk=sender.nodeid).first()
+        models.GraphModel.objects.filter(pk=node.graph_id).update(
+            has_unpublished_changes=True
+        )
     except:
         pass
-
-
-@receiver(post_save, sender=models.FunctionXGraph)
-@receiver(post_delete, sender=models.FunctionXGraph)
-def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
-    models.GraphModel.objects.filter(
-        pk=instance.graph_id, source_identifier_id__isnull=True
-    ).update(has_unpublished_changes=True)
