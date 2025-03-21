@@ -54,8 +54,8 @@ define([
             if (url.searchParams.has('has_been_redirected_from_draft_graph')) {
                 viewModel.alert(new AlertViewModel(
                         'ep-alert-blue', 
-                        arches.translations.graphDesignerRedirectFromEditableFutureGraph.title,
-                        arches.translations.graphDesignerRedirectFromEditableFutureGraph.text,
+                        arches.translations.graphDesignerRedirectFromDraftGraph.title,
+                        arches.translations.graphDesignerRedirectFromDraftGraph.text,
                         null,
                         function(){
                             // removes query args without reloading page

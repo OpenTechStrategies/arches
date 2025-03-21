@@ -1412,7 +1412,7 @@ class GraphTests(ArchesTestCase):
         self.assertIn(state2, resource_instance_lifecycle_states)
 
 
-class EditableFutureGraphTests(ArchesTestCase):
+class DraftGraphTests(ArchesTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()

@@ -169,6 +169,7 @@ class GraphSettingsView(GraphBaseView):
 
                 node.save()
                 graph.save()
+                graph.refresh_from_database()
 
             return JSONResponse(
                 {

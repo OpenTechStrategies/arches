@@ -636,7 +636,7 @@ class Graph(models.GraphModel):
                 draft_graph = Graph.objects.get(source_identifier_id=self.graphid)
                 draft_graph.delete()
             except Graph.DoesNotExist:
-                pass  # no editable future graph to delete
+                pass  # no draft_graph to delete
 
             for nodegroup in self.get_nodegroups(force_recalculation=True):
                 nodegroup.delete()
@@ -2343,7 +2343,7 @@ class Graph(models.GraphModel):
 
     def create_draft_graph(self):
         """
-        Creates an additional entry in the Graphs table that represents an editable version of the current graph
+        Creates an additional entry in the Graphs table that represents an draft version of the current graph
         """
         with transaction.atomic():
             LanguageSynchronizer.synchronize_settings_with_db(
@@ -2381,9 +2381,9 @@ class Graph(models.GraphModel):
 
     def update_from_draft_graph(self, draft_graph):
         """
-        Updates the graph with any changes made to the editable future graph,
-        removes the editable future graph and related resources, then creates
-        an editable future graph from the updated graph.
+        Updates the graph with any changes made to the draft_graph,
+        deletes the draft_graph and related entities, then creates
+        a new draft_graph from the updated graph.
         """
         serialized_source_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self)

@@ -145,10 +145,10 @@ define([
 
                     return resources.reduce((acc, resource) => {
                         if (!resource.source_identifier_id) {
-                            const editableFutureGraph = resources.find(graph => graph.source_identifier_id === resource.graphid);
+                            const draftGraph = resources.find(graph => graph.source_identifier_id === resource.graphid);
 
-                            if (editableFutureGraph) {
-                                resource['has_unpublished_changes'] = editableFutureGraph['has_unpublished_changes'];
+                            if (draftGraph) {
+                                resource['has_unpublished_changes'] = draftGraph['has_unpublished_changes'];
                             }
 
                             acc.push(resource);
