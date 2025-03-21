@@ -613,11 +613,10 @@ class Graph(models.GraphModel):
             self._nodegroups_to_delete = []
 
             # becuase of signals listeners on related graph entities,
-            # `has_unpublished_changes` must be updated manually
-            if not has_unpublished_changes:
-                models.GraphModel.objects.filter(pk=self.pk).update(
-                    has_unpublished_changes=False
-                )
+            # `has_unpublished_changes` must be updated manually after
+            # all related entities have updated.
+            self.has_unpublished_changes = has_unpublished_changes
+            super().save()
 
         return self
 
@@ -2291,13 +2290,7 @@ class Graph(models.GraphModel):
 
                 if self.has_unpublished_changes:
                     self.has_unpublished_changes = False
-
-                    # Update the field directly in the database, bypassing GraphModel.save()
-                    models.GraphModel.objects.filter(pk=self.pk).update(
-                        has_unpublished_changes=self.has_unpublished_changes
-                    )
-
-                    self.create_draft_graph()
+                    super().save()
 
                 published_graph_edit = models.PublishedGraphEdit.objects.create(
                     publication=self.publication, user=user, notes=notes
@@ -2652,11 +2645,7 @@ class Graph(models.GraphModel):
             self.publication = publication
             self.has_unpublished_changes = False
 
-            # Update the fields directly in the database, bypassing GraphModel.save()
-            models.GraphModel.objects.filter(pk=self.pk).update(
-                publication=self.publication,
-                has_unpublished_changes=self.has_unpublished_changes,
-            )
+            super().save()  # avoids side-effects from `Graph.save`
 
             for language_tuple in settings.LANGUAGES:
                 language = models.Language.objects.get(code=language_tuple[0])
