@@ -169,7 +169,7 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         cls.test_graph = test_graph
         cls.rootNode = test_graph.root
 
-    def test_card_signals(self):
+    def test_card_save_signal(self):
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
         test_card = [card for card in self.test_graph.cards.values()][0]
@@ -178,7 +178,16 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_card_model_signals(self):
+    def test_card_delete_signal(self):
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        test_card = [card for card in self.test_graph.cards.values()][0]
+        test_card.delete()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_card_model_save_signal(self):
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
         test_card = [card for card in self.test_graph.cards.values()][0]
@@ -189,7 +198,18 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_node_signals(self):
+    def test_card_model_delete_signal(self):
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        test_card = [card for card in self.test_graph.cards.values()][0]
+
+        test_card_model = models.CardModel.objects.get(pk=test_card.pk)
+        test_card_model.delete()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_node_save_signal(self):
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
         test_node = [node for node in self.test_graph.nodes.values()][0]
@@ -198,7 +218,16 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_edge_signals(self):
+    def test_node_delete_signal(self):
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        test_node = [node for node in self.test_graph.nodes.values()][0]
+        test_node.delete()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_edge_save_signal(self):
         self.test_graph.append_branch(
             "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
             graphid=self.NODE_NODETYPE_GRAPHID,
@@ -215,16 +244,24 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_node_signals(self):
+    def test_edge_delete_signal(self):
+        self.test_graph.append_branch(
+            "http://www.ics.forth.gr/isl/CRMdig/L54_is_same-as",
+            graphid=self.NODE_NODETYPE_GRAPHID,
+        )
+        self.test_graph.save()
+        self.test_graph.publish()
+
+        self.test_graph.refresh_from_db()
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
-        test_node = [node for node in self.test_graph.nodes.values()][0]
-        test_node.save()
+        test_edge = [edge for edge in self.test_graph.edges.values()][0]
+        test_edge.delete()
 
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_function_x_graph_signals(self):
+    def test_function_x_graph_save_signal(self):
         models.FunctionXGraph.objects.create(
             graph=self.test_graph,
             function_id="60000000-0000-0000-0000-000000000001",
@@ -256,7 +293,39 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_graph_x_published_graph_signals(self):
+    def test_function_x_graph_delete_signal(self):
+        models.FunctionXGraph.objects.create(
+            graph=self.test_graph,
+            function_id="60000000-0000-0000-0000-000000000001",
+            config={
+                "descriptor_types": {
+                    "name": {
+                        "nodegroup_id": None,
+                        "string_template": "<String Node> <Resource Node>",
+                    },
+                    "map_popup": {
+                        "nodegroup_id": None,
+                        "string_template": "",
+                    },
+                    "description": {
+                        "nodegroup_id": None,
+                        "string_template": "",
+                    },
+                },
+            },
+        )
+
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        function_x_graph = models.FunctionXGraph.objects.get(
+            function_id="60000000-0000-0000-0000-000000000001"
+        )
+        function_x_graph.delete()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_graph_x_published_graph_save_signal(self):
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
         self.test_graph.publication.save()
@@ -264,7 +333,15 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_nodegroup_signals(self):
+    def test_graph_x_published_graph_delete_signal(self):
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        self.test_graph.publication.delete()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_nodegroup_save_signal(self):
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
         test_node = [node for node in self.test_graph.nodes.values()][0]
@@ -274,7 +351,17 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
 
-    def test_card_x_node_x_widget_signals(self):
+    def test_nodegroup_delete_signal(self):
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        test_node = [node for node in self.test_graph.nodes.values()][0]
+
+        test_node.nodegroup.delete()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_card_x_node_x_widget_save_signal(self):
         self.assertFalse(self.test_graph.has_unpublished_changes)
 
         test_card = [card for card in self.test_graph.cards.values()][0]
@@ -296,6 +383,32 @@ class GraphHasUnpublishedChangesSignalTests(ArchesTestCase):
             for card_x_node_x_widget in self.test_graph.widgets.values()
         ][0]
         test_card_x_node_x_widget.save()
+
+        self.test_graph.refresh_from_db()
+        self.assertTrue(self.test_graph.has_unpublished_changes)
+
+    def test_card_x_node_x_widget_delete_signal(self):
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        test_card = [card for card in self.test_graph.cards.values()][0]
+
+        models.CardXNodeXWidget.objects.create(
+            card=test_card,
+            node_id=test_card.nodegroup_id,
+            widget=models.Widget.objects.first(),
+            label="Widget name",
+        )
+
+        self.test_graph.publish()
+        self.test_graph.refresh_from_db()
+
+        self.assertFalse(self.test_graph.has_unpublished_changes)
+
+        test_card_x_node_x_widget = [
+            card_x_node_x_widget
+            for card_x_node_x_widget in self.test_graph.widgets.values()
+        ][0]
+        test_card_x_node_x_widget.delete()
 
         self.test_graph.refresh_from_db()
         self.assertTrue(self.test_graph.has_unpublished_changes)
