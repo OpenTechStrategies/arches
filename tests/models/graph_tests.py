@@ -1766,6 +1766,61 @@ class DraftGraphTests(ArchesTestCase):
                 ),
             )
 
+    def test_publish_sets_correct_has_unpublished_changes_value(self):
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
+
+        source_graph.name = "TEST NAME"
+        source_graph.save()
+        source_graph.refresh_from_database()
+
+        self.assertEqual(source_graph.name, "TEST NAME")
+        self.assertTrue(source_graph.has_unpublished_changes)
+
+        source_graph.publish()
+        self.assertFalse(source_graph.has_unpublished_changes)
+
+        draft_graph = Graph.objects.get(source_identifier=source_graph)
+        self.assertFalse(draft_graph.has_unpublished_changes)
+
+    def test_create_draft_graph_sets_correct_has_unpublished_changes_value(self):
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
+
+        self.assertFalse(source_graph.has_unpublished_changes)
+
+        source_graph.create_draft_graph()
+        self.assertFalse(source_graph.has_unpublished_changes)
+
+        draft_graph = Graph.objects.get(source_identifier=source_graph)
+        self.assertFalse(draft_graph.has_unpublished_changes)
+
+    def test_restore_state_from_serialized_graph(self):
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE", is_resource=True, author="TEST"
+        )
+
+        source_graph.name = "TEST NAME"
+        source_graph.save()
+        source_graph.refresh_from_database()
+
+        self.assertEqual(source_graph.name, "TEST NAME")
+        self.assertTrue(source_graph.has_unpublished_changes)
+
+        published_graph = models.PublishedGraph.objects.get(
+            publication=source_graph.publication,
+            language="en",
+        )
+
+        source_graph = source_graph.restore_state_from_serialized_graph(
+            published_graph.serialized_graph
+        )
+
+        self.assertFalse(source_graph.has_unpublished_changes)
+        self.assertEqual(source_graph.name, "TEST RESOURCE")
+
     def test_update_empty_graph_from_draft_graph(self):
         source_graph = Graph.objects.create_graph(
             name="TEST RESOURCE", is_resource=True, author="TEST"
@@ -1777,10 +1832,12 @@ class DraftGraphTests(ArchesTestCase):
             graphid=self.NODE_NODETYPE_GRAPHID,
         )
         draft_graph.save()
+        self.assertTrue(draft_graph.has_unpublished_changes)
 
         updated_source_graph = source_graph.update_from_draft_graph(
             draft_graph=draft_graph
         )
+        self.assertFalse(updated_source_graph.has_unpublished_changes)
 
         serialized_draft_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(draft_graph)
