@@ -243,21 +243,21 @@ class GraphDesignerView(GraphBaseView):
             )
 
             query_dict = request.GET.copy()
-            query_dict["has_been_redirected_from_editable_future_graph"] = True
+            query_dict["has_been_redirected_from_draft_graph"] = True
             query_string = query_dict.urlencode()
 
             return redirect("{}?{}".format(url, query_string))
 
-        self.editable_future_graph = None
+        self.draft_graph = None
 
-        editable_future_graph_query = Graph.objects.filter(source_identifier_id=graphid)
-        if len(editable_future_graph_query):
-            self.editable_future_graph = editable_future_graph_query[0]
+        draft_graph_query = Graph.objects.filter(source_identifier_id=graphid)
+        if len(draft_graph_query):
+            self.draft_graph = draft_graph_query[0]
 
         if bool(request.GET.get("should_show_source_graph", "false").lower() == "true"):
             self.graph = self.source_graph
         else:
-            self.graph = self.editable_future_graph
+            self.graph = self.draft_graph
 
         serialized_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self.graph)
@@ -373,13 +373,9 @@ class GraphDesignerView(GraphBaseView):
             else {}
         )
 
-        context["editable_future_graph_id"] = (
-            self.editable_future_graph.pk if self.editable_future_graph else None
-        )
-        context["has_been_redirected_from_editable_future_graph"] = bool(
-            request.GET.get(
-                "has_been_redirected_from_editable_future_graph", "false"
-            ).lower()
+        context["draft_graph_id"] = self.draft_graph.pk if self.draft_graph else None
+        context["has_been_redirected_from_draft_graph"] = bool(
+            request.GET.get("has_been_redirected_from_draft_graph", "false").lower()
             == "true"
         )
         context["nav"]["menu"] = True
@@ -560,7 +556,7 @@ class GraphDataView(View):
 
                     clone_data["copy"].save()
 
-                    clone_data["copy"].create_editable_future_graph()
+                    clone_data["copy"].create_draft_graph()
                     clone_data["copy"].publish()
 
                     ret = {"success": True, "graphid": clone_data["copy"].pk}
@@ -576,7 +572,7 @@ class GraphDataView(View):
 
                     ret.save()
                     ret.publish()
-                    ret.create_editable_future_graph()
+                    ret.create_draft_graph()
 
                     ret.copy_functions(
                         graph, [clone_data["nodes"], clone_data["nodegroups"]]
@@ -678,17 +674,17 @@ class GraphPublicationView(View):
 
         if graph.source_identifier:
             source_graph = Graph.objects.get(pk=graph.source_identifier_id)
-            editable_future_graph = graph
+            draft_graph = graph
         else:
             source_graph = graph
-            editable_future_graph = None
+            draft_graph = None
 
         if self.action == "publish":
             try:
                 data = JSONDeserializer().deserialize(request.body)
 
-                updated_graph = source_graph.update_from_editable_future_graph(
-                    editable_future_graph=editable_future_graph
+                updated_graph = source_graph.update_from_draft_graph(
+                    draft_graph=draft_graph
                 )
                 updated_graph.publish(notes=data.get("notes"), user=request.user)
 
@@ -709,7 +705,7 @@ class GraphPublicationView(View):
 
         elif self.action == "revert":
             try:
-                source_graph.create_editable_future_graph()
+                source_graph.create_draft_graph()
                 return JSONResponse(
                     {
                         "title": _("Success!"),

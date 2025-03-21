@@ -197,7 +197,7 @@ def import_graph(graphs, overwrite_graphs=True, user=None):
                     try:
                         Graph.objects.get(source_identifier_id=graph.graphid)
                     except Graph.DoesNotExist:
-                        graph.create_editable_future_graph()
+                        graph.create_draft_graph()
 
                     if publication_data:
                         GraphXPublishedGraph.objects.update_or_create(

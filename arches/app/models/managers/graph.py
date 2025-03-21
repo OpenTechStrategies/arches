@@ -31,7 +31,7 @@ class GraphManager(models.Manager):
             ontology=None,
             slug=None,
         )
-        graph_model.save()  # to access `save` method declared on model
+        graph_model.save()  # to access side-effects declared in save method
 
         if not is_resource:
             nodegroup = arches_models.NodeGroup.objects.create(pk=new_id)
@@ -54,6 +54,6 @@ class GraphManager(models.Manager):
         graph = self.get(pk=graph_model.graphid)
 
         graph.publish()
-        graph.create_editable_future_graph()
+        graph.create_draft_graph()
 
         return graph

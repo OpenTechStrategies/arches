@@ -474,7 +474,7 @@ class Graph(models.GraphModel):
                 ):
                     se.create_mapping("resources", body=datatype_mapping)
 
-    def save(self, validate=True, nodeid=None, **kwargs):
+    def save(self, validate=True, nodeid=None):
         """
         Saves a graph and its nodes, edges, and nodegroups back to the db
         creates associated card objects if any of the nodegroups don't already have a card
@@ -487,8 +487,11 @@ class Graph(models.GraphModel):
             self.validate()
 
         with transaction.atomic():
-            super(Graph, self).save(**kwargs)
-            for nodegroup in self.get_nodegroups(force_recalculation=True):
+            super(Graph, self).save()
+
+            has_unpublished_changes = self.has_unpublished_changes
+
+            for nodegroup in self.get_nodegroups():
                 nodegroup.save()
 
             se = SearchEngineFactory().create()
@@ -582,7 +585,7 @@ class Graph(models.GraphModel):
 
                     translation.activate(language=language_tuple[0])
 
-                    published_graph = models.PublishedGraph.objects.create(
+                    models.PublishedGraph.objects.create(
                         publication=self.publication,
                         serialized_graph=JSONDeserializer().deserialize(
                             JSONSerializer().serialize(self, force_recalculation=True)
@@ -609,6 +612,13 @@ class Graph(models.GraphModel):
                 nodegroup.delete()
             self._nodegroups_to_delete = []
 
+            # becuase of signals listeners on related graph entities,
+            # `has_unpublished_changes` must be updated manually
+            if not has_unpublished_changes:
+                models.GraphModel.objects.filter(pk=self.pk).update(
+                    has_unpublished_changes=False
+                )
+
         return self
 
     def delete(self):
@@ -623,10 +633,8 @@ class Graph(models.GraphModel):
         """
         with transaction.atomic():
             try:
-                editable_future_graph = Graph.objects.get(
-                    source_identifier_id=self.graphid
-                )
-                editable_future_graph.delete()
+                draft_graph = Graph.objects.get(source_identifier_id=self.graphid)
+                draft_graph.delete()
             except Graph.DoesNotExist:
                 pass  # no editable future graph to delete
 
@@ -2078,7 +2086,7 @@ class Graph(models.GraphModel):
             - A node group can only have child node groups if the node group only contains semantic nodes
             - If graph has an ontology, nodes must have classes and edges must have properties that are ontologically valid
             - If the graph has no ontology, nodes and edges should have null values for ontology class and property respectively
-            - The graph has a slug that unique only to it and its editable_future_graph
+            - The graph has a slug that unique only to it and its draft_graph
         """
         # validates that the top node of a resource graph is semantic and a collector
         if self.isresource is True:
@@ -2289,7 +2297,7 @@ class Graph(models.GraphModel):
                         has_unpublished_changes=self.has_unpublished_changes
                     )
 
-                    self.create_editable_future_graph()
+                    self.create_draft_graph()
 
                 published_graph_edit = models.PublishedGraphEdit.objects.create(
                     publication=self.publication, user=user, notes=notes
@@ -2333,7 +2341,7 @@ class Graph(models.GraphModel):
 
             return self
 
-    def create_editable_future_graph(self):
+    def create_draft_graph(self):
         """
         Creates an additional entry in the Graphs table that represents an editable version of the current graph
         """
@@ -2343,30 +2351,35 @@ class Graph(models.GraphModel):
             )
 
             try:
-                previous_editable_future_graph = Graph.objects.get(
+                previous_draft_graph = Graph.objects.get(
                     source_identifier_id=self.graphid
                 )
-                previous_editable_future_graph.delete()
+                previous_draft_graph.delete()
             except Graph.DoesNotExist:
                 pass
 
             graph_copy = self.copy(set_source=True)
 
-            editable_future_graph = graph_copy["copy"]
-            editable_future_graph.source_identifier_id = self.graphid
+            draft_graph = graph_copy["copy"]
+            draft_graph.source_identifier_id = self.graphid
 
-            # editable_future_graphs do not interact with `Resource` objects
-            editable_future_graph.resource_instance_lifecycle = None
+            # draft_graphs do not interact with `Resource` objects
+            draft_graph.resource_instance_lifecycle = None
 
-            editable_future_graph.root.set_relatable_resources(
+            # draft_graphs are never published, so on creation
+            # `has_unpublished_changes` should never be true, regardless
+            # of the state of the source_graph.
+            draft_graph.has_unpublished_changes = False
+
+            draft_graph.root.set_relatable_resources(
                 [node.pk for node in self.root.get_relatable_resources()]
             )
 
-            editable_future_graph.save(validate=False)
+            draft_graph.save(validate=False)
 
-            return editable_future_graph
+            return draft_graph
 
-    def update_from_editable_future_graph(self, editable_future_graph):
+    def update_from_draft_graph(self, draft_graph):
         """
         Updates the graph with any changes made to the editable future graph,
         removes the editable future graph and related resources, then creates
@@ -2375,24 +2388,24 @@ class Graph(models.GraphModel):
         serialized_source_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self)
         )
-        serialized_editable_future_graph = JSONDeserializer().deserialize(
-            JSONSerializer().serialize(editable_future_graph)
+        serialized_draft_graph = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(draft_graph)
         )
 
         node_id_to_node_source_identifier_id = {
             node["nodeid"]: node["source_identifier_id"]
-            for node in serialized_editable_future_graph["nodes"]
+            for node in serialized_draft_graph["nodes"]
             if node["source_identifier_id"]
         }
 
         card_id_to_card_source_identifier_id = {
             card["cardid"]: card["source_identifier_id"]
-            for card in serialized_editable_future_graph["cards"]
+            for card in serialized_draft_graph["cards"]
             if card["source_identifier_id"]
         }
 
         # update cards_x_nodes_x_widgets
-        for serialized_card_x_node_x_widget in serialized_editable_future_graph[
+        for serialized_card_x_node_x_widget in serialized_draft_graph[
             "cards_x_nodes_x_widgets"
         ]:
             if serialized_card_x_node_x_widget["source_identifier_id"]:
@@ -2414,7 +2427,7 @@ class Graph(models.GraphModel):
                 serialized_card_x_node_x_widget["node_id"] = updated_node_id
 
         # update cards
-        for serialized_card in serialized_editable_future_graph["cards"]:
+        for serialized_card in serialized_draft_graph["cards"]:
             if serialized_card["source_identifier_id"]:
                 serialized_card["cardid"] = serialized_card["source_identifier_id"]
                 serialized_card["source_identifier_id"] = None
@@ -2428,7 +2441,7 @@ class Graph(models.GraphModel):
             serialized_card["graph_id"] = serialized_source_graph["graphid"]
 
         # update nodes
-        for serialized_node in serialized_editable_future_graph["nodes"]:
+        for serialized_node in serialized_draft_graph["nodes"]:
             if serialized_node["source_identifier_id"]:
                 serialized_node["nodeid"] = serialized_node["source_identifier_id"]
                 serialized_node["source_identifier_id"] = None
@@ -2442,7 +2455,7 @@ class Graph(models.GraphModel):
             serialized_node["graph_id"] = serialized_source_graph["graphid"]
 
         # update nodegroups
-        for serialized_nodegroup in serialized_editable_future_graph["nodegroups"]:
+        for serialized_nodegroup in serialized_draft_graph["nodegroups"]:
             updated_nodegroup_id = node_id_to_node_source_identifier_id.get(
                 serialized_nodegroup["nodegroupid"]
             )
@@ -2462,7 +2475,7 @@ class Graph(models.GraphModel):
                 serialized_nodegroup["grouping_node_id"] = updated_grouping_node_id
 
         # update edges
-        for serialized_edge in serialized_editable_future_graph["edges"]:
+        for serialized_edge in serialized_draft_graph["edges"]:
             if serialized_edge["source_identifier_id"]:
                 serialized_edge["edgeid"] = serialized_edge["source_identifier_id"]
                 serialized_edge["source_identifier_id"] = None
@@ -2482,60 +2495,53 @@ class Graph(models.GraphModel):
             serialized_edge["graph_id"] = serialized_source_graph["graphid"]
 
         # update root node
-        serialized_editable_future_graph["root"]["graph_id"] = serialized_source_graph[
-            "graphid"
+        serialized_draft_graph["root"]["graph_id"] = serialized_source_graph["graphid"]
+        serialized_draft_graph["root"]["nodeid"] = serialized_draft_graph["root"][
+            "source_identifier_id"
         ]
-        serialized_editable_future_graph["root"]["nodeid"] = (
-            serialized_editable_future_graph["root"]["source_identifier_id"]
-        )
-        serialized_editable_future_graph["root"]["source_identifier_id"] = None
+        serialized_draft_graph["root"]["source_identifier_id"] = None
 
         # update graph data
-        serialized_editable_future_graph["graphid"] = serialized_source_graph["graphid"]
-        serialized_editable_future_graph["resource_instance_lifecycle_id"] = (
+        serialized_draft_graph["graphid"] = serialized_source_graph["graphid"]
+        serialized_draft_graph["resource_instance_lifecycle_id"] = (
             serialized_source_graph["resource_instance_lifecycle_id"]
         )
-        serialized_editable_future_graph["source_identifier_id"] = None
+        serialized_draft_graph["source_identifier_id"] = None
 
         # update permissions
-        serialized_editable_future_graph["group_permissions"] = {
+        serialized_draft_graph["group_permissions"] = {
             key: value
             for key, value in serialized_source_graph["group_permissions"].items()
             if key in node_id_to_node_source_identifier_id.values()
         }
-        serialized_editable_future_graph["user_permissions"] = {
+        serialized_draft_graph["user_permissions"] = {
             key: value
             for key, value in serialized_source_graph["user_permissions"].items()
             if key in node_id_to_node_source_identifier_id.values()
         }
 
-        serialized_editable_future_graph["relatable_resource_model_ids"] = [
+        serialized_draft_graph["relatable_resource_model_ids"] = [
             (
                 serialized_source_graph["graphid"]
-                if relatable_resource_model_id
-                == serialized_editable_future_graph["graphid"]
+                if relatable_resource_model_id == serialized_draft_graph["graphid"]
                 else relatable_resource_model_id
             )
-            for relatable_resource_model_id in serialized_editable_future_graph[
+            for relatable_resource_model_id in serialized_draft_graph[
                 "relatable_resource_model_ids"
             ]
         ]
 
-        return self.restore_state_from_serialized_graph(
-            serialized_editable_future_graph
-        )
+        return self.restore_state_from_serialized_graph(serialized_draft_graph)
 
     def restore_state_from_serialized_graph(self, serialized_graph):
         """
         Restores a Graph's state from a serialized graph, and creates a
-        new editable_future_graph
+        new draft_graph
         """
         with transaction.atomic():
-            editable_future_graph = Graph.objects.filter(
-                source_identifier_id=self.pk
-            ).first()
-            if editable_future_graph:
-                editable_future_graph.delete()
+            draft_graph = Graph.objects.filter(source_identifier_id=self.pk).first()
+            if draft_graph:
+                draft_graph.delete()
 
             self.delete_associated_entities()
 
@@ -2622,9 +2628,9 @@ class Graph(models.GraphModel):
             )
 
             updated_graph.has_unpublished_changes = False
-            updated_graph.save()
+            updated_graph.save(validate=False)
 
-            updated_graph.create_editable_future_graph()
+            updated_graph.create_draft_graph()
 
             return Graph.objects.get(pk=updated_graph.pk)
 
@@ -2634,7 +2640,7 @@ class Graph(models.GraphModel):
         and creates a PublishedGraph entry for every active language
         """
         if self.source_identifier_id:
-            raise RuntimeError("Publishing an editable_future_graph is prohibited.")
+            raise RuntimeError("Publishing an draft_graph is prohibited.")
 
         self.refresh_from_database()
 

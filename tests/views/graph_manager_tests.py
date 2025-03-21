@@ -55,7 +55,7 @@ class GraphManagerViewTests(ArchesTestCase):
 
         cls.test_graph.save()
         cls.test_graph.publish()
-        cls.test_graph.create_editable_future_graph()
+        cls.test_graph.create_draft_graph()
 
         cls.ROOT_ID = cls.test_graph.root.nodeid
         cls.GRAPH_ID = str(cls.test_graph.pk)
@@ -208,16 +208,12 @@ class GraphManagerViewTests(ArchesTestCase):
     def test_graph_manager_redirects_future_graph(self):
         self.client.login(username="admin", password="admin")
 
-        editable_future_graph = Graph.objects.get(source_identifier_id=self.GRAPH_ID)
-        url = reverse(
-            "graph_designer", kwargs={"graphid": editable_future_graph.graphid}
-        )
+        draft_graph = Graph.objects.get(source_identifier_id=self.GRAPH_ID)
+        url = reverse("graph_designer", kwargs={"graphid": draft_graph.graphid})
         response = self.client.get(url)
 
         redirect_url = reverse("graph_designer", kwargs={"graphid": self.GRAPH_ID})
-        query_string = urlencode(
-            {"has_been_redirected_from_editable_future_graph": True}
-        )
+        query_string = urlencode({"has_been_redirected_from_draft_graph": True})
 
         self.assertRedirects(response, "{}?{}".format(redirect_url, query_string))
 

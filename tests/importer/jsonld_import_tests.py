@@ -182,11 +182,9 @@ class JsonLDImportTests(ArchesTestCase):
         ]:
             graph = Graph.objects.get(pk=graph_id)
 
-            editable_future_graph_list = Graph.objects.filter(
-                source_identifier_id=graph.pk
-            )
-            if not len(editable_future_graph_list):
-                graph.create_editable_future_graph()
+            draft_graph_list = Graph.objects.filter(source_identifier_id=graph.pk)
+            if not len(draft_graph_list):
+                graph.create_draft_graph()
 
             graph.publish(user=User.objects.get(pk=1))
 
