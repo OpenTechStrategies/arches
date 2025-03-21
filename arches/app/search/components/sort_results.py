@@ -16,12 +16,13 @@ details = {
 
 class SortResults(BaseSearchFilter):
     def append_dsl(self, search_query_object, **kwargs):
-        sort_param = self.request.GET.get(self.componentname, None)
+
+        query_string = kwargs['querystring']
+        sort_order = query_string["sort_order"]
+        sort_by = query_string["sort_by"]
 
         sort_component = SearchComponent.objects.get(name="Sort")
         sort_config = sort_component.config
-
-        sort_order, sort_by = sort_param.split("-")
 
         sort_field = "displayname.value"
 
@@ -36,7 +37,7 @@ class SortResults(BaseSearchFilter):
             sort_field = sort_config["field"]
             sort_dsl = sort_config["dsl"]       
 
-        if sort_order is not None and sort_order != "":
+        if sort_order:
             sort_dsl["order"] = sort_order
 
         search_query_object["query"].sort(

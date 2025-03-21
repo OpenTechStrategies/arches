@@ -1,5 +1,3 @@
-const { filter } = require("underscore");
-
 define([
     'jquery',
     'underscore',
@@ -8,26 +6,21 @@ define([
     'templates/views/components/search/sort-results.htm',
     'chosen',
 ], function($, _, BaseFilter, ko, sortResultsTemplate) {
-    var componentName = 'sort-results';
     const viewModel = BaseFilter.extend({
         initialize: function(options) {
             options.name = 'Sort Results';
             BaseFilter.prototype.initialize.call(this, options);
 
-            this.filter = ko.observable('');
-            this.order = ko.observable('');
+            this.sortBy = ko.observable('');
+            this.sortOrder = ko.observable('');
 
-            this.combinedFilterOrder = ko.computed(() => {
-                return this.filter() + "-" + this.order()
-            });
-
-            this.searchFilterVms[componentName](this);
+            this.searchFilterVms['sort-results'](this); 
             
-            this.filter.subscribe(function(){
+            this.sortBy.subscribe(function(){
                 this.updateQuery();
             }, this);
 
-            this.order.subscribe(function(){
+            this.sortOrder.subscribe(function(){
                 this.updateQuery();
             }, this);
 
@@ -36,28 +29,42 @@ define([
 
         updateQuery: function() {
             var queryObj = this.query();
-            if(this.filter() === '' && this.order() === '') {
-                delete queryObj[componentName];
+
+            if(this.sortBy() === '') {
+                delete queryObj['sort-by'];
             } else {
-                queryObj[componentName] = this.combinedFilterOrder();
+                queryObj['sort-by'] = this.sortBy();
             }
+
+            if(this.sortOrder() === '') {
+                delete queryObj['sort-order'];
+            } else {
+                queryObj['sort-order'] = this.sortOrder();
+            }
+
             this.query(queryObj);
         },
 
         restoreState: function(){
             var query = this.query();
-            if (componentName in query) {
-                this.filter(query[componentName].split("-")[0]);
+
+            if ('sort-by' in query) {
+                this.sortBy(query['sort-by']);
+            }
+
+            if ('sort-order' in query) {
+                this.sortOrder(query['sort-order']);
             }
         },
 
         clear: function(){
-            this.combinedFilterOrder({});
+            this.sortBy('');
+            this.sortOrder('')
         }
         
     });
 
-    return ko.components.register(componentName, {
+    return ko.components.register('sort-results', {
         viewModel: viewModel,
         template: sortResultsTemplate,
     });
