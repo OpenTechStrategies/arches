@@ -275,14 +275,8 @@ class Graph(models.GraphModel):
             node.pk = uuid.UUID(node.pk)
         if node.istopnode:
             self.root = node
+
         self.nodes[node.pk] = node
-
-        for edge in self.edges.values():
-            if edge.domainnode_id == node.pk:
-                edge.domainnode = node
-            if edge.rangenode_id == node.pk:
-                edge.rangenode = node
-
         self.has_unpublished_changes = True
 
         return node

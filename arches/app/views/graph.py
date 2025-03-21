@@ -725,6 +725,7 @@ class GraphPublicationView(View):
                 source_graph.update_published_graphs(
                     notes=data.get("notes"), user=request.user
                 )
+                source_graph.create_draft_graph()
 
                 return JSONResponse(
                     {
