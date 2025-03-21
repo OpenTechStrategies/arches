@@ -296,6 +296,8 @@ def ensure_single_default_searchview(sender, instance, **kwargs):
 @receiver(post_delete, sender=models.Edge)
 @receiver(post_save, sender=models.FunctionXGraph)
 @receiver(post_delete, sender=models.FunctionXGraph)
+@receiver(post_save, sender=models.GraphXPublishedGraph)
+@receiver(post_delete, sender=models.GraphXPublishedGraph)
 def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
     models.GraphModel.objects.filter(pk=instance.graph_id).update(
         has_unpublished_changes=True
