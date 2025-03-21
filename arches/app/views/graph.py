@@ -145,6 +145,7 @@ class GraphSettingsView(GraphBaseView):
         )
         node.name = graph.name
         graph.root.name = node.name
+        graph.has_unpublished_changes = True
 
         if node.ontologyclass:
             graph.root.ontologyclass = node.ontologyclass
@@ -157,12 +158,8 @@ class GraphSettingsView(GraphBaseView):
             nodegroup_ids_to_serialized_nodegroups[
                 serialized_nodegroup["nodegroupid"]
             ] = serialized_nodegroup
-
         try:
             with transaction.atomic():
-                graph.save()
-                node.save()
-
                 for nodegroup in models.NodeGroup.objects.filter(
                     nodegroupid__in=nodegroup_ids_to_serialized_nodegroups.keys()
                 ):
@@ -170,6 +167,9 @@ class GraphSettingsView(GraphBaseView):
                         str(nodegroup.nodegroupid)
                     ]["cardinality"]
                     nodegroup.save()
+
+                node.save()
+                graph.save()
 
             return JSONResponse(
                 {

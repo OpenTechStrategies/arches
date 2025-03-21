@@ -286,6 +286,7 @@ def ensure_single_default_searchview(sender, instance, **kwargs):
             )
 
 
+# @receiver(post_save, sender=models.Card)
 @receiver(post_save, sender=models.CardModel)
 @receiver(post_save, sender=models.Node)
 @receiver(post_save, sender=models.Edge)
