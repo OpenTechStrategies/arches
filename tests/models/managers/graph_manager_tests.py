@@ -96,3 +96,15 @@ class GraphManagerTests(ArchesTestCase):
 
                 publish_mock.assert_called_once()
                 create_draft_mock.assert_called_once()
+
+    def test_create_graph_correctly_sets_has_unpublished_changes(self):
+        """
+        Neither the created graph nor the draft_graph should have unpublished changes.
+        """
+        graph = Graph.objects.create_graph(
+            author="author2", name="Resource Graph", is_resource=True
+        )
+        self.assertFalse(graph.has_unpublished_changes)
+
+        draft_graph = Graph.objects.get(source_identifier=graph)
+        self.assertFalse(draft_graph.has_unpublished_changes)

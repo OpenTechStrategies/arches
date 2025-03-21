@@ -56,4 +56,5 @@ class GraphManager(models.Manager):
         graph.publish()
         graph.create_draft_graph()
 
-        return graph
+        # ensures entity returned matches database entity
+        return self.get(pk=graph_model.graphid)
