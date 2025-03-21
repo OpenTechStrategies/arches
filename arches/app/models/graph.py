@@ -752,7 +752,7 @@ class Graph(models.GraphModel):
 
         """
 
-        branch_graph = self.__class__.objects.get(pk=graphid)
+        branch_graph = Graph.objects.get(pk=graphid)
         nodeToAppendTo = self.nodes[uuid.UUID(str(nodeid))] if nodeid else self.root
 
         if skip_validation or self.can_append(branch_graph, nodeToAppendTo):
@@ -2287,7 +2287,7 @@ class Graph(models.GraphModel):
                     self.has_unpublished_changes = False
 
                     # Update the field directly in the database, bypassing GraphModel.save()
-                    self.__class__.objects.filter(pk=self.pk).update(
+                    models.GraphModel.objects.filter(pk=self.pk).update(
                         has_unpublished_changes=self.has_unpublished_changes
                     )
 
@@ -2365,14 +2365,6 @@ class Graph(models.GraphModel):
             )
 
             editable_future_graph.save(validate=False)
-
-            editable_future_graph.has_unpublished_changes = False
-
-            editable_future_graph.__class__.objects.filter(
-                pk=editable_future_graph.pk
-            ).update(
-                has_unpublished_changes=editable_future_graph.has_unpublished_changes
-            )  # Update the field directly in the database, bypassing GraphModel.save()
 
             return editable_future_graph
 
@@ -2631,15 +2623,8 @@ class Graph(models.GraphModel):
                 )
             )
 
-            # first, save all the changes in the graph
-            updated_graph.save()
-
-            # then manually update the model's `has_unpublished_changes` value to bypass automatic `True` assignment in `GraphModel.save()`
             updated_graph.has_unpublished_changes = False
-
-            updated_graph.__class__.objects.filter(pk=updated_graph.pk).update(
-                has_unpublished_changes=updated_graph.has_unpublished_changes
-            )  # Update the field directly in the database, bypassing GraphModel.save()
+            updated_graph.save()
 
             updated_graph.create_editable_future_graph()
 
@@ -2664,7 +2649,7 @@ class Graph(models.GraphModel):
             self.has_unpublished_changes = False
 
             # Update the fields directly in the database, bypassing GraphModel.save()
-            self.__class__.objects.filter(pk=self.pk).update(
+            models.GraphModel.objects.filter(pk=self.pk).update(
                 publication=self.publication,
                 has_unpublished_changes=self.has_unpublished_changes,
             )

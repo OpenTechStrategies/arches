@@ -678,8 +678,9 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
             )
             add_to_update_fields(kwargs, "resource_instance_lifecycle_id")
 
-        self.has_unpublished_changes = True
-        add_to_update_fields(kwargs, "has_unpublished_changes")
+        if self.has_unpublished_changes is not False:
+            self.has_unpublished_changes = True
+            add_to_update_fields(kwargs, "has_unpublished_changes")
 
         super(GraphModel, self).save(**kwargs)
 
