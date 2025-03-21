@@ -2453,13 +2453,14 @@ class UserPreference(APIBase):
                         _("The User Preference API includes an invalid user."),
                         status=400,
                     )
-                new_user_preference = UserPreference()
+                new_user_preference = models.UserPreference()
                 new_user_preference.userpreferenceid = uuid.uuid4()
                 new_user_preference.user = models.User.objects.get(
                     username=user_pref_json["user"]
                 )
                 new_user_preference.preferencename = user_pref_json["preferencename"]
                 new_user_preference.config = user_pref_json["config"]
+                new_user_preference.save()
                 return JSONResponse(new_user_preference, status=201)
 
         return JSONErrorResponse(_("No json request payload"), status=400)

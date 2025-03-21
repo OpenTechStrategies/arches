@@ -5,8 +5,10 @@ from django.urls import reverse
 from django.test.utils import captured_stdout
 from django.core import management
 from arches.app.models.models import UserPreference
+from arches.app.models.system_settings import settings
 from arches.app.models import models
 from tests import test_settings
+from django.test.client import Client
 
 
 # these tests can be run from the command line via
@@ -29,7 +31,7 @@ class UserPrefApiTest(TransactionTestCase):
         # Test POST
         user_pref = {
             "userpreferenceid": None,
-            "user": "admin",
+            "user": models.User.objects.get(username="admin"),
             "preferencename": "test preference",
             "config": [
                 {"overlayid": "7d0dffba-5bcf-4694-a5d7-3425ad97fa2b", "sortorder": 1},
@@ -38,13 +40,17 @@ class UserPrefApiTest(TransactionTestCase):
         }
 
         self.client.login(username="admin", password="admin")
-
-        # create a new spatialview
         response = self.client.post(
             reverse("api_user_preference", kwargs={"identifier": ""}),
             data=user_pref,
             content_type="application/json",
         )
+
         self.assertEqual(response.status_code, 201)
         response_json = json.loads(response.content)
-        print(response_json)
+
+        response = self.client.get(
+            reverse("api_user_preference", kwargs={"identifier": ""}),
+        )
+        print(response.content)
+        # if user_pref.userpreferenceid in response_json.keys():
