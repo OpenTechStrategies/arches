@@ -2,43 +2,33 @@
 {% load i18n %}
 
 <!-- Sort Results Selector-->
-<form autocomplete="off">
-    <select style="text-align-last:unset;" data-bind="
+<form autocomplete="off" class="search-dropdowns-container">
+    <select class="search-dropdown" data-bind="
         options: [
-            {'id':'', 'name':$root.translations.unsorted}, 
-            {'id':'asc', 'name':$root.translations.ascending}, 
-            {'id':'desc', 'name':$root.translations.descending}
+        {'id':'', 'name':$root.translations.resourceName}, 
+        {'id':'custom', 'name':$root.translations.custom}, 
         ],
         optionsText: 'name', 
         optionsValue: 'id',
         select2Query: {
             select2Config:{
-                value: sortOrder,
+                value: sortBy,
                 allowClear: false,
                 minimumResultsForSearch: -1
-        }},
+            }},
+            attr: {
+                'data-label': $root.translations.sortSearchResults
+            }
+            ">
+    </select>
+    <button type="button" class="btn btn-toggle" data-bind="
+        html: sortSymbol,
+        click: function() {
+            sortOrder(sortOrder() === 'asc' ? 'desc' : 'asc');
+        },
         attr: {
-            'data-label': $root.translations.sortSearchResults
+            'aria-label': sortOrder() === 'asc' ? $root.translations.descending : $root.translations.ascending
         }
-    ">
-    </select>
-    <select style="text-align-last:unset;" data-bind="
-    options: [
-        {'id':'', 'name':$root.translations.resourceName}, 
-        {'id':'custom', 'name':$root.translations.custom}, 
-    ],
-    optionsText: 'name', 
-    optionsValue: 'id',
-    select2Query: {
-        select2Config:{
-            value: sortBy,
-            allowClear: false,
-            minimumResultsForSearch: -1
-    }},
-    attr: {
-        'data-label': $root.translations.sortSearchResults
-    }
-">
-    </select>
+    "></button>
 <form autocomplete="off"></form>
 <!-- End Sort Results Selector-->
