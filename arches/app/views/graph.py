@@ -145,7 +145,6 @@ class GraphSettingsView(GraphBaseView):
         )
         node.name = graph.name
         graph.root.name = node.name
-        graph.has_unpublished_changes = True
 
         if node.ontologyclass:
             graph.root.ontologyclass = node.ontologyclass
@@ -248,11 +247,7 @@ class GraphDesignerView(GraphBaseView):
 
             return redirect("{}?{}".format(url, query_string))
 
-        self.draft_graph = None
-
-        draft_graph_query = Graph.objects.filter(source_identifier_id=graphid)
-        if len(draft_graph_query):
-            self.draft_graph = draft_graph_query[0]
+        self.draft_graph = Graph.objects.filter(source_identifier_id=graphid).first()
 
         if bool(request.GET.get("should_show_source_graph", "false").lower() == "true"):
             self.graph = self.source_graph
