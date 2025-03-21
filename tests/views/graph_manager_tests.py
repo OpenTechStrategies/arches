@@ -28,7 +28,6 @@ from django.urls import reverse
 from urllib.parse import urlencode
 from arches.app.models.graph import Graph
 from arches.app.models import models
-from arches.app.models.models import Node, NodeGroup, GraphModel, CardModel, Edge
 from arches.app.utils.betterJSONSerializer import JSONSerializer, JSONDeserializer
 
 # these tests can be run from the command line via
@@ -77,7 +76,7 @@ class GraphManagerViewTests(ArchesTestCase):
             "subtitle": "Represents a node and node type pairing",
             "version": "v1",
         }
-        graph_model = models.GraphModel.objects.create(**graph_data)
+        graph_model = models.models.GraphModel.objects.create(**graph_data)
 
         nodegroup_data = {
             "cardinality": "n",
@@ -148,7 +147,7 @@ class GraphManagerViewTests(ArchesTestCase):
             "ontologyproperty": "http://www.cidoc-crm.org/cidoc-crm/P2_has_type",
             "rangenode_id": "20000000-0000-0000-0000-100000000002",
         }
-        models.Edge.objects.create(**edge_data).save()
+        models.models.Edge.objects.create(**edge_data).save()
 
         graph = Graph.objects.get(pk=graph_model.pk)
         graph.save()
@@ -190,7 +189,7 @@ class GraphManagerViewTests(ArchesTestCase):
         graphs = json.loads(response.context["graphs"])
         self.assertEqual(
             len(graphs),
-            GraphModel.objects.all()
+            models.GraphModel.objects.all()
             .exclude(graphid=settings.SYSTEM_SETTINGS_RESOURCE_MODEL_ID)
             .count(),
         )
@@ -247,9 +246,9 @@ class GraphManagerViewTests(ArchesTestCase):
         """
         self.client.login(username="admin", password="admin")
         url = reverse("update_node", kwargs={"graphid": self.GRAPH_ID})
-        node = Node.objects.get(nodeid=str(self.appended_branch_1.root.pk))
+        node = models.Node.objects.get(nodeid=str(self.appended_branch_1.root.pk))
         node.name = "new node name"
-        nodegroup, created = NodeGroup.objects.get_or_create(
+        nodegroup, created = models.NodeGroup.objects.get_or_create(
             pk=str(self.appended_branch_1.root.pk)
         )
         node.nodegroup = nodegroup
@@ -271,7 +270,7 @@ class GraphManagerViewTests(ArchesTestCase):
                 node_count = node_count + 1
         self.assertEqual(node_count, 2)
 
-        node_ = Node.objects.get(nodeid=str(self.appended_branch_1.root.pk))
+        node_ = models.Node.objects.get(nodeid=str(self.appended_branch_1.root.pk))
 
         self.assertEqual(node_.name, "new node name")
         self.assertTrue(node_.is_collector)
@@ -282,7 +281,7 @@ class GraphManagerViewTests(ArchesTestCase):
 
         """
         self.client.login(username="admin", password="admin")
-        node = Node.objects.get(nodeid=str(self.appended_branch_1.root.pk))
+        node = models.Node.objects.get(nodeid=str(self.appended_branch_1.root.pk))
         url = reverse("delete_node", kwargs={"graphid": self.GRAPH_ID})
         post_data = JSONSerializer().serialize({"nodeid": node.nodeid})
         response = self.client.delete(url, post_data)
@@ -295,8 +294,8 @@ class GraphManagerViewTests(ArchesTestCase):
     def test_update_node_malicious_config_key(self):
         self.client.login(username="admin", password="admin")
         url = reverse("update_node", kwargs={"graphid": self.GRAPH_ID})
-        node = Node.objects.get(nodeid=self.appended_branch_1.root.pk)
-        nodegroup, _created = NodeGroup.objects.get_or_create(
+        node = models.Node.objects.get(nodeid=self.appended_branch_1.root.pk)
+        nodegroup, _created = models.NodeGroup.objects.get_or_create(
             pk=self.appended_branch_1.root.pk
         )
         node.nodegroup = nodegroup
@@ -391,8 +390,8 @@ class GraphManagerViewTests(ArchesTestCase):
         url = reverse("delete_graph", kwargs={"graphid": self.GRAPH_ID})
         response = self.client.delete(url)
 
-        node_count = Node.objects.filter(graph_id=self.GRAPH_ID).count()
-        edge_count = Edge.objects.filter(graph_id=self.GRAPH_ID).count()
+        node_count = models.Node.objects.filter(graph_id=self.GRAPH_ID).count()
+        edge_count = models.Edge.objects.filter(graph_id=self.GRAPH_ID).count()
         self.assertEqual(node_count, 0)
         self.assertEqual(edge_count, 0)
 
