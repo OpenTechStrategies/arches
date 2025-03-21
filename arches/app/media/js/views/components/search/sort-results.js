@@ -16,8 +16,8 @@ define([
             
             this.sortSymbol=ko.computed(function() {
                 return this.sortOrder() === "asc" ? 
-                    '<span style="display: flex; align-items: center">Asc <i class="fa fa-sort-up"></i></span>' :  
-                    '<span style="display: flex">Desc <i class="fa fa-sort-down"></i></span>'
+                    '<i class="fa fa-sort-alpha-asc fa-lg"></i>' :  
+                    '<i class="fa fa-sort-alpha-desc fa-lg"></i>'
             }, this);
 
             this.searchFilterVms['sort-results'](this); 
