@@ -210,10 +210,12 @@ class StandardSearchView(BaseSearchView):
             list(self.request.GET.items()) + list(self.request.POST.items())
         )
 
-        if sorted_query_obj.get("sort-by", "") or sorted_query_obj.get("sort-order", ""):
+        if sorted_query_obj.get("sort-by", "") or sorted_query_obj.get(
+            "sort-order", ""
+        ):
             sorted_query_obj["sort-results"] = {
-                'sort_by': sorted_query_obj.get("sort-by", ""),
-                'sort_order': sorted_query_obj.get("sort-order", ""),
+                "sort_by": sorted_query_obj.get("sort-by", ""),
+                "sort_order": sorted_query_obj.get("sort-order", ""),
             }
 
         permitted_nodegroups = get_permitted_nodegroups(self.request.user)

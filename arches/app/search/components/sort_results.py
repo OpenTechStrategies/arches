@@ -14,10 +14,11 @@ details = {
     "config": {},
 }
 
+
 class SortResults(BaseSearchFilter):
     def append_dsl(self, search_query_object, **kwargs):
 
-        query_string = kwargs['querystring']
+        query_string = kwargs["querystring"]
         sort_order = query_string["sort_order"]
         sort_by = query_string["sort_by"]
 
@@ -26,7 +27,7 @@ class SortResults(BaseSearchFilter):
         sort_dsl = {
             "nested": {
                 "path": "displayname",
-                        "filter": {"term": {"displayname.language": get_language()}},
+                "filter": {"term": {"displayname.language": get_language()}},
             },
         }
 
