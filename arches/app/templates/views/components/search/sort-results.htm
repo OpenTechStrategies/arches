@@ -5,7 +5,9 @@
 <form autocomplete="off" class="search-dropdowns-container">
     <select class="search-dropdown" data-bind="
         options: [
-        {'id':'', 'name':$root.translations.resourceName}, 
+            {'id':'', 'name':$root.translations.resourceName}, 
+            {'id':'date_created', 'name':$root.translations.dateCreated}, 
+            {'id':'date_edited', 'name':$root.translations.dateEdited}, 
         ],
         optionsText: 'name', 
         optionsValue: 'id',
