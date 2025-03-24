@@ -21,9 +21,6 @@ class SortResults(BaseSearchFilter):
         sort_order = query_string["sort_order"]
         sort_by = query_string["sort_by"]
 
-        sort_component = SearchComponent.objects.get(name="Sort")
-        sort_config = sort_component.config
-
         sort_field = "displayname.value"
 
         sort_dsl = {
@@ -32,10 +29,6 @@ class SortResults(BaseSearchFilter):
                         "filter": {"term": {"displayname.language": get_language()}},
             },
         }
-
-        if sort_by and sort_config:
-            sort_field = sort_config["field"]
-            sort_dsl = sort_config["dsl"]       
 
         if sort_order:
             sort_dsl["order"] = sort_order
