@@ -499,6 +499,20 @@ class Resource(models.ResourceInstance):
         document["displayname"] = []
         document["displaydescription"] = []
         document["map_popup"] = []
+        document["date_created"] = (
+            models.EditLog.objects.filter(
+                resourceinstanceid=str(self.resourceinstanceid)
+            )
+            .earliest("timestamp")
+            .timestamp
+        )
+        document["date_edited"] = (
+            models.EditLog.objects.filter(
+                resourceinstanceid=str(self.resourceinstanceid)
+            )
+            .latest("timestamp")
+            .timestamp
+        )
         for lang in settings.LANGUAGES:
             if context is None:
                 context = {}
