@@ -22,14 +22,18 @@ class SortResults(BaseSearchFilter):
         sort_order = query_string["sort_order"]
         sort_by = query_string["sort_by"]
 
-        sort_field = "displayname.value"
+        if sort_by:
+            sort_field = sort_by
+            sort_dsl = {"order": "asc"}
 
-        sort_dsl = {
-            "nested": {
-                "path": "displayname",
-                "filter": {"term": {"displayname.language": get_language()}},
-            },
-        }
+        else:
+            sort_field = "displayname.value"
+            sort_dsl = {
+                "nested": {
+                    "path": "displayname",
+                    "filter": {"term": {"displayname.language": get_language()}},
+                },
+            }
 
         if sort_order:
             sort_dsl["order"] = sort_order
