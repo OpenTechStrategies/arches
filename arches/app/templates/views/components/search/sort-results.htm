@@ -16,10 +16,10 @@
     <div class="search-dropdown">
         <select data-bind="
             options: [
+                {'id':'', 'name': $root.translations.unsorted},
                 {'id':'resource_name', 'name':$root.translations.resourceName}, 
                 {'id':'date_created', 'name':$root.translations.dateCreated}, 
                 {'id':'date_edited', 'name':$root.translations.dateEdited}, 
-                {'id':'', 'name': $root.translations.unsorted},
             ],
             optionsText: 'name', 
             optionsValue: 'id',

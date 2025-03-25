@@ -11,13 +11,13 @@ define([
             options.name = 'Sort Results';
             BaseFilter.prototype.initialize.call(this, options);
 
-            this.sortBy = ko.observable('resource_name');
+            this.sortBy = ko.observable('');
             this.sortOrder = ko.observable('');
             
             this.sortSymbol=ko.computed(function() {
                 return this.sortOrder() === "asc" ? 
-                    '<i class="fa fa-sort-alpha-asc fa-lg"></i>' :  
-                    '<i class="fa fa-sort-alpha-desc fa-lg"></i>'
+                    '<i class="fa fa-sort-amount-asc fa-lg"></i>' :  
+                    '<i class="fa fa-sort-amount-desc fa-lg"></i>'
             }, this);
 
             this.searchFilterVms['sort-results'](this); 
