@@ -1,20 +1,16 @@
-define([
-    'jquery',
-    'underscore',
-    'knockout',
-    'templates/views/components/workbench.htm',
-    'utils/aria',
-    'bindings/sortable',
-], function($, _, ko, workbenchTemplate, ariaUtils) {
-    var viewModel = function(params) {
-        var self = this;
+import _ from 'underscore';
+import ko from 'knockout';
+import workbenchTemplate from 'templates/views/components/workbench.htm';
+import ariaUtils from 'utils/aria';
+import 'bindings/sortable';
 
-         
+class Workbench {
+    constructor(params) {
         this.activeTab = ko.observable(params.activeTab);
         this.showTabs = ko.observable(true);
-        this.hideSidePanel = function(focusElement) {
-            self.activeTab(undefined);
-            if(focusElement){
+        this.hideSidePanel = (focusElement) => {
+            this.activeTab(undefined);
+            if (focusElement) {
                 ariaUtils.shiftFocus(focusElement);
             }
         };
@@ -23,28 +19,29 @@ define([
             this.card.allowProvisionalEditRerender(false);
         }
 
-        this.expandSidePanel = ko.computed(function(){
-            if (self.tile) {
-                return self.tile.hasprovisionaledits() && self.reviewer === true;
+        this.expandSidePanel = ko.computed(() => {
+            if (this.tile) {
+                return this.tile.hasprovisionaledits() && this.reviewer === true;
             } else {
                 return false;
             }
         });
-        
+
         this.workbenchWrapperClass = ko.observable();
 
-        this.toggleTab = function(tabName) {
-            if (self.activeTab() === tabName) {
-                self.activeTab(null);
+        this.toggleTab = (tabName) => {
+            if (this.activeTab() === tabName) {
+                this.activeTab(null);
             } else {
-                self.activeTab(tabName);
+                this.activeTab(tabName);
             }
         };
-    };
+    }
+}
 
-    ko.components.register('workbench', {
-        viewModel: viewModel,
-        template: workbenchTemplate,
-    });
-    return viewModel;
+ko.components.register('workbench', {
+    viewModel: Workbench,
+    template: workbenchTemplate,
 });
+
+export default Workbench;

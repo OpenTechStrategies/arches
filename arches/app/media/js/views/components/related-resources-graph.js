@@ -1,20 +1,20 @@
-define([
-    'knockout',
-    'arches',
-    'views/components/workbench',
-    'templates/views/components/related-resources-graph.htm',
-    'bindings/cytoscape',
-], function(ko, arches, WorkbenchViewmodel, relatedResourcesGraphTemplate) {
-    const viewModel = function(params) {
-        var self = this;
-        var layout = {
+import ko from 'knockout';
+import arches from 'arches';
+import WorkbenchViewmodel from 'views/components/workbench';
+import relatedResourcesGraphTemplate from 'templates/views/components/related-resources-graph.htm';
+import 'bindings/cytoscape';
+
+class RelatedResourcesGraphViewModel extends WorkbenchViewmodel {
+    constructor(params) {
+        super(params);
+        const self = this;
+        const layout = {
             name: "cola",
             animate: true,
             directed: true,
             edgeLength: 200
         };
 
-         
         this.viz = ko.observable();
         this.cytoscapeConfig = ko.observable();
         this.focusResourceId = ko.isObservable(params.resourceId) ?
@@ -24,79 +24,96 @@ define([
         this.selectionMode = ko.observable('information');
         this.elements = ko.observableArray();
         this.informationElement = ko.observable();
-        this.informationGraph = ko.computed(function() {
-            var informationElement = self.informationElement();
-            if (informationElement && informationElement.graph_id)
+
+        // resourceTypeLookup holds node configuration details keyed by resource type id
+        let resourceTypeLookup = {};
+
+        this.informationGraph = ko.computed(() => {
+            const informationElement = self.informationElement();
+            if (informationElement && informationElement.graph_id) {
                 return resourceTypeLookup[informationElement.graph_id];
+            }
             return {};
         });
-        this.viewInformationNodeReport = function() {
-            var informationElement = self.informationElement();
-            if (informationElement)
+
+        this.viewInformationNodeReport = () => {
+            const informationElement = self.informationElement();
+            if (informationElement) {
                 window.open(arches.urls.resource_report + informationElement.id);
+            }
         };
-        this.editInformationNode = function() {
-            var informationElement = self.informationElement();
-            if (informationElement)
+
+        this.editInformationNode = () => {
+            const informationElement = self.informationElement();
+            if (informationElement) {
                 window.open(arches.urls.resource_editor + informationElement.id);
+            }
         };
+
         this.hoverElementId = ko.observable();
-        this.legendEntries = ko.computed(function() {
-            var elements = self.elements();
-            var entries = [];
-            for (var resourceTypeId in resourceTypeLookup) {
-                if (elements.filter(function(element) {
-                    return element.data('graph_id') === resourceTypeId;
-                }).length > 0) entries.push(resourceTypeLookup[resourceTypeId]);
+
+        this.legendEntries = ko.computed(() => {
+            const elements = self.elements();
+            const entries = [];
+            for (let resourceTypeId in resourceTypeLookup) {
+                if (elements.filter(element => element.data('graph_id') === resourceTypeId).length > 0) {
+                    entries.push(resourceTypeLookup[resourceTypeId]);
+                }
             }
             return entries;
         });
+
         this.nodeSearchFilter = ko.observable('');
         this.expandedSearchId = ko.observable();
-        this.searchNodes = ko.computed(function() {
-            var filter = self.nodeSearchFilter();
-            var elements = self.elements();
-            var viz = self.viz();
-            var filteredNodes = [];
-            if (viz) elements.forEach(function(element) {
-                if (element.isNode()) {
-                    var data = element.data();
-                    if (!data.shownRelationsCount) data.shownRelationsCount = ko.observable();
-                    if (data.displayname.toLowerCase().indexOf(filter) !== -1) {
-                        data.graph = resourceTypeLookup[data.graph_id];
-                        // excludes target relationships back to node, to prevent duplicates
-                        data.shownRelationsCount(viz.edges('[source = "' + data.id + '"]').length +
-                            viz.edges('[target = "' + data.id + '"][source != "' + data.id + '"]'). length);
-                        filteredNodes.push(data);
+        this.searchNodes = ko.computed(() => {
+            const filter = self.nodeSearchFilter();
+            const elements = self.elements();
+            const viz = self.viz();
+            const filteredNodes = [];
+            if (viz) {
+                elements.forEach(element => {
+                    if (element.isNode()) {
+                        const data = element.data();
+                        if (!data.shownRelationsCount) {
+                            data.shownRelationsCount = ko.observable();
+                        }
+                        if (data.displayname.toLowerCase().indexOf(filter) !== -1) {
+                            data.graph = resourceTypeLookup[data.graph_id];
+                            data.shownRelationsCount(
+                                viz.edges('[source = "' + data.id + '"]').length +
+                                viz.edges('[target = "' + data.id + '"][source != "' + data.id + '"]').length
+                            );
+                            filteredNodes.push(data);
+                        }
                     }
-                }
-            });
+                });
+            }
             return filteredNodes;
         });
-        // strips URL from relationship labels, if present, for presentation
-        var getRelationshipLabel = function(edgeData) {
-            var label;
+
+        const getRelationshipLabel = function (edgeData) {
+            let label;
             try {
-                var url = new window.URL(edgeData.relationshiptype_label);
-                label = url.pathname.split('/')[url.pathname.split('/').length - 1];
+                const url = new window.URL(edgeData.relationshiptype_label);
+                label = url.pathname.split('/').pop();
             } catch (e) {
                 label = edgeData.relationshiptype_label;
             }
             return label;
         };
-        this.informationElementRelationships = ko.computed(function() {
-            var relationships = [];
-            var informationElement = self.informationElement();
-            var viz = self.viz();
-            self.elements();
-            if (informationElement && viz && !informationElement.source) {
-                var sourceEdges = viz.edges('[source = "' + informationElement.id + '"]');
-                var targetEdges = viz.edges('[target = "' + informationElement.id + '"]');
-                var addRelationship = function(edge, nodeType) {
-                    var edgeData = edge.data();
-                    var nodeData = edge[nodeType]().data();
-                    var label = getRelationshipLabel(edgeData);
 
+        this.informationElementRelationships = ko.computed(() => {
+            const relationships = [];
+            const informationElement = self.informationElement();
+            const viz = self.viz();
+            self.elements(); // ensure dependency
+            if (informationElement && viz && !informationElement.source) {
+                const sourceEdges = viz.edges('[source = "' + informationElement.id + '"]');
+                const targetEdges = viz.edges('[target = "' + informationElement.id + '"]');
+                const addRelationship = function (edge, nodeType) {
+                    const edgeData = edge.data();
+                    const nodeData = edge[nodeType]().data();
+                    const label = getRelationshipLabel(edgeData);
                     relationships.push({
                         label: label,
                         node: nodeData,
@@ -105,23 +122,22 @@ define([
                         hoverElementId: self.hoverElementId
                     });
                 };
-                sourceEdges.forEach(function(edge) {
-                    addRelationship(edge, 'target');
-                });
-                targetEdges.forEach(function(edge) {
-                    // excludes target relationships back to node, to prevent duplicates
-                    if (edge.source().id() !== edge.target().id())
+                sourceEdges.forEach(edge => addRelationship(edge, 'target'));
+                targetEdges.forEach(edge => {
+                    if (edge.source().id() !== edge.target().id()) {
                         addRelationship(edge, 'source');
+                    }
                 });
             }
             return relationships;
         });
-        this.edgeInformation = ko.computed(function() {
-            var informationElement = self.informationElement();
-            var viz = self.viz();
+
+        this.edgeInformation = ko.computed(() => {
+            const informationElement = self.informationElement();
+            const viz = self.viz();
             if (informationElement && viz && informationElement.source) {
-                var sourceData = viz.getElementById(informationElement.source).data();
-                var targetData = viz.getElementById(informationElement.target).data();
+                const sourceData = viz.getElementById(informationElement.source).data();
+                const targetData = viz.getElementById(informationElement.target).data();
                 return {
                     id: informationElement.id,
                     label: getRelationshipLabel(informationElement),
@@ -133,14 +149,13 @@ define([
             }
         });
 
-        WorkbenchViewmodel.apply(this, [params]);
-
-        var getResourceRelations = function(resourceId) {
-            var url = `${arches.urls.related_resources}${resourceId}?paginate=false&lang=${arches.activeLanguage}`;
+        // Fetch related resources for a given resourceId.
+        const getResourceRelations = function (resourceId) {
+            const url = `${arches.urls.related_resources}${resourceId}?paginate=false&lang=${arches.activeLanguage}`;
             return window.fetch(url);
         };
-        var resourceTypeLookup = {};
-        var dataToElement = function(data) {
+
+        const dataToElement = function (data) {
             data.source = data.resourceinstanceidfrom;
             data.target = data.resourceinstanceidto;
             if (data.source) {
@@ -149,155 +164,155 @@ define([
                 data.id = data.resourceinstanceid;
                 data.totalRelations = data.total_relations.value;
             }
-            var classes = [];
-            if (data.graph_id) classes.push(resourceTypeLookup[data.graph_id].className);
-            if (data.focus) classes.push('focus');
+            const classes = [];
+            if (data.graph_id) {
+                classes.push(resourceTypeLookup[data.graph_id].className);
+            }
+            if (data.focus) {
+                classes.push('focus');
+            }
             return {
                 data: data,
                 classes: classes,
                 selected: data.focus
             };
         };
-        this.refreshLayout = function() {
-            var viz = self.viz();
+
+        this.refreshLayout = function () {
+            const viz = self.viz();
             if (viz) {
                 viz.elements().makeLayout(layout).run();
             }
         };
-        this.addMissingNodes = function(elements){
-            var nodesReferencedByEdges = [];
-            elements.forEach(function(ele){
-                if(!!ele.data.source){
+
+        this.addMissingNodes = function (elements) {
+            const nodesReferencedByEdges = [];
+            elements.forEach(ele => {
+                if (ele.data.source) {
                     nodesReferencedByEdges.push(ele.data.source);
                 }
-                if(!!ele.data.target){
+                if (ele.data.target) {
                     nodesReferencedByEdges.push(ele.data.target);
                 }
             });
-            var relatedResourceIds = elements.filter(function(ele){
-                return !!ele.data.resourceinstanceid;
-            }).map(function(ele){
-                return ele.data.resourceinstanceid;
-            });
-            // add reference to missing nodes
-            nodesReferencedByEdges.forEach(function(resourceId){
-                if(!relatedResourceIds.includes(resourceId)){
+            const relatedResourceIds = elements
+                .filter(ele => !!ele.data.resourceinstanceid)
+                .map(ele => ele.data.resourceinstanceid);
+            nodesReferencedByEdges.forEach(resourceId => {
+                if (!relatedResourceIds.includes(resourceId)) {
                     elements.push({
-                        'classes':[],
-                        'data':{
-                            'graph_id': 'undefined',
-                            'id': resourceId,
-                            'target': undefined,
-                            'source': undefined,
-                            'displayname': '',
-                            'totalRelations': 1
+                        classes: [],
+                        data: {
+                            graph_id: 'undefined',
+                            id: resourceId,
+                            target: undefined,
+                            source: undefined,
+                            displayname: '',
+                            totalRelations: 1
                         },
-                        'selected': undefined
+                        selected: undefined
                     });
                     relatedResourceIds.push(resourceId);
                 }
             });
             return elements;
         };
-        this.expandNode = function(node) {
-            var viz = self.viz();
-            var position;
+
+        this.expandNode = function (node) {
+            const viz = self.viz();
+            let position;
             if (viz) {
-                position = self.viz().getElementById(node.id).position();
+                position = viz.getElementById(node.id).position();
             }
-            if (node.id) getResourceRelations(node.id)
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(result) {
-                    var elements = result.related_resources.concat(result.resource_relationships)
-                        .map(function(data) {
-                            var element = dataToElement(data);
-                            if (!data.source && position) {
-                                element.position = {
-                                    x: position.x,
-                                    y: position.y
-                                };
-                            }
-                            return element;
-                        });    
-                    elements = self.addMissingNodes(elements)
-                        .filter(function(element) {
-                            return viz.getElementById(element.data.id).length === 0;
+            if (node.id) {
+                getResourceRelations(node.id)
+                    .then(response => response.json())
+                    .then(result => {
+                        let elements = result.related_resources.concat(result.resource_relationships)
+                            .map(data => {
+                                const element = dataToElement(data);
+                                if (!data.source && position) {
+                                    element.position = { x: position.x, y: position.y };
+                                }
+                                return element;
+                            });
+                        elements = self.addMissingNodes(elements)
+                            .filter(element => viz.getElementById(element.data.id).length === 0);
+                        viz.getElementById(node.id).lock();
+                        viz.add(elements);
+                        self.elements(viz.elements());
+                        const vizLayout = viz.elements().makeLayout(layout);
+                        vizLayout.on("layoutstop", function () {
+                            viz.nodes().unlock();
                         });
-                    self.viz().getElementById(node.id).lock();
-                    viz.add(elements);
-                    self.elements(viz.elements());
-                    var vizLayout = viz.elements().makeLayout(layout);
-                    vizLayout.on("layoutstop", function() {
-                        viz.nodes().unlock();
+                        vizLayout.run();
                     });
-                    vizLayout.run();
-                });
+            }
         };
-        var getStyle = function() {
-            var nodeSize = 60;
-            var borderColor = '#115170';
-            var borderHighlightColor = '#023047';
-            var borderSelectedColor = '#000F16';
-            var lineColor = '#BFBEBE';
-            var selectedLineColor = '#023047';
-            var borderWidth = 1;
-            var hoverBorderWidth = 4;
-            var selectedBorderWidth = 4;
-            var styles = [{
-                "selector": "node",
-                "style": {
-                    "content": "data(displayname)",
+
+        const getStyle = function () {
+            const nodeSize = 60;
+            const borderColor = '#115170';
+            const borderHighlightColor = '#023047';
+            const borderSelectedColor = '#000F16';
+            const lineColor = '#BFBEBE';
+            const selectedLineColor = '#023047';
+            const borderWidth = 1;
+            const hoverBorderWidth = 4;
+            const selectedBorderWidth = 4;
+            const styles = [{
+                selector: "node",
+                style: {
+                    content: "data(displayname)",
                     "font-size": "18px",
-                    "width": nodeSize,
-                    "height": nodeSize,
+                    width: nodeSize,
+                    height: nodeSize,
                     "text-valign": "center",
                     "text-halign": "center",
                     "border-color": borderColor,
                     "border-width": borderWidth
                 }
             }, {
-                "selector": "node.focus",
-                "style": {
+                selector: "node.focus",
+                style: {
                     "font-weight": "bold"
                 }
             }, {
-                "selector": "node:selected",
-                "style": {
+                selector: "node:selected",
+                style: {
                     "border-width": selectedBorderWidth,
                     "border-color": borderSelectedColor
                 }
             }, {
-                "selector": "node.hover",
-                "style": {
+                selector: "node.hover",
+                style: {
                     "border-width": hoverBorderWidth,
                     "border-color": borderHighlightColor
                 }
             }, {
-                "selector": "edge",
-                "style": {
+                selector: "edge",
+                style: {
                     "line-color": lineColor,
                     "border-width": borderWidth
                 }
             }, {
-                "selector": "edge:selected",
-                "style": {
-                    "width": selectedBorderWidth,
+                selector: "edge:selected",
+                style: {
+                    width: selectedBorderWidth,
                     "line-color": selectedLineColor
                 }
             }, {
-                "selector": "edge.hover",
-                "style": {
-                    "width": hoverBorderWidth,
+                selector: "edge.hover",
+                style: {
+                    width: hoverBorderWidth,
                     "line-color": selectedLineColor
                 }
             }];
-            for (var resourceId in resourceTypeLookup) {
-                var color = resourceTypeLookup[resourceId].fillColor || '#CCCCCC';
-                var style = {
-                    "selector": "node." + resourceTypeLookup[resourceId].className,
-                    "style": {
+            for (let resourceId in resourceTypeLookup) {
+                const color = resourceTypeLookup[resourceId].fillColor || '#CCCCCC';
+                const style = {
+                    selector: "node." + resourceTypeLookup[resourceId].className,
+                    style: {
                         "background-color": color
                     }
                 };
@@ -305,7 +320,8 @@ define([
             }
             return styles;
         };
-        var updateCytoscapeConfig = function(elements) {
+
+        const updateCytoscapeConfig = function (elements) {
             self.cytoscapeConfig({
                 selectionType: 'single',
                 elements: elements,
@@ -313,37 +329,32 @@ define([
                 style: getStyle()
             });
         };
-        var updateFocusResource = function() {
-            var resourceId = self.focusResourceId();
-            if (resourceId) {
-                var viz = self.viz();
-                if (viz) {
-                    var element = viz.getElementById(resourceId);
-                    if (element) self.informationElement(element.data());
-                }
 
+        const updateFocusResource = function () {
+            const resourceId = self.focusResourceId();
+            if (resourceId) {
+                const viz = self.viz();
+                if (viz) {
+                    const element = viz.getElementById(resourceId);
+                    if (element) {
+                        self.informationElement(element.data());
+                    }
+                }
                 self.selection(null);
                 getResourceRelations(resourceId)
-                    .then(function(response) {
-                        return response.json();
-                    })
-                    .then(function(result) {
-                        var i = 0;
-                        var lookup = result['node_config_lookup'];
-                        for (var resourceId in lookup) {
+                    .then(response => response.json())
+                    .then(result => {
+                        let i = 0;
+                        const lookup = result['node_config_lookup'];
+                        for (let resourceId in lookup) {
                             lookup[resourceId].className = 'resource-type-' + i;
                             i++;
                         }
-                        // add lookup for referencing a missing related resources
-                        lookup['undefined'] = {
-                            'fillColor': '#CCCCCC'
-                        };
+                        lookup['undefined'] = { fillColor: '#CCCCCC' };
                         resourceTypeLookup = lookup;
                         result.resource_instance.focus = true;
-                        result.resource_instance['total_relations'] = {
-                            value: result.resource_relationships.length
-                        };
-                        var elements = [dataToElement(result.resource_instance)]
+                        result.resource_instance['total_relations'] = { value: result.resource_relationships.length };
+                        let elements = [dataToElement(result.resource_instance)]
                             .concat(
                                 result.related_resources.concat(result.resource_relationships)
                                     .map(dataToElement)
@@ -364,81 +375,98 @@ define([
         };
 
         this.focusResourceId.subscribe(updateFocusResource);
-        this.viz.subscribe(function(viz) {
+
+        this.viz.subscribe(viz => {
             if (!viz) {
                 self.cytoscapeConfig(null);
                 self.selection(null);
-            }
-            else {
-                viz.on('select', 'node, edge', function(e) {
-                    // prevents multiple selection
+            } else {
+                viz.on('select', 'node, edge', function (e) {
                     viz.elements().not(e.target).unselect();
                     self.selection(e.target.data());
                 });
-                viz.on('unselect', 'node, edge', function() {
+                viz.on('unselect', 'node, edge', function () {
                     self.selection(null);
                 });
-                viz.on('mouseover', 'node, edge', function(e) {
+                viz.on('mouseover', 'node, edge', function (e) {
                     self.hoverElementId(e.target.id());
                 });
-                viz.on('mouseout', 'node, edge', function() {
+                viz.on('mouseout', 'node, edge', function () {
                     self.hoverElementId(null);
                 });
             }
         });
 
-        this.hoverElementId.subscribe(function(elementId) {
-            var viz = self.viz();
+        this.hoverElementId.subscribe(elementId => {
+            const viz = self.viz();
             if (viz) {
                 viz.elements().removeClass('hover');
-                if (elementId) viz.getElementById(elementId).addClass('hover');
+                if (elementId) {
+                    viz.getElementById(elementId).addClass('hover');
+                }
             }
         });
 
-        this.activeTab.subscribe(function() {
-            var viz = self.viz();
-            if (viz) viz.resize();
+        this.activeTab.subscribe(() => {
+            const viz = self.viz();
+            if (viz) {
+                viz.resize();
+            }
         });
 
-        this.selection.subscribe(function(selection) {
-            var mode = self.selectionMode();
-            var viz = self.viz();
-            if (selection) switch (mode) {
-            case 'expand':
-                if (selection.source) viz.elements().unselect();
-                else self.expandNode(selection);
-                break;
-            case 'delete':
-                var element = viz.getElementById(selection.id);
-                var informationElement = self.informationElement();
-                var informationElementId = informationElement ? informationElement.id : null;
-                if (!selection.source) viz.edges().forEach(function(edge) {
-                    if (edge.source().id() === selection.id ||
-                        edge.target().id() === selection.id) {
-                        if (edge.id() === informationElementId) self.informationElement(null);
-                        viz.remove(edge);
-                        self.elements.remove(edge);
+        this.selection.subscribe(selection => {
+            const mode = self.selectionMode();
+            const viz = self.viz();
+            if (selection) {
+                switch (mode) {
+                    case 'expand':
+                        if (selection.source) {
+                            viz.elements().unselect();
+                        } else {
+                            self.expandNode(selection);
+                        }
+                        break;
+                    case 'delete': {
+                        const element = viz.getElementById(selection.id);
+                        const informationElement = self.informationElement();
+                        const informationElementId = informationElement ? informationElement.id : null;
+                        if (!selection.source) {
+                            viz.edges().forEach(edge => {
+                                if (edge.source().id() === selection.id || edge.target().id() === selection.id) {
+                                    if (edge.id() === informationElementId) {
+                                        self.informationElement(null);
+                                    }
+                                    viz.remove(edge);
+                                    self.elements.remove(edge);
+                                }
+                            });
+                        }
+                        if (selection.id === informationElementId) {
+                            self.informationElement(null);
+                        }
+                        viz.remove(element);
+                        self.elements.remove(element);
+                        break;
                     }
-                });
-                if (selection.id === informationElementId) self.informationElement(null);
-                viz.remove(element);
-                self.elements.remove(element);
-                break;
-            case 'focus':
-                if (selection.source) viz.elements().unselect();
-                else self.focusResourceId(selection.id);
-                break;
-            default:
-                self.informationElement(selection);
-                break;
+                    case 'focus':
+                        if (selection.source) {
+                            viz.elements().unselect();
+                        } else {
+                            self.focusResourceId(selection.id);
+                        }
+                        break;
+                    default:
+                        self.informationElement(selection);
+                        break;
+                }
             }
         });
 
-        self.informationElement.subscribe(function(data) {
-            var viz = self.viz();
+        self.informationElement.subscribe(data => {
+            const viz = self.viz();
             if (data) {
                 if (viz) {
-                    var element = viz.getElementById(data.id);
+                    const element = viz.getElementById(data.id);
                     if (!element.selected()) {
                         self.selectionMode('information');
                         element.select();
@@ -448,16 +476,18 @@ define([
             }
         });
 
-        this.selectionMode.subscribe(function() {
-            var viz = self.viz();
+        this.selectionMode.subscribe(() => {
+            const viz = self.viz();
             viz.elements().unselect();
         });
 
         updateFocusResource();
-    };
+    }
+}
 
-    return ko.components.register('related-resources-graph', {
-        viewModel: viewModel,
-        template: relatedResourcesGraphTemplate,
-    });
+ko.components.register('related-resources-graph', {
+    viewModel: RelatedResourcesGraphViewModel,
+    template: relatedResourcesGraphTemplate,
 });
+
+export default RelatedResourcesGraphViewModel;

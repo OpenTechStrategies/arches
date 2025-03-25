@@ -1,30 +1,31 @@
-define([
-    'jquery',
-    'knockout',
-    'knockout-mapping',
-    'leaflet',
-    'arches',
-    'views/components/workbench',
-    'templates/views/components/iiif-popup.htm',
-    'templates/views/components/iiif-viewer.htm',
-    'select-woo-src/utils',
-    'select-woo-src/data/array',
-    'leaflet-iiif',
-    'leaflet-fullscreen',
-    'leaflet-side-by-side',
-    'bindings/select2-query',
-    'bindings/leaflet'
-], function($, ko, koMapping, L, arches, WorkbenchViewmodel, iiifPopup, iiifViewerTemplate, selectWooUtils, selectWooArrayAdapter) {
-    var IIIFViewerViewmodel = function(params) {
-        var self = this;
-        var abortFetchManifest;
-        this.getManifestDataValue = function(object, property, returnFirstVal) {
-            var val = object[property];
+import $ from 'jquery';
+import ko from 'knockout';
+import koMapping from 'knockout-mapping';
+import L from 'leaflet';
+import arches from 'arches';
+import WorkbenchViewmodel from 'views/components/workbench';
+import iiifPopup from 'templates/views/components/iiif-popup.htm';
+import iiifViewerTemplate from 'templates/views/components/iiif-viewer.htm';
+import selectWooUtils from 'select-woo-src/utils';
+import selectWooArrayAdapter from 'select-woo-src/data/array';
+import 'leaflet-iiif';
+import 'leaflet-fullscreen';
+import 'leaflet-side-by-side';
+import 'bindings/select2-query';
+import 'bindings/leaflet';
+
+class IIIFViewerViewmodel extends WorkbenchViewmodel {
+    constructor(params) {
+        super(params);
+        const self = this;
+        let abortFetchManifest;
+
+        this.getManifestDataValue = function (object, property, returnFirstVal) {
+            let val = object[property];
             if (Array.isArray(val) && returnFirstVal) val = object[property][0]["@value"];
             return val;
         };
 
-         
         this.map = ko.observable();
         this.manifest = ko.observable(params.manifest);
         this.editManifest = ko.observable(!params.manifest);
@@ -66,15 +67,13 @@ define([
         this.origCanvasLabel = ko.observable();
 
         this.selectPrimaryPanel.subscribe((value) => {
-            // if true, primary panel is being selected
-            if(value){
+            if (value) {
                 this.imageToolSelector(this.canvas());
                 self.origCanvasLabel(self.canvasObject().label);
                 self.canvasLabel(self.canvasObject().label);
-                // preserve state of secondary filters, if secondaryCanvas is set
-                if(self.secondaryCanvas()) {
+                if (self.secondaryCanvas()) {
                     secondaryPanelFilters = self.canvasFilterObject();
-                    if(primaryPanelFilters) {
+                    if (primaryPanelFilters) {
                         self.brightness(primaryPanelFilters.brightness);
                         self.saturation(primaryPanelFilters.saturation);
                         self.contrast(primaryPanelFilters.contrast);
@@ -86,7 +85,7 @@ define([
                 primaryPanelFilters = self.canvasFilterObject();
                 self.origCanvasLabel(self.secondaryCanvasObject()?.label);
                 self.canvasLabel(self.secondaryCanvasObject()?.label);
-                if(secondaryPanelFilters) {
+                if (secondaryPanelFilters) {
                     self.brightness(secondaryPanelFilters.brightness);
                     self.saturation(secondaryPanelFilters.saturation);
                     self.contrast(secondaryPanelFilters.contrast);
@@ -101,29 +100,24 @@ define([
         });
 
         this.imageToolSelector.subscribe((value) => {
-            if(this.selectPrimaryPanel() && this.canvas() !== this.imageToolSelector()){
+            if (this.selectPrimaryPanel() && this.canvas() !== this.imageToolSelector()) {
                 this.canvas(this.imageToolSelector());
-            } else if (!this.selectPrimaryPanel() && this.secondaryCanvas() !== this.imageToolSelector()){
+            } else if (!this.selectPrimaryPanel() && this.secondaryCanvas() !== this.imageToolSelector()) {
                 this.secondaryCanvas(this.imageToolSelector());
             }
         });
 
         this.compareMode.subscribe((mode) => {
-            if(!mode){
+            if (!mode) {
                 const map = self.map();
-
-                if(secondaryCanvasLayer && map.hasLayer(secondaryCanvasLayer)){
+                if (secondaryCanvasLayer && map.hasLayer(secondaryCanvasLayer)) {
                     try {
                         map.removeLayer(secondaryCanvasLayer);
-                    } catch(e){
-                        // ignore/smother if remove layer fails
-                    }
+                    } catch (e) { }
                 }
-
-                if(sideBySideControl && sideBySideControl?._map){
+                if (sideBySideControl && sideBySideControl._map) {
                     map.removeControl(sideBySideControl);
                 }
-    
                 self.secondaryCanvas(undefined);
                 self.secondaryLabel(undefined);
                 self.showImageModifiers(false);
@@ -136,39 +130,32 @@ define([
         });
 
         this.panelRadio = ko.pureComputed(() => {
-            if(!this.compareMode()){
-                return "single";
-            } else {
-                return "double";
-            }
+            return !this.compareMode() ? "single" : "double";
         });
 
         this.showLogo = ko.pureComputed(() => {
-            const imageExtenstion = ["bmp", "gif", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
-            return !!imageExtenstion.find((ext) => self.manifestLogo().endsWith(ext))
+            const imageExtension = ["bmp", "gif", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"];
+            return !!imageExtension.find(ext => self.manifestLogo().endsWith(ext));
         });
 
-        this.buildAnnotationNodes = params.buildAnnotationNodes || function(json) {
+        this.buildAnnotationNodes = params.buildAnnotationNodes || function (json) {
             self.annotationNodes(
                 json.map((node) => {
                     const annotations = ko.observableArray();
-                    const updateAnnotations = async function() {
-                        var canvas = self.canvas();
+                    const updateAnnotations = async function () {
+                        const canvas = self.canvas();
                         if (canvas) {
                             const annotationsUrl = arches.urls.iiifannotations + '?canvas=' + canvas + '&nodeid=' + node.nodeid;
-                            if(!cachedAnnotations[annotationsUrl]){
+                            if (!cachedAnnotations[annotationsUrl]) {
                                 const response = await window.fetch(annotationsUrl);
-
                                 const jsonResponse = await response.json();
                                 cachedAnnotations[annotationsUrl] = jsonResponse;
                             }
                             const annotation = cachedAnnotations[annotationsUrl];
-
-                            annotation.features.forEach(function(feature) {
+                            annotation.features.forEach(function (feature) {
                                 feature.properties.graphName = node['graph_name'];
                             });
                             annotations(annotation.features);
-
                         }
                     };
                     self.canvas.subscribe(updateAnnotations);
@@ -185,22 +172,18 @@ define([
         };
 
         window.fetch(arches.urls.iiifannotationnodes)
-            .then(function(response) {
-                return response.json();
-            })
+            .then(response => response.json())
             .then(self.buildAnnotationNodes);
 
-        var annotationLayer = ko.computed(function() {
-            var annotationFeatures = [];
-            self.annotationNodes().forEach(function(node) {
+        const annotationLayer = ko.computed(function () {
+            let annotationFeatures = [];
+            self.annotationNodes().forEach(function (node) {
                 if (node.active()) {
-                    var annotations = node.annotations();
+                    let annotations = node.annotations();
                     if (params.tile && params.tile.tileid) {
-                        annotations = annotations.filter(function(annotation) {
-                            return annotation.properties.tileId !== params.tile.tileid;
-                        });
+                        annotations = annotations.filter(annotation => annotation.properties.tileId !== params.tile.tileid);
                     }
-                    annotations.forEach(function(annotation) {
+                    annotations.forEach(function (annotation) {
                         annotation.properties.opacityModifier = node.opacity();
                     });
                     annotationFeatures = annotations.concat(annotationFeatures);
@@ -210,9 +193,9 @@ define([
                 type: 'FeatureCollection',
                 features: annotationFeatures
             }, {
-                pointToLayer: function(feature, latlng) {
-                    var modifier = feature.properties.opacityModifier / 100;
-                    var style = {
+                pointToLayer: function (feature, latlng) {
+                    const modifier = feature.properties.opacityModifier / 100;
+                    const style = {
                         color: feature.properties.color,
                         fillColor: feature.properties.fillColor,
                         weight: feature.properties.weight,
@@ -222,9 +205,9 @@ define([
                     };
                     return L.circleMarker(latlng, style);
                 },
-                style: function(feature) {
-                    var modifier = feature.properties.opacityModifier / 100;
-                    var style = {
+                style: function (feature) {
+                    const modifier = feature.properties.opacityModifier / 100;
+                    const style = {
                         color: feature.properties.color,
                         fillColor: feature.properties.fillColor,
                         weight: feature.properties.weight,
@@ -234,38 +217,34 @@ define([
                     };
                     return style;
                 },
-                onEachFeature: function(feature, layer) {
+                onEachFeature: function (feature, layer) {
                     if (params.onEachFeature) {
                         params.onEachFeature(feature, layer);
-                    }
-                    else {
-                        var popup = L.popup({
+                    } else {
+                        const popup = L.popup({
                             closeButton: false,
                             maxWidth: 349
                         })
                             .setContent(iiifPopup)
-                            .on('add', function() {
-                                var popupData = {
-                                    'closePopup': function() {
+                            .on('add', function () {
+                                const popupData = {
+                                    closePopup: function () {
                                         popup.remove();
                                     },
-                                    'name': ko.observable(''),
-                                    'description': ko.observable(''),
-                                    'graphName': feature.properties.graphName,
-                                    'resourceinstanceid': feature.properties.resourceId,
-                                    'reportURL': arches.urls.resource_report,
-                                    'translations': arches.translations
+                                    name: ko.observable(''),
+                                    description: ko.observable(''),
+                                    graphName: feature.properties.graphName,
+                                    resourceinstanceid: feature.properties.resourceId,
+                                    reportURL: arches.urls.resource_report,
+                                    translations: arches.translations
                                 };
                                 window.fetch(arches.urls.resource_descriptors + popupData.resourceinstanceid)
-                                    .then(function(response) {
-                                        return response.json();
-                                    })
-                                    .then(function(descriptors) {
+                                    .then(response => response.json())
+                                    .then(descriptors => {
                                         popupData.name(descriptors.displayname);
                                         popupData.description(descriptors['map_popup']);
                                     });
-                                var popupElement = popup.getElement()
-                                    .querySelector('.mapboxgl-popup-content');
+                                const popupElement = popup.getElement().querySelector('.mapboxgl-popup-content');
                                 ko.applyBindingsToDescendants(popupData, popupElement);
                             });
                         layer.bindPopup(popup);
@@ -273,24 +252,24 @@ define([
                 }
             });
         });
-        var annotationFeatureGroup = new L.FeatureGroup();
+        const annotationFeatureGroup = new L.FeatureGroup();
 
-        annotationLayer.subscribe(function(newAnnotationLayer) {
-            var map = self.map();
+        annotationLayer.subscribe(function (newAnnotationLayer) {
+            const map = self.map();
             if (map) {
                 annotationFeatureGroup.clearLayers();
                 annotationFeatureGroup.addLayer(newAnnotationLayer);
             }
         });
 
-        this.canvases = ko.pureComputed(function() {
-            var manifestData = self.manifestData();
-            var sequences = manifestData ? manifestData.sequences : [];
-            var canvases = [];
-            sequences.forEach(function(sequence) {
+        this.canvases = ko.pureComputed(function () {
+            const manifestData = self.manifestData();
+            const sequences = manifestData ? manifestData.sequences : [];
+            const canvases = [];
+            sequences.forEach(function (sequence) {
                 if (sequence.canvases) {
                     sequence.label = self.getManifestDataValue(sequence, 'label', true);
-                    sequence.canvases.forEach(function(canvas) {
+                    sequence.canvases.forEach(function (canvas) {
                         canvas.label = self.getManifestDataValue(canvas, 'label', true);
                         if (typeof canvas.thumbnail === 'object')
                             canvas.thumbnail = canvas.thumbnail["@id"];
@@ -305,12 +284,12 @@ define([
             return canvases;
         });
 
-        var validateUrl = function(value) {
+        const validateUrl = function (value) {
             return /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:[/?#]\S*)?$/i.test(value);
         };
 
-        var queryTerm;
-        var limit = 10;
+        let queryTerm;
+        const limit = 10;
         this.manifestSelectConfig = {
             value: this.manifest,
             clickBubble: true,
@@ -322,56 +301,53 @@ define([
                 url: arches.urls.iiifmanifest,
                 dataType: 'json',
                 quietMillis: 250,
-                data: function(requestParams) {
+                data: function (requestParams) {
                     let term = requestParams.term || '';
                     let page = requestParams.page || 1;
-                    var data = {
-                        start: (page-1)*limit,
+                    const data = {
+                        start: (page - 1) * limit,
                         limit: limit
                     };
                     queryTerm = term;
                     if (term) data.query = term;
                     return data;
                 },
-                processResults: function(data) {
-                    var results = data.results;
+                processResults: function (data) {
+                    let results = data.results;
                     if (validateUrl(queryTerm)) results.unshift({
                         url: queryTerm,
                         label: queryTerm
                     });
-                    results.forEach((item) => {
+                    results.forEach(item => {
                         item.id = item.url;
                     });
                     return {
-                        "results": results,
-                        "pagination": {
-                            "more": data.more
+                        results: results,
+                        pagination: {
+                            more: data.more
                         }
                     };
                 }
             },
-            templateResult: function(item) {
+            templateResult: function (item) {
                 return item.label;
             },
-            templateSelection: function(item) {
+            templateSelection: function (item) {
                 return item.label;
             }
         };
 
-        var CustomDataAdapterClass = function(){
+        const CustomDataAdapterClass = function () {
             return {};
         };
 
-        var CustomDataAdapter = selectWooUtils.Decorate(selectWooArrayAdapter, CustomDataAdapterClass);
-        CustomDataAdapter.prototype.current = function(callback){
+        const CustomDataAdapter = selectWooUtils.Decorate(selectWooArrayAdapter, CustomDataAdapterClass);
+        CustomDataAdapter.prototype.current = function (callback) {
             const canvasObj = self.canvases().find(canvas => self.getCanvasService(canvas) == this.options.options.value());
             callback([canvasObj]);
         };
-        CustomDataAdapter.prototype.query = function(params, callback){
-            // self.canvases.subscribe(function(canvases){
-            //     callback({"results": canvases});
-            // });
-            callback({"results": self.canvases()});
+        CustomDataAdapter.prototype.query = function (params, callback) {
+            callback({ results: self.canvases() });
         };
 
         const splitSelectConfig = {
@@ -381,13 +357,13 @@ define([
             allowClear: false,
             dataAdapter: CustomDataAdapter,
             dropdownCssClass: "split-controls-drop",
-            templateResult: function(item) {
-                if(item.loading){
+            templateResult: function (item) {
+                if (item.loading) {
                     return "";
                 }
-                return $(`<div class="image"><img src="${item.thumbnail}" height="50"/></div><div class="title">${item.label}</div>`); 
+                return $(`<div class="image"><img src="${item.thumbnail}" height="50"/></div><div class="title">${item.label}</div>`);
             },
-            templateSelection: function(item) {
+            templateSelection: function (item) {
                 return item?.label;
             }
         };
@@ -401,31 +377,29 @@ define([
             ...splitSelectConfig,
             value: this.canvas
         };
-        
+
         this.imageToolConfig = {
             ...splitSelectConfig,
             value: this.imageToolSelector
         };
 
-        this.getManifestData = function() {
-            var manifestURL = self.manifest();
+        this.getManifestData = function () {
+            const manifestURL = self.manifest();
             if (manifestURL) {
                 self.manifestLoading(true);
                 self.manifestError(undefined);
                 abortFetchManifest = new window.AbortController();
-                window.fetch(manifestURL, {signal: abortFetchManifest.signal})
-                    .then(function(response) {
-                        return response.json();
-                    })
-                    .then(function(manifestData) {
+                window.fetch(manifestURL, { signal: abortFetchManifest.signal })
+                    .then(response => response.json())
+                    .then(manifestData => {
                         self.manifestData(manifestData);
                         self.editManifest(false);
                     })
-                    .catch(function(error) {
+                    .catch(error => {
                         if (error.message !== "The user aborted a request.")
                             self.manifestError(error);
                     })
-                    .finally(function() {
+                    .finally(() => {
                         self.manifestLoading(false);
                         abortFetchManifest = undefined;
                     });
@@ -435,9 +409,9 @@ define([
 
         WorkbenchViewmodel.apply(this, [params]);
 
-        this.activeTab.subscribe(function() {
-            var map = self.map();
-            if (map) setTimeout(function() {
+        this.activeTab.subscribe(() => {
+            const map = self.map();
+            if (map) setTimeout(() => {
                 map.invalidateSize();
             }, 1);
         });
@@ -446,17 +420,17 @@ define([
         this.showGallery = ko.observable(params.showGallery);
         if (!params.manifest) params.expandGallery = true;
         this.expandGallery = ko.observable(params.expandGallery);
-        this.expandGallery.subscribe(function(expandGallery) {
-            if (expandGallery) { 
+        this.expandGallery.subscribe(expandGallery => {
+            if (expandGallery) {
                 self.compareMode(false);
                 self.showGallery(true);
             }
         });
-        this.showGallery.subscribe(function(showGallery) {
+        this.showGallery.subscribe(showGallery => {
             if (!showGallery) self.expandGallery(false);
         });
 
-        this.toggleGallery = function() {
+        this.toggleGallery = function () {
             self.showGallery(!self.showGallery());
         };
 
@@ -468,16 +442,15 @@ define([
         };
 
         this.imagePropertyUpdate = (location, viewmodel, event) => {
-            if(self.floatingLocation() == location || !self.showImageModifiers()){
+            if (self.floatingLocation() == location || !self.showImageModifiers()) {
                 self.showImageModifiers(!self.showImageModifiers());
             }
             self.floatingLocation(location);
-            if(self.floatingLocation() == "left") {
+            if (self.floatingLocation() == "left") {
                 self.selectPrimaryPanel(true);
             } else {
                 self.selectPrimaryPanel(false);
             }
-
         };
 
         this.fileUpdate = (...params) => {
@@ -492,13 +465,12 @@ define([
         this.saturation = ko.observable(100);
         this.greyscale = ko.observable(false);
 
-        this.canvasFilter = ko.pureComputed(function() {
-            var b = self.brightness() / 100;
-            var c = self.contrast() / 100;
-            var s = self.saturation() / 100;
-            var g = self.greyscale() ? 1 : 0;
-            return 'brightness(' + b + ') contrast(' + c + ') ' +
-                'saturate(' + s + ') grayscale(' + g + ')';
+        this.canvasFilter = ko.pureComputed(function () {
+            const b = self.brightness() / 100;
+            const c = self.contrast() / 100;
+            const s = self.saturation() / 100;
+            const g = self.greyscale() ? 1 : 0;
+            return 'brightness(' + b + ') contrast(' + c + ') saturate(' + s + ') grayscale(' + g + ')';
         });
 
         this.canvasFilterObject = ko.pureComputed(() => {
@@ -506,28 +478,27 @@ define([
             const contrast = self.contrast();
             const saturation = self.saturation();
             const greyscale = self.greyscale();
-
             return { brightness, contrast, saturation, greyscale };
         });
 
-        var updateCanvasLayerFilter = function() {
-            var filter = self.canvasFilter();
-            var map = self.map();
+        const updateCanvasLayerFilter = function () {
+            const filter = self.canvasFilter();
+            const map = self.map();
             let layer;
             if (map) {
-                if(self.selectPrimaryPanel()){
+                if (self.selectPrimaryPanel()) {
                     layer = map.getPane('tilePane').querySelector('.iiif-layer-primary');
                 } else {
                     layer = map.getPane('tilePane').querySelector('.iiif-layer-secondary');
                 }
-                if(layer && layer !== null){
+                if (layer) {
                     layer.style.filter = filter;
                 }
             }
         };
         this.canvasFilter.subscribe(updateCanvasLayerFilter);
 
-        this.resetImageSettings = function() {
+        this.resetImageSettings = function () {
             self.brightness(100);
             self.contrast(100);
             self.saturation(100);
@@ -535,85 +506,73 @@ define([
         };
 
         const zoomToBounds = (map, layer) => {
-            var initialZoom = layer._getInitialZoom(map.getSize());
-            var imageSize = layer._imageSizes[initialZoom];
-            var sw = map.options.crs.pointToLatLng(L.point(0, imageSize.y), initialZoom);
-            var ne = map.options.crs.pointToLatLng(L.point(imageSize.x, 0), initialZoom);
-            var bounds = L.latLngBounds(sw, ne);
+            const initialZoom = layer._getInitialZoom(map.getSize());
+            const imageSize = layer._imageSizes[initialZoom];
+            const sw = map.options.crs.pointToLatLng(L.point(0, imageSize.y), initialZoom);
+            const ne = map.options.crs.pointToLatLng(L.point(imageSize.x, 0), initialZoom);
+            const bounds = L.latLngBounds(sw, ne);
             map.fitBounds(bounds);
         };
 
         const loadComparison = () => {
             const map = self.map();
-            if(map && canvasLayer.getContainer() && secondaryCanvasLayer?.getContainer() /*self.primaryLayerLoaded && self.secondaryLayerLoaded*/){
-                // remove the control if it's been added to the map already  
-                if(self.zoomToCanvas){
+            if (map && canvasLayer.getContainer() && secondaryCanvasLayer?.getContainer()) {
+                if (self.zoomToCanvas) {
                     zoomToBounds(map, canvasLayer);
-                    //map.fitBounds(canvasLayer.getBounds())
                     self.zoomToCanvas = false;
                 }
-                // add the control back, comparing the appropriate layers
-                if(!sideBySideControl){
+                if (!sideBySideControl) {
                     sideBySideControl = L.control.sideBySide(canvasLayer, secondaryCanvasLayer);
                 } else {
                     sideBySideControl.setLeftLayers(canvasLayer);
                     sideBySideControl.setRightLayers(secondaryCanvasLayer);
                 }
-
-                if(!sideBySideControl?._map) {
+                if (!sideBySideControl?._map) {
                     sideBySideControl.addTo(map);
                 }
             }
         };
 
-        var updatePrimaryCanvasLayer = function() {
+        const updatePrimaryCanvasLayer = function () {
             const map = self.map();
             const canvas = self.canvas();
-
-            if(self.selectPrimaryPanel() && canvas && canvas != self.imageToolSelector()){
+            if (self.selectPrimaryPanel() && canvas && canvas != self.imageToolSelector()) {
                 self.imageToolSelector(canvas);
             }
-
             if (map && canvas) {
                 if (canvasLayer && map.hasLayer(canvasLayer)) {
                     try {
                         map.removeLayer(canvasLayer);
-                    } catch(e){
-                        // ignore/smother if remove layer fails
-                    }
+                    } catch (e) { }
                     canvasLayer = undefined;
                 }
                 if (canvas) {
                     const layerInfoUrl = canvas + '/info.json';
                     canvasLayer = getLayer(layerInfoUrl, layers);
-    
-                    if(!canvasLayer){
+                    if (!canvasLayer) {
                         canvasLayer = L.tileLayer.iiif(layerInfoUrl, {
                             fitBounds: false,
                             className: "iiif-layer-primary"
                         });
-
                         canvasLayer.on('load', () => {
-                            if(self.compareMode()){
+                            if (self.compareMode()) {
                                 loadComparison();
-                            } else if (!self.compareMode() && self.zoomToCanvas && canvasLayer){
+                            } else if (!self.compareMode() && self.zoomToCanvas && canvasLayer) {
                                 zoomToBounds(map, canvasLayer);
                                 self.zoomToCanvas = false;
                             }
                         });
-
                         layers.push(canvasLayer);
                     }
                     canvasLayer.addTo(map);
                     updateCanvasLayerFilter();
-
                 }
             }
         };
 
         const getLayer = (url, layers) => {
             const match = layers.filter(layer => layer._infoUrl == url);
-            if(match.length > 0){
+            if (match.length > 0) {
                 return match[0];
             }
         };
@@ -622,45 +581,37 @@ define([
             const map = self.map();
             const primaryCanvas = self.canvas();
             const secondaryCanvas = self.secondaryCanvas();
-            if(secondaryCanvas && secondaryCanvas != self.imageToolSelector()){
+            if (secondaryCanvas && secondaryCanvas != self.imageToolSelector()) {
                 self.selectPrimaryPanel(false);
                 self.imageToolSelector(secondaryCanvas);
             }
-
             if (map && primaryCanvas && secondaryCanvas) {
-                if(secondaryCanvasLayer && map.hasLayer(secondaryCanvasLayer)) {
+                if (secondaryCanvasLayer && map.hasLayer(secondaryCanvasLayer)) {
                     try {
                         map.removeLayer(secondaryCanvasLayer);
-                    } catch(e){
-                        // ignore/smother if remove layer fails
-                    }
+                    } catch (e) { }
                     secondaryCanvasLayer = undefined;
                 }
-
                 const layerInfoUrl = secondaryCanvas + '/info.json';
                 secondaryCanvasLayer = getLayer(layerInfoUrl, secondaryLayers);
-
-                if(!secondaryCanvasLayer){
+                if (!secondaryCanvasLayer) {
                     secondaryCanvasLayer = L.tileLayer.iiif(layerInfoUrl, {
                         fitBounds: false,
                         className: "iiif-layer-secondary"
                     });
-
                     secondaryCanvasLayer.on('load', () => {
-                        if(self.compareMode()){
+                        if (self.compareMode()) {
                             loadComparison();
                         }
                     });
-
                     secondaryLayers.push(secondaryCanvasLayer);
                 }
                 secondaryCanvasLayer.addTo(map);
-                
                 updateCanvasLayerFilter();
             }
         };
 
-        this.map.subscribe(function(map) {
+        this.map.subscribe(map => {
             L.control.fullscreen({
                 fullscreenElement: $(map.getContainer()).closest('.workbench-card-wrapper')[0]
             }).addTo(map);
@@ -672,15 +623,13 @@ define([
 
         this.setSecondaryCanvas = (canvas) => {
             const service = self.getCanvasService(canvas);
-            if(service){
+            if (service) {
                 self.secondaryCanvas(service);
             }
         };
 
-        this.selectCanvas = function(canvas) {
-            
+        this.selectCanvas = function (canvas) {
             const service = self.getCanvasService(canvas);
-
             if (service && self.selectPrimaryPanel()) {
                 self.canvas(service);
                 self.canvasObject(canvas);
@@ -693,39 +642,37 @@ define([
             self.origCanvasLabel(self.canvasLabel());
         };
 
-        this.canvasClick = function(canvas) {
+        this.canvasClick = function (canvas) {
             self.selectCanvas(canvas);
             self.expandGallery(false);
         };
 
-        this.getCanvasService = function(canvas) {
+        this.getCanvasService = function (canvas) {
             if (canvas.images.length > 0) return canvas.images[0].resource.service['@id'];
         };
 
         this.updateCanvas = !self.canvas();
-        this.manifestData.subscribe(function(manifestData) {
+        this.manifestData.subscribe(manifestData => {
             if (manifestData) {
                 if (manifestData.sequences.length > 0) {
-                    var sequence = manifestData.sequences[0];
-                    var canvasIndex = 0;
+                    const sequence = manifestData.sequences[0];
+                    let canvasIndex = 0;
                     if (sequence.canvases.length > 0) {
                         if (!self.updateCanvas) {
-                            canvasIndex = sequence.canvases.findIndex(function(c){return c.images[0].resource.service['@id'] === self.canvas();});
+                            canvasIndex = sequence.canvases.findIndex(c => c.images[0].resource.service['@id'] === self.canvas());
                         }
-                        var canvas = sequence.canvases[canvasIndex];
-
+                        const canvas = sequence.canvases[canvasIndex];
                         self.secondaryCanvasLayer = undefined;
                         self.canvasLayer = undefined;
                         const service = self.getCanvasService(canvas);
                         self.zoomToCanvas = true;
                         self.canvas(service);
                         self.canvasObject(canvas);
-
-                        if(self.compareMode()){
+                        if (self.compareMode()) {
                             self.secondaryCanvas(service);
                             self.secondaryCanvasObject(canvas);
                         }
-                    }    
+                    }
                 }
                 self.updateCanvas = true;
                 self.origManifestName = self.getManifestDataValue(manifestData, 'label', true);
@@ -738,24 +685,27 @@ define([
                 self.manifestLogo(self.origManifestLogo);
                 self.origManifestMetadata = koMapping.toJSON(self.getManifestDataValue(manifestData, 'metadata'));
                 self.manifestMetadata.removeAll();
-                self.getManifestDataValue(manifestData, 'metadata').forEach(function(entry){
+                self.getManifestDataValue(manifestData, 'metadata').forEach(entry => {
                     self.manifestMetadata.push(koMapping.fromJS(entry));
                 });
             }
         });
 
-        this.toggleManifestEditor = function() {
+        this.toggleManifestEditor = function () {
             self.editManifest(!self.editManifest());
             if (abortFetchManifest) abortFetchManifest.abort();
         };
 
-        this.getAnnotationCount = function() {
+        this.getAnnotationCount = function () {
             return 0;
         };
-    };
-    ko.components.register('iiif-viewer', {
-        viewModel: IIIFViewerViewmodel,
-        template: iiifViewerTemplate,
-    });
-    return IIIFViewerViewmodel;
+    }
+
+}
+
+ko.components.register('iiif-viewer', {
+    viewModel: IIIFViewerViewmodel,
+    template: iiifViewerTemplate,
 });
+
+export default IIIFViewerViewmodel;

@@ -1,26 +1,20 @@
-require([
-    'jquery',
-    'underscore',
-    'knockout',
-    'views/base-manager',
-    'views/components/resource-report-abstract'
-], function($, _, ko, BaseManagerView) {
-    var View = BaseManagerView.extend({
-        initialize: function(options){
-            BaseManagerView.prototype.initialize.call(this, options);
+import _ from 'underscore';
+import BaseManagerView from 'views/base-manager';
+import 'views/components/resource-report-abstract';
 
-            if (location.search.indexOf('print') > 0) {
-                const self = this;
-                self.viewModel.loading(true);
-                setTimeout(
-                    function() {
-                        self.viewModel.loading(false);
-                        window.print();
-                    },
-                    7000 // a generous timeout here to allow maps/images to load
-                );
-            }
+class View extends BaseManagerView {
+    initialize(options) {
+        super.initialize(options);
+        if (location.search.indexOf('print') > 0) {
+            const self = this;
+            self.viewModel.loading(true);
+            setTimeout(function () {
+                self.viewModel.loading(false);
+                window.print();
+            }, 7000 // a generous timeout here to allow maps/images to load
+            );
         }
-    });
-    return new View();
-});
+    }
+}
+
+export default new View();

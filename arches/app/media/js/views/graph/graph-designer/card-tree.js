@@ -1,32 +1,32 @@
-define([
-    'jquery',
-    'underscore',
-    'knockout',
-    'arches',
-    'views/graph-designer-data',
-    'viewmodels/card',
-    'models/card-widget',
-    'uuid',
-    'bindings/sortable',
-    'bindings/scrollTo',
-], function($, _, ko, arches, data, CardViewModel, CardWidgetModel, uuid) {
-    var CardTreeViewModel = function(params) {
-        var self = this;
-        var filter = ko.observable('');
-        var loading = ko.observable(false);
-        self.multiselect = params.multiselect || false;
-        var selection;
-        if (params.multiselect) {
+import $ from 'jquery';
+import _ from 'underscore';
+import ko from 'knockout';
+import arches from 'arches';
+import data from 'views/graph-designer-data';
+import CardViewModel from 'viewmodels/card';
+import CardWidgetModel from 'models/card-widget';
+import uuid from 'uuid';
+import 'bindings/sortable';
+import 'bindings/scrollTo';
+
+export default class CardTree {
+    constructor(params) {
+        const self = this;
+        const filter = ko.observable('');
+        const loading = ko.observable(false);
+        this.multiselect = params.multiselect || false;
+        let selection;
+        if (this.multiselect) {
             selection = ko.observableArray([]);
         } else {
             selection = ko.observable();
         }
-        var hover = ko.observable();
-        var scrollTo = ko.observable();
-        var cachedFlatTree;
-        var cardList = data.cards;
+        const hover = ko.observable();
+        const scrollTo = ko.observable();
+        let cachedFlatTree;
+        let cardList = data.cards;
 
-        var getBlankConstraint = function(card){
+        const getBlankConstraint = card => {
             return [{
                 uniquetoallinstances: false,
                 nodes: [],
@@ -35,26 +35,23 @@ define([
             }];
         };
 
-        this.flattenTree = function(parents, flatList) {
-            _.each(ko.unwrap(parents), function(parent) {
+        this.flattenTree = (parents, flatList) => {
+            _.each(ko.unwrap(parents), parent => {
                 flatList.push(parent);
-                self.flattenTree(
-                    ko.unwrap(parent.cards),
-                    flatList
-                );
-            }, this);
+                self.flattenTree(ko.unwrap(parent.cards), flatList);
+            });
             return flatList;
         };
 
-        this.updateNodeList = function() {
+        this.updateNodeList = () => {
             if (self.cachedFlatTree === undefined) {
                 self.cachedFlatTree = self.flattenTree(self.topCards(), []);
             }
         };
 
-        var toggleAll = function(state) {
+        const toggleAll = state => {
             self.updateNodeList();
-            _.each(self.cachedFlatTree, function(node) {
+            _.each(self.cachedFlatTree, node => {
                 node.expanded(state);
             });
             if (state) {
@@ -62,24 +59,23 @@ define([
             }
         };
 
-        var selectAll = function(state) {
+        const selectAll = state => {
             self.updateNodeList();
-            _.each(self.cachedFlatTree, function(node) {
+            _.each(self.cachedFlatTree, node => {
                 if (node.selected() !== state) {
                     node.selected(state);
                 }
             });
         };
 
-        var expandToRoot = function(node) {
-            //expands all nodes up to the root, but does not expand the root.
+        const expandToRoot = node => {
             self.updateNodeList();
             if (node.parent) {
                 node.parent.expanded(true);
                 expandToRoot(node.parent);
             } else {
                 node.expanded(true);
-                _.each(self.cachedFlatTree, function(n) {
+                _.each(self.cachedFlatTree, n => {
                     if (node.parentnodegroup_id !== null && node.parentnodegroup_id === n.nodegroupid) {
                         expandToRoot(n);
                     }
@@ -87,9 +83,9 @@ define([
             }
         };
 
-        var removeCard = function(cards, nodegroupid) {
-            var removed;
-            _.each(cards(), function(card){
+        const removeCard = (cards, nodegroupid) => {
+            let removed;
+            _.each(cards(), card => {
                 if (card) {
                     if (card.nodegroupid === nodegroupid) {
                         cards.remove(card);
@@ -102,25 +98,25 @@ define([
             return removed;
         };
 
-        var createLookup = function(list, idKey) {
-            return _.reduce(list, function(lookup, item) {
+        const createLookup = (list, idKey) => {
+            return _.reduce(list, (lookup, item) => {
                 lookup[ko.unwrap(item[idKey])] = item;
                 return lookup;
             }, {});
         };
 
         _.extend(this, {
-            filterEnterKeyHandler: function(context, e) {
+            filterEnterKeyHandler: (context, e) => {
                 if (e.keyCode === 13) {
-                    var highlightedItems = _.filter(self.flattenTree(self.topCards(), []), function(item) {
+                    const highlightedItems = _.filter(self.flattenTree(self.topCards(), []), item => {
                         return item.highlight && item.highlight();
                     });
-                    var previousItem = scrollTo();
+                    const previousItem = scrollTo();
                     scrollTo(null);
                     if (highlightedItems.length > 0) {
-                        var scrollIndex = 0;
-                        var previousIndex = highlightedItems.indexOf(previousItem);
-                        if (previousItem && highlightedItems[previousIndex+1]) {
+                        let scrollIndex = 0;
+                        const previousIndex = highlightedItems.indexOf(previousItem);
+                        if (previousItem && highlightedItems[previousIndex + 1]) {
                             scrollIndex = previousIndex + 1;
                         }
                         scrollTo(highlightedItems[scrollIndex]);
@@ -143,79 +139,69 @@ define([
             graphModel: params.graphModel,
             appliedFunctions: params.appliedFunctions(),
             primaryDescriptorFunction: params.primaryDescriptorFunction(),
-            toggleIds: function() {
+            toggleIds: () => {
                 self.showIds(!self.showIds());
             },
-            expandAll: function() {
+            expandAll: () => {
                 toggleAll(true);
             },
-            collapseAll: function() {
+            collapseAll: () => {
                 toggleAll(false);
             },
-            toggleGrid: function() {
-                self.showGrid(!this.showGrid());
+            toggleGrid: () => {
+                self.showGrid(!self.showGrid());
             },
-            selectAllCards: function() {
+            selectAllCards: () => {
                 selectAll(true);
             },
-            clearSelection: function() {
+            clearSelection: () => {
                 selectAll(false);
             },
             expandToRoot: expandToRoot,
             rootExpanded: ko.observable(true),
-            on: function() {
-                return;
+            on: () => { return; },
+            beforeMove: e => {
+                e.cancelDrop = (e.sourceParent !== e.targetParent);
             },
-            beforeMove: function(e) {
-                e.cancelDrop = (e.sourceParent!==e.targetParent);
-            },
-            updateCard: function(parents, card, data) {
-                var updatedCards = [];
-                _.each(ko.unwrap(parents), function(parent) {
+            updateCard: (parents, card, updatedData) => {
+                _.each(ko.unwrap(parents), parent => {
                     if (parent.nodegroupid === card.parentnodegroupId) {
-                        var newcard = {
+                        const newcard = {
                             card: card,
-                            nodegroup: _.filter(data.nodegroups, function(ng){return data.updated_values.card.nodegroup_id === ng.nodegroupid;})[0]
+                            nodegroup: _.filter(updatedData.nodegroups, ng => updatedData.updated_values.card.nodegroup_id === ng.nodegroupid)[0]
                         };
                         self.addCard(newcard, parent.cards, parent);
                     } else {
-                        self.updateCard(ko.unwrap(parent.cards), card, data);
+                        self.updateCard(ko.unwrap(parent.cards), card, updatedData);
                     }
-                }, this);
-                return updatedCards;
+                });
             },
-            updateNode: function(parents, node) {
-                var updatedCards = [];
-                if (_.contains(_.keys(self.nodeLookup), node.nodeid) === false) {
-                    self.nodeLookup[node.nodeid] = node;
-                }
-                _.each(ko.unwrap(parents), function(parent) {
+            updateNode: (parents, node) => {
+                _.each(ko.unwrap(parents), parent => {
                     if (parent.nodegroupid === node.nodegroup_id) {
-                        var attributes = parent.model.attributes;
-                        _.each(parent.model.nodes(), function(modelnode){
+                        const attributes = parent.model.attributes;
+                        _.each(parent.model.nodes(), modelnode => {
                             if (modelnode.nodeid === node.nodeid) {
-                                var datatype = attributes.datatypelookup[ko.unwrap(modelnode.datatype)];
+                                const datatype = attributes.datatypelookup[ko.unwrap(modelnode.datatype)];
                                 if (!modelnode.nodeDatatypeSubscription) {
-                                    modelnode.nodeDatatypeSubscription = modelnode.datatype.subscribe(function(){
+                                    modelnode.nodeDatatypeSubscription = modelnode.datatype.subscribe(() => {
                                         parent.model._card(JSON.stringify(parent.model.toJSON()));
-                                    }, this);
+                                    });
                                 }
                                 if (datatype.defaultwidget_id) {
-                                    var cardWidgetData = _.find(attributes.data.widgets, function(widget) {
-                                        return widget.node_id === node.nodeid;
-                                    });
-                                    var widget = new CardWidgetModel(cardWidgetData, {
+                                    const cardWidgetData = _.find(attributes.data.widgets, widget => widget.node_id === node.nodeid);
+                                    const widget = new CardWidgetModel(cardWidgetData, {
                                         node: modelnode,
                                         card: parent.model,
                                         datatype: datatype,
                                         disabled: attributes.data.disabled
                                     });
-                                    var widgetIndex;
-                                    _.each(parent.widgets(), function(pw, i){
+                                    let widgetIndex;
+                                    _.each(parent.widgets(), (pw, i) => {
                                         if (pw.node_id() === widget.node_id()) {
                                             widgetIndex = i;
                                         }
-                                    }, self);
+                                    });
                                     if (widgetIndex !== undefined) {
                                         parent.widgets.splice(widgetIndex, 1, widget);
                                     } else {
@@ -228,67 +214,65 @@ define([
                     } else {
                         self.updateNode(ko.unwrap(parent.cards), node);
                     }
-                }, this);
-                return updatedCards;
+                });
             },
-            updateCards: function(selectedNodegroupId, data) {
-                self.updateNode(self.topCards(), data.updated_values.node);
-
-                if (data.updated_values.card) {
-                    var card = data.updated_values.card;
-                    var defaultCardName = data.default_card_name;
+            updateCards: (selectedNodegroupId, updatedData) => {
+                self.updateNode(self.topCards(), updatedData.updated_values.node);
+                if (updatedData.updated_values.card) {
+                    const card = updatedData.updated_values.card;
+                    const defaultCardName = updatedData.default_card_name;
                     if (self.cachedFlatTree) {
-                        self.cachedFlatTree.forEach(function(c){
-                            if (c.model.name().startsWith(defaultCardName) && c.model.cardid() === card.cardid){
-                                if (data.updated_values.node) {
-                                    c.model.name(data.updated_values.node.name);
+                        self.cachedFlatTree.forEach(c => {
+                            if (c.model.name().startsWith(defaultCardName) && c.model.cardid() === card.cardid) {
+                                if (updatedData.updated_values.node) {
+                                    c.model.name(updatedData.updated_values.node.name);
                                     card.name = c.model.name;
                                     c.model.save();
                                 }
                             }
                         });
                     }
-                    card.parentnodegroupId = _.filter(data.nodegroups, function(ng){return data.updated_values.card.nodegroup_id === ng.nodegroupid;})[0].parentnodegroup_id;
-                    self.updateCard(self.topCards(), card, data);
+                    card.parentnodegroupId = _.filter(updatedData.nodegroups, ng => updatedData.updated_values.card.nodegroup_id === ng.nodegroupid)[0].parentnodegroup_id;
+                    self.updateCard(self.topCards(), card, updatedData);
                 } else {
-                    if (data.updated_values.node.nodegroup_id !== data.updated_values.node.nodeid) {
-                        var oldCard = _.find(self.flattenTree(self.topCards(), []), function(card) {
-                            return card.nodegroupid === data['updated_values'].node.nodeid;
+                    if (updatedData.updated_values.node.nodegroup_id !== updatedData.updated_values.node.nodeid) {
+                        const oldCard = _.find(self.flattenTree(self.topCards(), []), card => {
+                            return card.nodegroupid === updatedData.updated_values.node.nodeid;
                         });
                         if (oldCard) {
-                            var parentCards = oldCard.parentCard ? oldCard.parentCard.cards : self.topCards;
+                            const parentCards = oldCard.parentCard ? oldCard.parentCard.cards : self.topCards;
                             parentCards.remove(oldCard);
-                            parentCards(
-                                parentCards().concat(
-                                    oldCard.cards()
-                                )
-                            );
+                            parentCards(parentCards().concat(oldCard.cards()));
                         }
                     }
                 }
-                _.each(self.cachedFlatTree, function(cardViewModel) {
+                _.each(self.cachedFlatTree, cardViewModel => {
                     cardViewModel.dispose();
                 });
                 self.cachedFlatTree = self.flattenTree(self.topCards(), []);
-                _.each(self.cachedFlatTree, function(node) {
+                _.each(self.cachedFlatTree, node => {
                     if (node.nodegroupid === selectedNodegroupId) {
                         self.collapseAll();
-                        self.multiselect ? self.selection([node]) : self.selection(node);
+                        if (self.multiselect) {
+                            self.selection([node]);
+                        } else {
+                            self.selection(node);
+                        }
                         self.expandToRoot(node);
                     }
                 });
             },
-            deleteCard: function(selectedNodegroupId) {
+            deleteCard: selectedNodegroupId => {
                 removeCard(self.topCards, selectedNodegroupId);
-                if (self.topCards().length){ self.topCards()[0].selected(true); }
+                if (self.topCards().length) { self.topCards()[0].selected(true); }
             },
-            addCard: function(data, parentcards, parent) {
+            addCard: (cardData, parentcards, parent) => {
                 if (!parentcards) {
                     parentcards = self.topCards;
                 }
-                self.graphModel.set('nodegroups', self.graphModel.get('nodegroups').concat([data.nodegroup]));
-                var newCardViewModel = new CardViewModel({
-                    card: data.card,
+                self.graphModel.set('nodegroups', self.graphModel.get('nodegroups').concat([cardData.nodegroup]));
+                const newCardViewModel = new CardViewModel({
+                    card: cardData.card,
                     graphModel: self.graphModel,
                     tile: null,
                     resourceId: ko.observable(),
@@ -303,46 +287,38 @@ define([
                     loading: loading,
                     filter: filter,
                     provisionalTileViewModel: null,
-                    cardwidgets: data.cardwidgets,
+                    cardwidgets: cardData.cardwidgets,
                     userisreviewer: true,
                     perms: ko.observableArray(),
                     permsLiteral: ko.observableArray(),
                     parentCard: parent,
-                    constraints: getBlankConstraint(data.card),
-                    topCards: self.topCards,
+                    constraints: getBlankConstraint(cardData.card),
+                    topCards: self.topCards
                 });
                 parentcards.push(newCardViewModel);
-
-                var node = _.find(self.graphModel.get('nodes')(), function(node) {
-                    return node.nodeid === data.card.nodegroup_id;
-                });
-                self.graphModel.getChildNodesAndEdges(node).nodes.forEach(function(node) {
-                    var card = _.find(ko.unwrap(parentcards), function(card) {
-                        return card.nodegroupid === (ko.unwrap(node.nodeGroupId) ||
-                            ko.unwrap(node.nodegroup_id)) &&
-                            card.model.cardid() !== newCardViewModel.model.cardid();
+                const node = _.find(self.graphModel.get('nodes')(), n => n.nodeid === cardData.card.nodegroup_id);
+                self.graphModel.getChildNodesAndEdges(node).nodes.forEach(n => {
+                    const card = _.find(ko.unwrap(parentcards), c => {
+                        return c.nodegroupid === (ko.unwrap(n.nodeGroupId) || ko.unwrap(n.nodegroup_id)) &&
+                            c.model.cardid() !== newCardViewModel.model.cardid();
                     });
                     if (card) {
                         parentcards.remove(card);
-                        var cardIDs = newCardViewModel.cards().map(function(card) {
-                            return card.cardid;
-                        });
+                        const cardIDs = newCardViewModel.cards().map(c => c.cardid);
                         if (!_.contains(cardIDs, card.cardid)) {
                             newCardViewModel.cards.push(card);
                         }
                     }
                 });
-
-                if (_.contains(_.keys(this.nodeLookup), node.nodeid) === false) {
+                if (!this.nodeLookup[node.nodeid]) {
                     this.nodeLookup[node.nodeid] = node;
                 }
-
                 self.cachedFlatTree = self.flattenTree(self.topCards(), []);
                 return newCardViewModel;
             },
-            reorderCards: function() {
+            reorderCards: () => {
                 loading(true);
-                var cards = _.map(self.topCards(), function(card, i) {
+                const cards = _.map(self.topCards(), (card, i) => {
                     card.model.get('sortorder')(i);
                     return {
                         id: card.model.id,
@@ -352,37 +328,28 @@ define([
                 });
                 $.ajax({
                     type: 'POST',
-                    data: JSON.stringify({
-                        cards: cards
-                    }),
+                    data: JSON.stringify({ cards: cards }),
                     url: arches.urls.reorder_cards,
-                    complete: function() {
-                        // adds event to trigger dirty state in graph-designer
-                        document.dispatchEvent(
-                            new Event('reorderCards')
-                        );
+                    complete: () => {
+                        document.dispatchEvent(new Event('reorderCards'));
                         loading(false);
                     }
                 });
             },
             selection: selection,
             filter: filter,
-            isFuncNode: function() {
-                var nodegroupId = null, pdFunction = this.primaryDescriptorFunction;
-
-                // params.card always seems to be undefined...
+            isFuncNode: () => {
+                let nodegroupId = null;
+                const pdFunction = self.primaryDescriptorFunction;
                 if (params.card && pdFunction) {
-                    // console.log(ko.unwrap(params));
                     nodegroupId = params.card.nodegroup_id;
-
-                    for (var descriptor in ['name', 'description'])
-                    {
+                    for (let descriptor of ['name', 'description']) {
                         try {
-                            if (nodegroupId === pdFunction['config']['descriptor_types'][descriptor]['nodegroup_id'])
+                            if (nodegroupId === pdFunction['config']['descriptor_types'][descriptor]['nodegroup_id']) {
                                 return true;
+                            }
                         } catch (e) {
-                            // Descriptor doesn't exist so ignore the exception
-                            console.log("No descriptor configuration for "+descriptor);
+                            console.log("No descriptor configuration for " + descriptor);
                         }
                     }
                     return false;
@@ -391,24 +358,22 @@ define([
         });
 
         this.topCards = ko.observableArray();
-
-        var tc = _.filter(params.isPermissionTree ? data.source_graph.cards : data.cards, function(card) {
-            var nodegroup = _.find(ko.unwrap(params.graphModel.get('nodegroups')), function(group) {
+        const tc = _.filter(params.isPermissionTree ? data.source_graph.cards : data.cards, card => {
+            const nodegroup = _.find(ko.unwrap(params.graphModel.get('nodegroups')), group => {
                 return ko.unwrap(group.nodegroupid) === card.nodegroup_id;
             });
             return !nodegroup || !ko.unwrap(nodegroup.parentnodegroup_id);
         }).sort((firstEl, secondEl) => {
-            if(firstEl.sortorder < secondEl.sortorder) {
+            if (firstEl.sortorder < secondEl.sortorder) {
                 return -1;
             }
-            if(firstEl.sortorder === secondEl.sortorder) {
+            if (firstEl.sortorder === secondEl.sortorder) {
                 return 0;
             }
             return 1;
-
         });
-        this.topCards(tc.map(function(card) {
-            var constraints =  data.constraints.filter(function(ct){return ct.card_id === card.cardid;});
+        this.topCards(tc.map(card => {
+            let constraints = data.constraints.filter(ct => ct.card_id === card.cardid);
             if (constraints.length === 0) {
                 constraints = getBlankConstraint(card);
             }
@@ -438,9 +403,7 @@ define([
                 topCards: self.topCards
             });
         }));
-
-
-        var topCard = self.topCards()[0];
+        const topCard = self.topCards()[0];
         if (topCard != null) {
             if (self.multiselect === true) {
                 selection.push(topCard.tiles().length > 0 ? topCard.tiles()[0] : topCard);
@@ -448,22 +411,16 @@ define([
                 selection(topCard.tiles().length > 0 ? topCard.tiles()[0] : topCard);
             }
         }
-
-        self.graphModel.get('cards').subscribe(function(graphCards) {
-            var currentCards = self.flattenTree(self.topCards(), []);
-            var cardIds = currentCards.map(function(card) {
-                return card.model.cardid();
-            });
-            var newCards = graphCards.filter(function(card) {
-                return !_.contains(cardIds, card.cardid);
-            });
+        self.graphModel.get('cards').subscribe(graphCards => {
+            const currentCards = self.flattenTree(self.topCards(), []);
+            const cardIds = currentCards.map(card => card.model.cardid());
+            const newCards = graphCards.filter(card => !_.contains(cardIds, card.cardid));
             cardList = cardList.concat(newCards);
-
-            newCards.forEach(function(card) {
-                var nodegroup = _.find(ko.unwrap(params.graphModel.get('nodegroups')), function(group) {
+            newCards.forEach(card => {
+                const nodegroup = _.find(ko.unwrap(params.graphModel.get('nodegroups')), group => {
                     return ko.unwrap(group.nodegroupid) === card.nodegroup_id;
                 });
-                var parent = _.find(currentCards, function(currentCard) {
+                const parent = _.find(currentCards, currentCard => {
                     return currentCard.nodegroupid === nodegroup.parentnodegroup_id;
                 });
                 if (parent || !nodegroup.parentnodegroup_id) {
@@ -475,6 +432,5 @@ define([
                 }
             });
         });
-    };
-    return CardTreeViewModel;
-});
+    }
+}
