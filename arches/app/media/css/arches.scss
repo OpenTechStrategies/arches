@@ -9370,15 +9370,18 @@ a.search-query-link-captions:focus {
     // border: 1px solid purple;
     display: flex;
     gap: 6px;
-    min-width: 200px;
 }
 
 .search-dropdown {
-    border: 5px solid red !important;
+    min-width: 160px;
 }
 
 .search-btn {
     height: 25px;
+}
+
+.sort-btn {
+    padding-right: 5px;
 }
 
 .search-title {

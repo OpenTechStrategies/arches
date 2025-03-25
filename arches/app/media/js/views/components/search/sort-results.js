@@ -43,7 +43,7 @@ define([
                 queryObj['sort-by'] = this.sortBy();
             }
 
-            if(this.sortOrder() === '') {
+            if(this.sortOrder() === '' | this.sortBy() === '') {
                 delete queryObj['sort-order'];
             } else {
                 queryObj['sort-order'] = this.sortOrder();
