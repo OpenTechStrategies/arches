@@ -11,7 +11,7 @@ define([
             options.name = 'Sort Results';
             BaseFilter.prototype.initialize.call(this, options);
 
-            this.sortBy = ko.observable('');
+            this.sortBy = ko.observable('resource_name');
             this.sortOrder = ko.observable('');
             
             this.sortSymbol=ko.computed(function() {
