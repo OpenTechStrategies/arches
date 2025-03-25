@@ -11,8 +11,6 @@ try {
     resourceTypes = JSON.parse(removeTrailingCommaFromObject(resourceTypeData));
 
     loadComponentDependencies(Object.values(resourceTypes).map(value => value['component']));
-    
-    return resourceTypes;
 } catch (error) {
     console.error(error);
 }

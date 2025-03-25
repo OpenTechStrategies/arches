@@ -11,8 +11,6 @@ try {
     cardComponents = JSON.parse(removeTrailingCommaFromObject(cardComponentData));
 
     loadComponentDependencies(Object.values(cardComponents).map(value => value['component']));
-
-    return cardComponents;
 } catch (error) {
     console.error(error);
 }

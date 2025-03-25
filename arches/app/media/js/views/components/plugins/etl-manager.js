@@ -4,7 +4,9 @@ import Cookies from 'js-cookie';
 import arches from 'arches';
 import AlertViewModel from 'viewmodels/alert';
 import ETLManagerTemplate from 'templates/views/components/plugins/etl-manager.htm';
-import loadComponentDependencies from 'utils/load-component-dependencies';
+
+import { loadComponentDependencies } from "utils/load-component-dependencies";
+
 
 export default ko.components.register('etl-manager', {
     viewModel: function (params) {

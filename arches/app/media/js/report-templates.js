@@ -11,8 +11,6 @@ try {
     reportTemplates = JSON.parse(removeTrailingCommaFromObject(reportTemplateData));
 
     loadComponentDependencies(Object.values(reportTemplates).map(value => value['component']));
-
-    return reportTemplates;
 } catch (error) {
     console.error(error);
 }

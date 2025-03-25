@@ -20,4 +20,4 @@ try {
     console.error(error);
 }
 
-return parsedResourceEditorData
+export default parsedResourceEditorData;

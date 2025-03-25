@@ -4,7 +4,7 @@ function removeTrailingCommaFromObject(string) {
     return string.replace(/,\s*}*$/, "}");
 }
 
-let functionTemplates
+let functionTemplates;
 try {        
     const functionTemplateDataHTML = document.querySelector('#functionTemplateData');
     const functionTemplateData = functionTemplateDataHTML.getAttribute('functionTemplates');
@@ -18,8 +18,6 @@ try {
             return acc;
         }, [])
     );
-
-    return functionTemplates;
 } catch (error) {
     console.error(error);
 }

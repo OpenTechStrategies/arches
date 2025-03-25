@@ -85,6 +85,4 @@ export async function loadComponentDependencies(componentPaths) {
             }
         }
     }
-};
-});
-
+}

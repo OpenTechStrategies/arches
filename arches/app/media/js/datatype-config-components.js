@@ -11,8 +11,6 @@ try {
     datatypeConfigComponents = JSON.parse(removeTrailingCommaFromObject(datatypeConfigComponentData));
 
     loadComponentDependencies(Object.values(datatypeConfigComponents).map(value => value['configcomponent']));
-
-    return datatypeConfigComponents;
 } 
 catch (error) {
     console.error(error);

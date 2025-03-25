@@ -11,8 +11,6 @@ try {
     geocoderTemplates = JSON.parse(removeTrailingCommaFromObject(geocoderTemplateData));
 
     loadComponentDependencies(Object.values(geocoderTemplates).map(value => value['component']));
-
-    return geocoderTemplates;
 } catch (error) {
     console.error(error);
 }

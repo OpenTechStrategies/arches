@@ -4,7 +4,7 @@ import uuid from 'uuid';
 import arches from 'arches';
 import AlertViewModel from 'viewmodels/alert';
 import JsonErrorAlertViewModel from 'viewmodels/alert-json';
-import bulkDataDeletionTemplate from 'templates/views/components/etl_modules/bulk_data_editor.htm';
+import bulkDataDeletionTemplate from 'templates/views/components/etl_modules/base-bulk-string-editor.htm';
 import 'views/components/simple-switch';
 import 'bindings/datatable';
 import 'bindings/dropzone';

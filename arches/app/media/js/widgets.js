@@ -11,8 +11,6 @@ try {
     widgets = JSON.parse(removeTrailingCommaFromObject(widgetData));
 
     loadComponentDependencies(Object.values(widgets).map(value => value['component']));
-
-    return widgets;
 } catch (error) {
     console.error(error);
 }

@@ -11,8 +11,6 @@ try {
     searchComponents = JSON.parse(removeTrailingCommaFromObject(searchComponentData));
 
     loadComponentDependencies(Object.values(searchComponents).map(value => value['componentpath']));
-
-    return searchComponents;
 } catch (error) {
     console.error(error);
 }

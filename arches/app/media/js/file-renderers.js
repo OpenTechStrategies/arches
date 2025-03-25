@@ -11,8 +11,6 @@ try {
     fileRenderers = JSON.parse(removeTrailingCommaFromObject(fileRendererData));
 
     loadComponentDependencies(Object.values(fileRenderers).map(value => value['component']));
-
-    return fileRenderers;
 } catch (error) {
     console.error(error);
 }

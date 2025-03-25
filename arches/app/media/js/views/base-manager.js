@@ -64,7 +64,7 @@ class BaseManager extends PageView {
             }
         });
 
-        super.constructor(options);
+        super(options);
         return this;
     }
 }

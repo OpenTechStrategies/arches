@@ -11,8 +11,6 @@ try {
     plugins = JSON.parse(removeTrailingCommaFromObject(pluginsData));
 
     loadComponentDependencies(Object.values(plugins).map(value => value['component']));
-
-    return plugins;
 } catch (error) {
     console.error(error);
 }
