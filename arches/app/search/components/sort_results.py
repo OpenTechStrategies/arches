@@ -22,21 +22,19 @@ class SortResults(BaseSearchFilter):
         sort_order = query_string["sort_order"]
         sort_by = query_string["sort_by"]
 
-        if sort_by:
-            sort_field = sort_by
-            sort_dsl = {"order": "asc"}
-
-        else:
+        if sort_by == "resource_name":
             sort_field = "displayname.value"
             sort_dsl = {
                 "nested": {
                     "path": "displayname",
                     "filter": {"term": {"displayname.language": get_language()}},
                 },
+                "order": sort_order,
             }
 
-        if sort_order:
-            sort_dsl["order"] = sort_order
+        else:
+            sort_field = sort_by
+            sort_dsl = {"order": sort_order}
 
         search_query_object["query"].sort(
             field=sort_field,
