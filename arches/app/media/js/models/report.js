@@ -1,277 +1,240 @@
-define(['jquery',
-    'arches',
-    'report-templates',
-    'models/abstract',
-    'knockout',
-    'knockout-mapping',
-    'underscore',
-], function($, arches, reportLookup, AbstractModel, ko, koMapping, _,) {
-    var ReportModel = AbstractModel.extend({
-        /**
-         * A backbone model to manage report data
-         * @augments AbstractModel
-         * @constructor
-         * @name ReportModel
-         */
+import $ from 'jquery';
+import arches from 'arches';
+import reportLookup from 'report-templates';
+import AbstractModel from 'models/abstract';
+import ko from 'knockout';
+import koMapping from 'knockout-mapping';
+import _ from 'underscore';
 
-        url: arches.urls.graph,
+class ReportModel extends AbstractModel {
+    constructor(options) {
+        super();
 
-        initialize: function(options) {
-            var self = this;
-            this.templateId = ko.observable(self.get('graph').template_id);
-            this.cards = options.cards || [];
-            this.preview = options.preview;
-            this.userisreviewer = options.userisreviewer;
-            
-            this.set('graphid', ko.observable());
-            this.set('config', {});
-            self.configKeys = ko.observableArray();
-            
-            this._data = ko.observable('{}');
-            
-            this.configJSON = ko.observable({});
-            this.configState = {};
-            this.configKeys.subscribe(function(val){
-                var config;
+        this.templateId = ko.observable(options.graph.template_id);
+        this.cards = options.cards || [];
+        this.preview = options.preview;
+        this.userisreviewer = options.userisreviewer;
 
-                if (reportLookup[self.templateId()]) {
-                    self.defaultConfig = reportLookup[self.templateId()].defaultconfig;
-                }
-                else {
-                    self.defaultConfig = {};
-                }
+        this.set('graphid', ko.observable());
+        this.set('config', {});
+        this.configKeys = ko.observableArray();
 
-                if (val.length) {
-                    self.configState = {};
-                    config = self.get('config');
-                    _.each(val, function(key) {
-                        if (Object.prototype.hasOwnProperty.call(self.defaultConfig, key)) {
-                            self.configState[key] = ko.unwrap(config[key]);
-                        }
-                    });
-                    self.configState = koMapping.fromJS(self.configState);
-                }
-            });
+        this._data = ko.observable('{}');
+        this.configJSON = ko.observable({});
+        this.configState = {};
+        this.relatedResourcesLookup = ko.observable({});
 
-            this.resetConfigs = function(previousConfigs) {
-                this.configKeys().forEach(function(key){
-                    if (Object.prototype.hasOwnProperty.call(self.defaultConfig, key)) {
-                        if (JSON.stringify(self.configState[key]()) !== JSON.stringify(previousConfigs[key])) {
-                            koMapping.fromJS(previousConfigs, self.configState);
-                        }
-                    }
-                });
-            };
+        if (options.related_resources) {
+            this.updateRelatedResourcesLookup(options.related_resources);
+        }
 
-            this.relatedResourcesLookup = ko.observable({});
-            
-            if (options.related_resources) {
-                this.updateRelatedResourcesLookup(options.related_resources);
+        this.graph = options.graph;
+        this.parse(options.graph);
+
+        this.configKeys.subscribe(val => {
+            if (reportLookup[this.templateId()]) {
+                this.defaultConfig = reportLookup[this.templateId()].defaultconfig;
+            } else {
+                this.defaultConfig = {};
             }
 
-            this.graph = options.graph;
-            this.parse(options.graph);
-        },
+            if (val.length) {
+                this.configState = {};
+                const config = this.get('config');
+                val.forEach(key => {
+                    if (Object.prototype.hasOwnProperty.call(this.defaultConfig, key)) {
+                        this.configState[key] = ko.unwrap(config[key]);
+                    }
+                });
+                this.configState = koMapping.fromJS(this.configState);
+            }
+        });
 
-        /**
-         * parse - parses the passed in attributes into a {@link ReportModel}
-         * @memberof ReportModel.prototype
-         * @param  {object} attributes - the properties to seed a {@link ReportModel} with
-         */
-        parse: function(attributes) {
-            var self = this;
-            this._attributes = attributes;
+        this.resetConfigs = (previousConfigs) => {
+            this.configKeys().forEach(key => {
+                if (Object.prototype.hasOwnProperty.call(this.defaultConfig, key)) {
+                    if (JSON.stringify(this.configState[key]()) !== JSON.stringify(previousConfigs[key])) {
+                        koMapping.fromJS(previousConfigs, this.configState);
+                    }
+                }
+            });
+        };
+    }
 
-            _.each(attributes, function(value, key) {
-                switch (key) {
+    url = arches.urls.graph;
+
+    parse(attributes) {
+        this._attributes = attributes;
+
+        _.each(attributes, (value, key) => {
+            switch (key) {
                 case 'graphid':
                     this.set('id', value);
                     this.get('graphid')(value);
                     break;
                 case 'template_id':
-                    self.templateId(value);
+                    this.templateId(value);
                     this.set(key, ko.computed({
-                        read: function() {
-                            return self.templateId();
-                        },
-                        write: function(value) {
-                            var key;
-                            var configKeys = [];
-                            var defaultConfig = reportLookup[value].defaultconfig;
-                            for (key in defaultConfig) {
-                                defaultConfig[key] = ko.observable(defaultConfig[key]);
+                        read: () => this.templateId(),
+                        write: newVal => {
+                            const configKeys = [];
+                            const defaultConfig = reportLookup[newVal].defaultconfig;
+                            for (let k in defaultConfig) {
+                                defaultConfig[k] = ko.observable(defaultConfig[k]);
                             }
-                            var currentConfig = this.get('config');
+                            const currentConfig = this.get('config');
                             this.set('config', _.defaults(currentConfig, defaultConfig));
-                            for (key in defaultConfig) {
-                                if (_.contains(self.configKeys(), key) === false) {
-                                    configKeys.push(key);
+                            for (let k in defaultConfig) {
+                                if (!this.configKeys().includes(k)) {
+                                    configKeys.push(k);
                                 }
                             }
-                            self.templateId(value);
-                            self.configKeys(self.configKeys().concat(configKeys));
-                        },
-                        owner: this
+                            this.templateId(newVal);
+                            this.configKeys(this.configKeys().concat(configKeys));
+                        }
                     }));
                     break;
                 case 'config':
-                    var config = {};
-                    var configKeys = [];
-                    self.configKeys.removeAll();
-                    _.each(value, function(configVal, configKey) {
+                    const config = {};
+                    const configKeys = [];
+                    this.configKeys.removeAll();
+                    _.each(value, (configVal, configKey) => {
                         config[configKey] = configVal;
                         configKeys.push(configKey);
                     });
                     this.set(key, config);
-                    self.configKeys(configKeys);
+                    this.configKeys(configKeys);
                     break;
                 default:
                     this.set(key, value);
-                }
-            }, this);
+            }
+        });
 
-            this._data(JSON.stringify(this.toJSON()));
-        },
+        this._data(JSON.stringify(this.toJSON()));
+    }
 
-        updateRelatedResourcesLookup: function(json) {
-            var relatedResourcesLookup = this.relatedResourcesLookup();
+    updateRelatedResourcesLookup(json) {
+        const relatedResourcesLookup = this.relatedResourcesLookup();
 
-            for (var [graphId, value] of Object.entries(json)) {
-                var relatedResources;
-                var paginator;
-                var remainingResources;
-                
-                if (!relatedResourcesLookup[graphId]) {
-                    // add graphId to lookup if we haven't added it yet
-                    relatedResources = ko.observableArray();
-                    remainingResources = ko.observable();
-                    paginator = ko.observable();
+        for (let [graphId, value] of Object.entries(json)) {
+            let relatedResources = ko.observableArray();
+            let paginator = ko.observable();
+            let remainingResources = ko.observable();
+            let totalRelatedResources = 0;
 
-                    var totalRelatedResources;
-                    if (value['related_resources']) {
-                        totalRelatedResources = value['related_resources']['total']['value'];
-                    }
-                    else if (value['resources']) {
-                        totalRelatedResources = value['resources'].length;
-                    }
-                    else {
-                        totalRelatedResources = 0;
-                    }
-
-                    relatedResourcesLookup[graphId] = {
-                        'graphId': graphId,
-                        'loadedRelatedResources': relatedResources,
-                        'name': value['name'] || value['related_resources']['node_config_lookup'][graphId]['name'],
-                        'paginator': paginator,
-                        'remainingResources': remainingResources,
-                        'totalRelatedResources': totalRelatedResources,
-                    };
-                } else {
-                    // else get pertinent references
-                    relatedResources = relatedResourcesLookup[graphId]['loadedRelatedResources'];
-                    paginator = relatedResourcesLookup[graphId]['paginator'];
-                    remainingResources = relatedResourcesLookup[graphId]['remainingResources'];
+            if (!relatedResourcesLookup[graphId]) {
+                if (value['related_resources']) {
+                    totalRelatedResources = value['related_resources']['total']['value'];
+                } else if (value['resources']) {
+                    totalRelatedResources = value['resources'].length;
                 }
 
-                paginator(value['paginator']);
-
-                /* 
-                    if there's no paginator, the incoming json is all related resource instances,
-                    and we should remove the ones we already have so as not to duplicate them
-                */
-                if (!value['paginator']) {relatedResources.removeAll();}
-
-                if (value['related_resources']) { /* for paginated response */ 
-                    // add new resource relationships to lookup entry
-                    for (var resourceRelationship of value['related_resources']['resource_relationships']) {
-                        let relatedResource = value['related_resources']['related_resources'].find(function(resource) {
-                            return (
-                                resource.resourceinstanceid === resourceRelationship.resourceinstanceidto
-                                || resource.resourceinstanceid === resourceRelationship.resourceinstanceidfrom
-                                || this.attributes && resource.resourceinstanceid === this.attributes.graph.graphid  // self
-                            );
-                        });
-                        if (relatedResource) {
-                            relatedResources.push({
-                                'displayName': relatedResource.displayname,
-                                'resourceinstanceid': relatedResource.resourceinstanceid,
-                                'relationship': resourceRelationship.relationshiptype_label,
-                                'link': arches.urls.resource_report + relatedResource.resourceinstanceid,
-                            });
-                        }
-                    }
-
-                    var resourceLimit = value['related_resources']['resource_relationships'].length;  /* equivalent to settings.py RELATED_RESOURCES_PER_PAGE */ 
-                    var remainingResourcesCount = value['related_resources']['total']['value'] - relatedResources().length;
-    
-                    remainingResources(remainingResourcesCount < resourceLimit ? remainingResourcesCount : resourceLimit);
-                }
-                else if (value['resources'].length > 0) {
-                    for (let relatedResource of value['resources']) {
-                        relatedResources.push({
-                            'displayName': relatedResource.displayname,
-                            'relationship': relatedResource.relationships[0],
-                            'link': arches.urls.resource_report + relatedResource.resourceinstanceid,
-                        });
-                    }
-                }
+                relatedResourcesLookup[graphId] = {
+                    graphId,
+                    loadedRelatedResources: relatedResources,
+                    name: value['name'] || value['related_resources']['node_config_lookup'][graphId]['name'],
+                    paginator,
+                    remainingResources,
+                    totalRelatedResources,
+                };
+            } else {
+                relatedResources = relatedResourcesLookup[graphId]['loadedRelatedResources'];
+                paginator = relatedResourcesLookup[graphId]['paginator'];
+                remainingResources = relatedResourcesLookup[graphId]['remainingResources'];
             }
 
-            this.relatedResourcesLookup(relatedResourcesLookup);
-        },
+            paginator(value['paginator']);
 
-        getRelatedResources: function(loadAll, resource) {
-            return $.ajax({
-                context: this,
-                url: (
-                    arches.urls.related_resources 
-                    + this.attributes.resourceid 
-                    + `?resourceinstance_graphid=${resource.graphId}`
-                    + (loadAll ? `&paginate=false` : `&page=${resource.paginator().next_page_number}`)
-                ),
-            }).done(function(json) {
-                this.updateRelatedResourcesLookup({
-                    // coerces expected shape
-                    [resource.graphId]: json['paginator'] ? json : {'related_resources': json, 'paginator': null }
-                });  
-            });
-        },
+            if (!value['paginator']) relatedResources.removeAll();
 
-        reset: function() {
-            this._attributes = JSON.parse(this._data());
-            this.parse(this._attributes);
-        },
-
-        toJSON: function() {
-            var ret = {};
-            var self = this;
-            for (var key in ['template_id', 'config']) {
-                if (ko.isObservable(this.attributes[key])) {
-                    ret[key] = this.attributes[key]();
-                } else if (key === 'config') {
-                    var configKeys = this.configKeys();
-                    var config = null;
-                    if (configKeys.length > 0) {
-                        config = {};
-                        _.each(configKeys, function(configKey) {
-                            config[configKey] = ko.unwrap(self.get('config')[configKey]);
+            if (value['related_resources']) {
+                for (let resourceRelationship of value['related_resources']['resource_relationships']) {
+                    const relatedResource = value['related_resources']['related_resources'].find(resource => {
+                        return (
+                            resource.resourceinstanceid === resourceRelationship.resourceinstanceidto ||
+                            resource.resourceinstanceid === resourceRelationship.resourceinstanceidfrom ||
+                            this.attributes?.graph?.graphid === resource.resourceinstanceid
+                        );
+                    });
+                    if (relatedResource) {
+                        relatedResources.push({
+                            displayName: relatedResource.displayname,
+                            resourceinstanceid: relatedResource.resourceinstanceid,
+                            relationship: resourceRelationship.relationshiptype_label,
+                            link: arches.urls.resource_report + relatedResource.resourceinstanceid,
                         });
                     }
+                }
+
+                const resourceLimit = value['related_resources']['resource_relationships'].length;
+                const remainingCount = value['related_resources']['total']['value'] - relatedResources().length;
+                remainingResources(remainingCount < resourceLimit ? remainingCount : resourceLimit);
+            } else if (value['resources']?.length > 0) {
+                for (let relatedResource of value['resources']) {
+                    relatedResources.push({
+                        displayName: relatedResource.displayname,
+                        relationship: relatedResource.relationships[0],
+                        link: arches.urls.resource_report + relatedResource.resourceinstanceid,
+                    });
+                }
+            }
+        }
+
+        this.relatedResourcesLookup(relatedResourcesLookup);
+    }
+
+    getRelatedResources(loadAll, resource) {
+        return $.ajax({
+            context: this,
+            url: (
+                arches.urls.related_resources +
+                this.attributes.resourceid +
+                `?resourceinstance_graphid=${resource.graphId}` +
+                (loadAll ? '&paginate=false' : `&page=${resource.paginator().next_page_number}`)
+            )
+        }).done(function (json) {
+            this.updateRelatedResourcesLookup({
+                [resource.graphId]: json.paginator ? json : { related_resources: json, paginator: null }
+            });
+        });
+    }
+
+    reset() {
+        this._attributes = JSON.parse(this._data());
+        this.parse(this._attributes);
+    }
+
+    toJSON() {
+        const ret = {};
+        const keys = ['template_id', 'config'];
+        keys.forEach(key => {
+            if (ko.isObservable(this.attributes[key])) {
+                ret[key] = this.attributes[key]();
+            } else if (key === 'config') {
+                const configKeys = this.configKeys();
+                if (configKeys.length > 0) {
+                    const config = {};
+                    configKeys.forEach(configKey => {
+                        config[configKey] = ko.unwrap(this.get('config')[configKey]);
+                    });
                     ret[key] = config;
                 } else {
-                    ret[key] = this.attributes[key];
+                    ret[key] = null;
                 }
+            } else {
+                ret[key] = this.attributes[key];
             }
-            return ret;
-        },
+        });
+        return ret;
+    }
 
-        save: function() {
-            return AbstractModel.prototype.save.call(this, function(request, status, self) {
-                if (status === 'success') {
-                    this._data(JSON.stringify(this.toJSON()));
-                }
-            }, this);
-        }
-    });
-    return ReportModel;
-});
+    save() {
+        return super.save(function (request, status) {
+            if (status === 'success') {
+                this._data(JSON.stringify(this.toJSON()));
+            }
+        }, this);
+    }
+}
+
+export default ReportModel;

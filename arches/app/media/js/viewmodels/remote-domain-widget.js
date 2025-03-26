@@ -1,42 +1,31 @@
-define([
-    'jquery',
-    'underscore',
-    'viewmodels/domain-widget'
-], function($, _, DomainWidgetViewModel) {
-    /**
-    * A viewmodel used for remote domain widgets
-    *
-    * @constructor
-    * @name RemoteDomainWidgetViewModel
-    *
-    * @param  {string} params - a configuration object
-    */
-    var RemoteDomainWidgetViewModel = function(params) {
-        var self = this;
+import $ from 'jquery';
+import _ from 'underscore';
+import DomainWidgetViewModel from 'viewmodels/domain-widget';
 
-        params.configKeys = _.union(['options', 'url'], params.configKeys);
+const RemoteDomainWidgetViewModel = function (params) {
+    var self = this;
 
-        DomainWidgetViewModel.apply(this, [params]);
+    params.configKeys = _.union(['options', 'url'], params.configKeys);
 
-        // to be used in widgets/extended view models to prep data for select
-        var prepData = typeof params.prepData === 'function' ?
-            params.prepData :
-            function(data) { return data; };
+    DomainWidgetViewModel.apply(this, [params]);
 
-        var getOptions = function(url) {
-            if (url) {
-                $.ajax({
-                    url: url,
-                    dataType: 'json'
-                }).done(function(data) {
-                    self.options(prepData(data));
-                });
-            }
-        };
+    var prepData = typeof params.prepData === 'function' ?
+        params.prepData :
+        function (data) { return data; };
 
-        this.url.subscribe(getOptions);
-        getOptions(this.url());
+    var getOptions = function (url) {
+        if (url) {
+            $.ajax({
+                url: url,
+                dataType: 'json'
+            }).done(function (data) {
+                self.options(prepData(data));
+            });
+        }
     };
 
-    return RemoteDomainWidgetViewModel;
-});
+    this.url.subscribe(getOptions);
+    getOptions(this.url());
+};
+
+export default RemoteDomainWidgetViewModel;

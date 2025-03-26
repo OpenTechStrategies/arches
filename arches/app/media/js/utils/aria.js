@@ -1,57 +1,40 @@
-define(['jquery'], function($){
+const toggleAriaExpanded = (id) => {
+    const ele = document.getElementById(id);
+    const expanded = ele.getAttribute("aria-expanded");
+    ele.setAttribute("aria-expanded", expanded === "true" ? "false" : "true");
+};
 
-    var ariaUtils = {
-        toggleAriaExpanded: function(id) {
-            const ele = document.getElementById(id);
-            let x = ele.getAttribute("aria-expanded"); 
-            if (x === "true") {
-                x = "false";
+const handleEscKey = (openElement, escListenerScope, closeElement) => {
+    const attachListener = (evt) => {
+        const isEscape = evt.key === "Escape" || evt.key === "Esc" || evt.keyCode === 27;
+
+        if (isEscape) {
+            if (closeElement) {
+                closeElement.click();
             } else {
-                x = "true";
+                openElement.click();
             }
-            ele.setAttribute("aria-expanded", x);
-        },
-
-        handleEscKey: function(openElement, escListenerScope, closeElement) {
-            /* 
-            *   openElement: element that expands/contracts a panel, menu, etc. 
-            *   escListenerScope: when focus is within this element, an escape key press will close the element controled by openElement
-            *   closeElement: [OPTIONAL] element that closes the panel, menu, etc. when clicked - use this param when panel is not removed from DOM on close
-            * 
-            *   Implement this function within the openElement's click event handler, passing event.currentTarget as openElement
-            */
-            let attachListener = function(evt) {
-                evt = evt || window.event;
-                var isEscape = false;
-                
-                // Check for escape key press
-                if ('key' in evt) {
-                    isEscape = (evt.key === 'Escape' || evt.key === 'Esc');
-                } else {
-                    isEscape = (evt.keyCode === 27);
-                }
-
-                // Handle escape key press
-                if (isEscape && closeElement) {
-                    $(closeElement).click();
-                    $(openElement).focus();
-                } else if (isEscape) {
-                    $(openElement).click();
-                    $(openElement).focus();
-                }
-            };
-            $(escListenerScope).off('keydown', attachListener);
-            $(escListenerScope).on('keydown', attachListener);
-            $(escListenerScope).find('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])').eq(0).focus();
-        },
-
-        shiftFocus: function(focusTarget) {
-            /* 
-            *   focusTarget: element to which focus will be moved. Should have tabindex="-1" or 0 and an aria-label
-            */
-            $(focusTarget).focus();
-        },
+            openElement.focus();
+        }
     };
 
-    return ariaUtils;
-});
+    escListenerScope.removeEventListener('keydown', attachListener);
+    escListenerScope.addEventListener('keydown', attachListener);
+
+    const focusable = escListenerScope.querySelectorAll(
+        'button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length) {
+        focusable[0].focus();
+    }
+};
+
+const shiftFocus = (focusTarget) => {
+    focusTarget.focus();
+};
+
+export default {
+    toggleAriaExpanded,
+    handleEscKey,
+    shiftFocus,
+};
