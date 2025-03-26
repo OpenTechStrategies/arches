@@ -16,6 +16,9 @@ from django.test.client import Client
 
 
 class UserPrefApiTest(TransactionTestCase):
+
+    serialized_rollback = True
+
     def generate_user_preference(self):
         user_preference = UserPreference()
         user_preference.userpreferenceid = uuid.uuid4()
@@ -27,30 +30,80 @@ class UserPrefApiTest(TransactionTestCase):
         ]
         return user_preference
 
-    def test_user_preference_api(self):
-        # Test POST
+    def user_preference_json_data(self, username):
         user_pref = {
             "userpreferenceid": None,
-            "user": models.User.objects.get(username="admin"),
+            "user": username,
             "preferencename": "test preference",
             "config": [
                 {"overlayid": "7d0dffba-5bcf-4694-a5d7-3425ad97fa2b", "sortorder": 1},
                 {"overlayid": "85c0cdd4-95d0-4350-bd9d-729f326fe1d5", "sortorder": 2},
             ],
         }
+        return user_pref
 
+    def test_user_preference_api(self):
+        # Test POST as anonymous fails
+        user_pref = self.user_preference_json_data("anonymous")
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.post(
+                reverse("api_user_preference", kwargs={"identifier": ""}),
+                data=user_pref,
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 403)
+
+        # Test POST as admin
         self.client.login(username="admin", password="admin")
+
+        user_pref = self.user_preference_json_data("admin")
         response = self.client.post(
             reverse("api_user_preference", kwargs={"identifier": ""}),
             data=user_pref,
             content_type="application/json",
         )
-
         self.assertEqual(response.status_code, 201)
         response_json = json.loads(response.content)
+        self.assertTrue("userpreferenceid" in response_json.keys())
+        admin_userpref_id = response_json["userpreferenceid"]
 
+        # Add a second preference
+        user_pref = self.user_preference_json_data("anonymous")
+        response = self.client.post(
+            reverse("api_user_preference", kwargs={"identifier": ""}),
+            data=user_pref,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        anonymous_userpref_id = response_json["userpreferenceid"]
+
+        # Test with invalid user
+        user_pref = self.user_preference_json_data("fakeuser")
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.post(
+                reverse("api_user_preference", kwargs={"identifier": ""}),
+                data=user_pref,
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 400)
+
+        # Test GET as admin with no identifier
         response = self.client.get(
             reverse("api_user_preference", kwargs={"identifier": ""}),
         )
-        print(response.content)
-        # if user_pref.userpreferenceid in response_json.keys():
+        self.assertEqual(response.status_code, 200)
+        response_json = json.loads(response.content)
+        self.assertTrue(isinstance(response_json, list))
+        self.assertTrue(len(response_json) == 2)
+
+        # Test GET as admin with both identifiers
+        response = self.client.get(
+            reverse("api_user_preference", kwargs={"identifier": admin_userpref_id}),
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(
+            reverse(
+                "api_user_preference", kwargs={"identifier": anonymous_userpref_id}
+            ),
+        )
+        self.assertEqual(response.status_code, 200)
