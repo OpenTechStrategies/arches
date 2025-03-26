@@ -2398,13 +2398,20 @@ class UserPreference(APIBase):
             overall_access = True
 
         if identifier:
-            returned_user_preferences = models.UserPreference.objects.get(pk=identifier)
-            if not returned_user_preferences:
+            returned_user_preference = models.UserPreference.objects.get(pk=identifier)
+            if not returned_user_preference:
                 return JSONErrorResponse(
                     _("No User Preference with this id"), status=404
                 )
             else:
-                response_data = returned_user_preferences
+                if overall_access or returned_user_preference.user == request.user:
+                    response_data = returned_user_preference
+                else:
+                    return JSONErrorResponse(
+                        _("User Preference GET request failed"),
+                        _("You do not have access to view this userpreferenceid"),
+                        status=403,
+                    )
         else:
             if overall_access:  # give view to everything
                 response_data = [x for x in models.UserPreference.objects.all()]
