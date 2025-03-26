@@ -4,7 +4,7 @@ import AbstractModel from 'models/abstract';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 
-var FunctionXGraphModel = AbstractModel.extend({
+export default AbstractModel.extend({
     /**
     * A backbone model to manage function data
     * @augments AbstractModel
@@ -86,5 +86,3 @@ var FunctionXGraphModel = AbstractModel.extend({
         return ret;
     },
 });
-
-export default FunctionXGraphModel;

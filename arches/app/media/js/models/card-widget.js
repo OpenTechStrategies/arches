@@ -5,7 +5,6 @@ import arches from 'arches';
 import widgets from 'widgets';
 import AbstractModel from 'models/abstract';
 import dispose from 'utils/dispose';
-import 'views/components/datatypes/string';
 
 export default AbstractModel.extend({
     /**
@@ -14,7 +13,7 @@ export default AbstractModel.extend({
     * @constructor
     * @name CardWidgetModel
     */
-    constructor: function (attributes, options) {
+    constructor: function(attributes, options){
         var defaults = {
             'id': null,
             'node_id': '',
@@ -33,16 +32,16 @@ export default AbstractModel.extend({
             widgets = require('widgets');
         }
         //-----------------------------------------------
-
+        
         var self = this;
         this.disposables = [];
         this.widgetLookup = widgets;
-        this.widgetList = function () {
-            var widgets = _.map(self.widgetLookup, function (widget, id) {
+        this.widgetList = function() {
+            var widgets = _.map(self.widgetLookup, function(widget, id) {
                 widget.id = id;
                 return widget;
             });
-            return _.filter(widgets, function (widget) {
+            return _.filter(widgets, function(widget) {
                 return widget.datatype === self.datatype.datatype;
             });
         };
@@ -73,8 +72,11 @@ export default AbstractModel.extend({
 
         AbstractModel.prototype.constructor.call(this, attributes, options);
 
+        // Wrap I18n_JSON field values (signified as i18n_properties)
+        // in a shape like: { "en": "some value" }.
         for (const [key, val] of Object.entries(this.config)) {
             if (
+                // Limit to string datatype for now.
                 this.datatype.datatype === 'string'
                 && ko.unwrap(this.config.i18n_properties)?.includes
                 && ko.unwrap(this.config.i18n_properties).includes(key)
@@ -85,17 +87,17 @@ export default AbstractModel.extend({
         }
 
         this.configJSON = ko.computed({
-            read: function () {
+            read: function() {
                 var configJSON = {};
                 var config = this.get('config');
-                _.each(this.configKeys(), function (key) {
+                _.each(this.configKeys(), function(key) {
                     configJSON[key] = koMapping.toJS(config[key]);
                 });
                 configJSON.label = this.get('label')();
                 return configJSON;
             },
-            write: function (value) {
-                if (window.location.pathname.includes(arches.urls.graph_designer(this.card.get('graph_id')))) {
+            write: function(value) {
+                if (window.location.pathname.includes(arches.urls.graph_designer(this.card.get('graph_id')))){
                     var config = this.get('config');
                     for (var key in value) {
                         if (key === 'label') {
@@ -120,7 +122,7 @@ export default AbstractModel.extend({
 
         this.disposables.push(this.configJSON);
 
-        this.dispose = function () {
+        this.dispose = function() {
             dispose(self);
         };
 
@@ -132,16 +134,16 @@ export default AbstractModel.extend({
      * @memberof CardWidgetModel.prototype
      * @param  {object} attributes - the properties to seed a {@link CardWidgetModel} with
      */
-    parse: function (attributes) {
+    parse: function(attributes){
         var self = this;
 
-        _.each(attributes, function (value, key) {
+        _.each(attributes, function(value, key){
             if (key === 'config') {
                 if (typeof value === 'string') {
                     value = JSON.parse(value);
                 }
                 var configKeys = [];
-                _.each(value, function (configVal, configKey) {
+                _.each(value, function(configVal, configKey) {
                     if (configVal === null || configVal === undefined || !configVal.__ko_mapping__) {
                         configVal = koMapping.fromJS(configVal);
                     }
@@ -150,13 +152,13 @@ export default AbstractModel.extend({
                 });
                 this.set(key, value);
                 this.configKeys = ko.observableArray(configKeys);
-            } else if (key === 'widget_id') {
+            } else if (key==='widget_id') {
                 var widgetId = ko.observable(value);
                 this.set(key, ko.computed({
-                    read: function () {
+                    read: function() {
                         return widgetId();
                     },
-                    write: function (value) {
+                    write: function(value) {
                         var key;
                         let defaultConfig = ko.unwrap(widgets[value].defaultconfig);
                         if (
@@ -184,13 +186,14 @@ export default AbstractModel.extend({
         }, this);
     },
 
+
     /**
      * toJSON - casts the model as a JSON object
      * @return {object} a JSON object representation of the model
      */
-    toJSON: function () {
+    toJSON: function() {
         var ret = {};
-        for (var key in this.attributes) {
+        for (var key in this.attributes){
             if (key !== 'config') {
                 ret[key] = this.attributes[key]();
             } else {

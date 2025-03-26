@@ -4,7 +4,7 @@ import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import _ from 'underscore';
 
-var FunctionModel = AbstractModel.extend({
+export default AbstractModel.extend({
     /**
     * A backbone model to manage function data
     * @augments AbstractModel
@@ -91,5 +91,3 @@ var FunctionModel = AbstractModel.extend({
         return JSON.parse(this.json());
     },
 });
-
-export default FunctionModel;

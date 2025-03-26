@@ -1,15 +1,13 @@
 import _ from 'underscore';
-import arches from 'arches';
-import cardComponentLookup from 'card-components';
 import AbstractModel from 'models/abstract';
 import CardWidgetModel from 'models/card-widget';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import CardConstraintsViewModel from 'viewmodels/card-constraints';
 import dispose from 'utils/dispose';
-import 'regenerator-runtime';
+import 'regenerator-runtime/runtime';
 
-var CardModel = AbstractModel.extend({
+export default AbstractModel.extend({
     /**
     * A backbone model to manage card data
     * @augments AbstractModel
@@ -19,7 +17,7 @@ var CardModel = AbstractModel.extend({
 
     url: arches.urls.card,
 
-    initialize: function (attributes) {
+    initialize: function(attributes) {
         var self = this;
         this.cards = ko.observableArray();
         this.nodes = attributes.data.nodes;
@@ -81,15 +79,15 @@ var CardModel = AbstractModel.extend({
         this.disposables = [];
 
         this.configJSON = ko.computed({
-            read: function () {
+            read: function() {
                 var configJSON = {};
                 var config = this.get('config');
-                _.each(this.configKeys(), function (key) {
+                _.each(this.configKeys(), function(key) {
                     configJSON[key] = ko.unwrap(config[key]);
                 });
                 return configJSON;
             },
-            write: function (value) {
+            write: function(value) {
                 var config = this.get('config');
                 for (var key in value) {
                     if (config[key] && config[key]() !== value[key]) {
@@ -100,7 +98,7 @@ var CardModel = AbstractModel.extend({
             owner: this
         });
 
-        var componentIdSubscription = this.get('component_id').subscribe(function (value) {
+        var componentIdSubscription = this.get('component_id').subscribe(function(value) {
             var key;
             var defaultConfig = self.cardComponentLookup[value].defaultconfig;
             for (key in defaultConfig) {
@@ -115,7 +113,7 @@ var CardModel = AbstractModel.extend({
 
         this._card = ko.observable('{}');
 
-        this.dirty = ko.computed(function () {
+        this.dirty = ko.computed(function() {
             return JSON.stringify(
                 _.extend(
                     JSON.parse(self._card()),
@@ -123,19 +121,19 @@ var CardModel = AbstractModel.extend({
             ) !== self._card();
         });
 
-        this.isContainer = ko.computed(function () {
+        this.isContainer = ko.computed(function() {
             return !!self.get('cards')().length;
         });
 
-        this.setConstraints = function (arr) {
+        this.setConstraints = function(arr) {
             var self = this;
             if (arr) {
-                arr.forEach(function (constraint) {
+                arr.forEach(function(constraint){
                     var constraintViewModel = new CardConstraintsViewModel({
                         constraint: koMapping.fromJS(constraint),
                         widgets: self.widgets()
                     });
-                    constraintViewModel.constraint.nodes.subscribe(function () {
+                    constraintViewModel.constraint.nodes.subscribe(function(){
                         self.toJSON();
                     }, self);
                     self.constraints.push(constraintViewModel);
@@ -147,23 +145,23 @@ var CardModel = AbstractModel.extend({
         this.parse(attributes);
         this.parseNodes.call(this, attributes);
 
-        var cardSubscription = this.get('cards').subscribe(function (cards) {
-            _.each(cards, function (card, i) {
+        var cardSubscription = this.get('cards').subscribe(function(cards) {
+            _.each(cards, function(card, i) {
                 card.get('sortorder')(i);
             });
         });
 
-        var widgetSubscription = this.get('widgets').subscribe(function (widgets) {
-            _.each(widgets, function (widget, i) {
+        var widgetSubscription = this.get('widgets').subscribe(function(widgets) {
+            _.each(widgets, function(widget, i) {
                 widget.get('sortorder')(i);
             });
         });
 
-        var nodes = ko.computed(function () {
+        var nodes = ko.computed(function() {
             return ko.unwrap(attributes.data.nodes);
         }, this).extend({ throttle: 100 });
 
-        var nodesSubscription = nodes.subscribe(function () {
+        var nodesSubscription = nodes.subscribe(function(){
             this.parseNodes(attributes);
         }, this);
 
@@ -187,7 +185,7 @@ var CardModel = AbstractModel.extend({
         };
         document?.addEventListener("keydown", keyListener)
         // dispose of eventlistener
-        this.dispose = function () {
+        this.dispose = function() {
             dispose(self);
             document?.removeEventListener("keydown", keyListener);
         };
@@ -199,95 +197,95 @@ var CardModel = AbstractModel.extend({
      * @memberof CardModel.prototype
      * @param  {object} attributes - the properties to seed a {@link CardModel} with
      */
-    parse: function (attributes) {
+    parse: function(attributes) {
         var self = this;
         // console.log(attributes.data.constraints[0].nodes)
         // console.log(attributes.data.constraints[0].nodes)
         this._attributes = attributes;
 
-        _.each(attributes.data, function (value, key) {
+        _.each(attributes.data, function(value, key) {
             switch (key) {
-                case 'config':
-                    var config = {};
-                    var configKeys = [];
-                    self.configKeys.removeAll();
-                    _.each(value, function (configVal, configKey) {
-                        if (!ko.isObservable(configVal)) {
-                            configVal = koMapping.fromJS(configVal);
-                        }
-                        config[configKey] = configVal;
-                        configKeys.push(configKey);
-                    });
-                    this.set(key, config);
-                    self.configKeys(configKeys);
-                    break;
-                case 'cards':
-                    var cards = [];
-                    var cardData = _.sortBy(value, 'sortorder');
-                    cardData.forEach(function (card) {
-                        var cardModel = new CardModel({
-                            data: _.extend(card, {
-                                nodes: attributes.data.nodes
-                            }),
-                            datatypelookup: attributes.datatypelookup,
-                            cardComponents: attributes.cardComponents
-                        });
-                        cards.push(cardModel);
-                    }, this);
-                    this.get('cards')(cards);
-                    break;
-                case 'widgets':
-                    break;
-                case 'cardid':
-                    this.set('id', value);
-                    this.get(key)(value);
-                    break;
-                case 'constraints':
-                    if (this.constraints().length === 0) {
-                        this.setConstraints(value);
-                    } else {
-                        this.constraints().forEach(function (constraint, i) {
-                            constraint.update(value[i]);
-                        });
+            case 'config':
+                var config = {};
+                var configKeys = [];
+                self.configKeys.removeAll();
+                _.each(value, function(configVal, configKey) {
+                    if (!ko.isObservable(configVal)) {
+                        configVal = koMapping.fromJS(configVal);
                     }
-                    break;
-                case 'name':
-                case 'nodegroup_id':
-                case 'instructions':
-                case 'cssclass':
-                case 'helptext':
-                case 'helpenabled':
-                case 'helptitle':
-                case 'cardinality':
-                case 'visible':
-                case 'active':
-                case 'ontologyproperty':
-                case 'sortorder':
-                case 'component_id':
-                    this.get(key)(value);
-                    break;
-                case 'ontology_properties':
-                case 'tiles':
-                    this.set(key, koMapping.fromJS(value));
-                    break;
-                default:
-                    this.set(key, value);
+                    config[configKey] = configVal;
+                    configKeys.push(configKey);
+                });
+                this.set(key, config);
+                self.configKeys(configKeys);
+                break;
+            case 'cards':
+                var cards = [];
+                var cardData = _.sortBy(value, 'sortorder');
+                cardData.forEach(function(card) {
+                    var cardModel = new CardModel({
+                        data: _.extend(card, {
+                            nodes: attributes.data.nodes
+                        }),
+                        datatypelookup: attributes.datatypelookup,
+                        cardComponents: attributes.cardComponents
+                    });
+                    cards.push(cardModel);
+                }, this);
+                this.get('cards')(cards);
+                break;
+            case 'widgets':
+                break;
+            case 'cardid':
+                this.set('id', value);
+                this.get(key)(value);
+                break;
+            case 'constraints':
+                if (this.constraints().length === 0) {
+                    this.setConstraints(value);
+                } else {
+                    this.constraints().forEach(function(constraint, i){
+                        constraint.update(value[i]);
+                    });
+                }
+                break;
+            case 'name':
+            case 'nodegroup_id':
+            case 'instructions':
+            case 'cssclass':
+            case 'helptext':
+            case 'helpenabled':
+            case 'helptitle':
+            case 'cardinality':
+            case 'visible':
+            case 'active':
+            case 'ontologyproperty':
+            case 'sortorder':
+            case 'component_id':
+                this.get(key)(value);
+                break;
+            case 'ontology_properties':
+            case 'tiles':
+                this.set(key, koMapping.fromJS(value));
+                break;
+            default:
+                this.set(key, value);
             }
         }, this);
         this._card(JSON.stringify(this.toJSON()));
     },
 
-    parseNodes: function () {
+    parseNodes: function() {
         var self = this;
         var attributes = this.sourceData;
         var nodeIds = [];
 
-        var widgetNodeIds = ko.unwrap(this.get('widgets')).map(function (widget) {
+        var widgetNodeIds = ko.unwrap(this.get('widgets')).map(function(widget) {
             return ko.unwrap(widget.node_id);
         });
 
         // let's iterate over each node, and add any new widgets
-        ko.unwrap(this.nodes).forEach(function (node) {
+        ko.unwrap(this.nodes).forEach(function(node) {
             nodeIds.push(node.id);
 
             // TODO: it would be nice to normalize the nodegroup_id names (right now we have several different versions)
@@ -296,13 +294,13 @@ var CardModel = AbstractModel.extend({
             if (nodegroupId === ko.unwrap(attributes.data.nodegroup_id) && !widgetNodeIds.includes(node.nodeid)) {
                 var datatype = attributes.datatypelookup[ko.unwrap(node.datatype)];
 
-                var nodeDatatypeSubscription = node.datatype.subscribe(function () {
+                var nodeDatatypeSubscription = node.datatype.subscribe(function(){
                     this._card(JSON.stringify(this.toJSON()));
                 }, this);
                 this.disposables.push(nodeDatatypeSubscription);
 
                 if (datatype.defaultwidget_id) {
-                    var cardWidgetData = _.find(ko.unwrap(attributes.data.widgets), function (widget) {
+                    var cardWidgetData = _.find(ko.unwrap(attributes.data.widgets), function(widget) {
                         return widget.node_id === node.nodeid;
                     });
                     var widget = new CardWidgetModel(cardWidgetData, {
@@ -317,7 +315,7 @@ var CardModel = AbstractModel.extend({
         }, this);
 
         // let's iterate over each widget, and remove any orphans
-        var widgetsToDelete = ko.unwrap(this.get('widgets')).filter(function (widget) {
+        var widgetsToDelete = ko.unwrap(this.get('widgets')).filter(function(widget) {
             var widgetNodegroupId = ko.unwrap(widget.node.nodeGroupId) || ko.unwrap(widget.node.nodegroup_id);
 
             if (ko.unwrap(this.nodegroup_id) !== widgetNodegroupId || !nodeIds.includes(widget.node_id())) {
@@ -325,26 +323,26 @@ var CardModel = AbstractModel.extend({
             }
         }, this);
 
-        widgetsToDelete.forEach(function (widget) {
+        widgetsToDelete.forEach(function(widget) {
             this.get('widgets').remove(widget);
         }, this);
 
         // let's sort the widgets according to sortorder
-        this.get('widgets').sort(function (w, ww) {
+        this.get('widgets').sort(function(w, ww) {
             return w.get('sortorder')() - ww.get('sortorder')();
         });
 
         this._card(JSON.stringify(this.toJSON()));
     },
 
-    reset: function () {
+    reset: function() {
         this._attributes.data = JSON.parse(this._card());
-        this.get('widgets')().forEach(function (widget) {
-            var originalWidgetData = _.find(this._attributes.data.widgets, function (origwidget) {
+        this.get('widgets')().forEach(function(widget){
+            var originalWidgetData = _.find(this._attributes.data.widgets, function(origwidget){
                 return widget.node_id() === origwidget.node_id;
             });
             if (originalWidgetData) {
-                widget.configKeys().forEach(function (configKey) {
+                widget.configKeys().forEach(function(configKey){
                     koMapping.fromJS(originalWidgetData.config[configKey], widget.config[configKey]);
                 });
                 widget.label(originalWidgetData.label);
@@ -354,7 +352,7 @@ var CardModel = AbstractModel.extend({
         this.parse(this._attributes);
     },
 
-    toJSON: function () {
+    toJSON: function() {
         var self = this;
         var ret = {};
         for (var key in this.attributes) {
@@ -364,12 +362,12 @@ var CardModel = AbstractModel.extend({
                 if (ko.isObservable(this.attributes[key])) {
                     if (key === 'constraints') {
                         ret[key] = [];
-                        this.attributes[key]().forEach(function (constraint) {
+                        this.attributes[key]().forEach(function(constraint) {
                             ret[key].push(constraint.toJSON());
                         }, this);
                     } else if (key === 'cards') {
                         ret[key] = [];
-                        this.attributes[key]().forEach(function (card) {
+                        this.attributes[key]().forEach(function(card) {
                             ret[key].push(card.toJSON());
                         }, this);
                     } else {
@@ -380,7 +378,7 @@ var CardModel = AbstractModel.extend({
                 }
             } else if (key === 'widgets') {
                 var widgets = this.attributes[key]();
-                ret[key] = _.map(widgets, function (widget) {
+                ret[key] = _.map(widgets, function(widget) {
                     return widget.toJSON();
                 });
             } else if (key === 'config') {
@@ -388,7 +386,7 @@ var CardModel = AbstractModel.extend({
                 var config = null;
                 if (configKeys.length > 0) {
                     config = {};
-                    _.each(configKeys, function (configKey) {
+                    _.each(configKeys, function(configKey) {
                         config[configKey] = ko.unwrap(self.get('config')[configKey]);
                     });
                 }
@@ -398,11 +396,11 @@ var CardModel = AbstractModel.extend({
         return ret;
     },
 
-    save: function (callback) {
-        return AbstractModel.prototype.save.call(this, function (request, status, self) {
+    save: function(callback) {
+        return AbstractModel.prototype.save.call(this, function(request, status, self) {
             if (status === 'success') {
                 this._card(JSON.stringify(this.toJSON()));
-
+                
                 // adds event to trigger dirty state in graph-designer
                 document.dispatchEvent(
                     new Event('cardSave')
@@ -415,5 +413,3 @@ var CardModel = AbstractModel.extend({
     }
 
 });
-
-export default CardModel;
