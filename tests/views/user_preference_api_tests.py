@@ -75,6 +75,7 @@ class UserPrefApiTest(TransactionTestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 201)
+        response_json = json.loads(response.content)
         anonymous_userpref_id = response_json["userpreferenceid"]
 
         # Test with invalid user
@@ -107,3 +108,74 @@ class UserPrefApiTest(TransactionTestCase):
             ),
         )
         self.assertEqual(response.status_code, 200)
+
+        # Test GET that doesn't exist
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(
+                reverse(
+                    "api_user_preference", kwargs={"identifier": str(uuid.uuid4())}
+                ),
+            )
+        self.assertEqual(response.status_code, 404)
+
+        # Test GET as anonymous with no identifier
+        self.client.force_login(models.User.objects.get(username="anonymous"))
+
+        response = self.client.get(
+            reverse("api_user_preference", kwargs={"identifier": ""}),
+        )
+        response_json = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(isinstance(response_json, list))
+        self.assertTrue(len(response_json) == 1)  # ensure output is the one userpref
+
+        # Test GET from anonymous with valid identifier
+        response = self.client.get(
+            reverse(
+                "api_user_preference", kwargs={"identifier": anonymous_userpref_id}
+            ),
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Test GET from anonymous to user preference they don't have access to
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(
+                reverse(
+                    "api_user_preference", kwargs={"identifier": admin_userpref_id}
+                ),
+            )
+        self.assertEqual(response.status_code, 403)
+
+        # Test DELETE as anonymous fails
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.delete(
+                reverse(
+                    "api_user_preference", kwargs={"identifier": anonymous_userpref_id}
+                ),
+            )
+        self.assertEqual(response.status_code, 403)
+
+        # Test valid DELETE as admin
+        self.client.login(username="admin", password="admin")
+        response = self.client.delete(
+            reverse(
+                "api_user_preference", kwargs={"identifier": anonymous_userpref_id}
+            ),
+        )
+        self.assertEqual(response.status_code, 204)
+
+        # Test DELETE without identifier
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.delete(
+                reverse("api_user_preference", kwargs={"identifier": ""}),
+            )
+        self.assertEqual(response.status_code, 400)
+
+        # Test DELETE with invalid identifier
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.delete(
+                reverse(
+                    "api_user_preference", kwargs={"identifier": str(uuid.uuid4())}
+                ),
+            )
+        self.assertEqual(response.status_code, 404)
