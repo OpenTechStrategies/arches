@@ -1,22 +1,23 @@
-import $ from 'jquery';
-import _ from 'underscore';
 import ko from 'knockout';
-import dropzone from 'dropzone';
+import _ from 'underscore';
+import $ from 'jquery';
+import dropzone from 'dropzone';    
+
 
 /**
  * @constructor
  * @name dropzone
  */
 ko.bindingHandlers.dropzone = {
-    init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
+    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
         var innerBindingContext = bindingContext.extend(valueAccessor);
         ko.applyBindingsToDescendants(innerBindingContext, element);
 
         var options = valueAccessor() || {};
 
-        _.each(_.filter(options, function (value, key) {
+        _.each(_.filter(options, function(value, key) {
             return _.contains(['previewsContainer', 'clickable'], key);
-        }), function (value, key) {
+        }),function(value, key) {
             options[key] = $(element).find(value)[0];
         });
 
@@ -24,5 +25,7 @@ ko.bindingHandlers.dropzone = {
         return { controlsDescendantBindings: true };
     }
 };
+ko.bindingHandlers.dropzone.init = ko.bindingHandlers.dropzone.init.bind(ko.bindingHandlers.dropzone);
 
 export default ko.bindingHandlers.dropzone;
+

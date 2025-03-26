@@ -14,6 +14,7 @@ ko.bindingHandlers.onEnterkeyClick = {
         });
     }
 };
+ko.bindingHandlers.onEnterkeyClick.init = ko.bindingHandlers.onEnterkeyClick.init.bind(ko.bindingHandlers.onEnterkeyClick);
 
 // Register binding of onSpaceClick. e.g. <div data-bind="onSpaceClick"> </div>
 ko.bindingHandlers.onSpaceClick = {
@@ -28,5 +29,6 @@ ko.bindingHandlers.onSpaceClick = {
         });
     }
 };
+ko.bindingHandlers.onSpaceClick.init = ko.bindingHandlers.onSpaceClick.init.bind(ko.bindingHandlers.onSpaceClick);
 
 export default ko.bindingHandlers;

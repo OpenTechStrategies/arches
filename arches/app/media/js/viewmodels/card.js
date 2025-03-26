@@ -1,15 +1,24 @@
-import $ from 'jquery';
-import _ from 'underscore';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import arches from 'arches';
 import CardModel from 'models/card';
+import CardWidgetModel from 'models/card-widget';
 import uuid from 'uuid';
 import dispose from 'utils/dispose';
+import TileViewModel from 'viewmodels/tile';
+import 'utils/set-csrf-token';      
 
-const isChildSelected = function (parent) {
-    let childSelected = false;
-    let children = [];
+/**
+* A viewmodel used for generic cards
+*
+* @constructor
+* @name CardViewModel
+*
+* @param  {string} params - a configuration object
+*/
+var isChildSelected = function(parent) {
+    var childSelected = false;
+    var children = [];
     if ('tileid' in parent) {
         children = ko.unwrap(parent.cards);
     } else if ('model' in parent) {
@@ -18,7 +27,7 @@ const isChildSelected = function (parent) {
             ko.unwrap(parent.widgets)
         );
     }
-    children.forEach(function (child) {
+    children.forEach(function(child) {
         if (child.selected && child.selected() || isChildSelected(child)) {
             childSelected = true;
         }
@@ -26,10 +35,10 @@ const isChildSelected = function (parent) {
     return childSelected;
 };
 
-const doesChildHaveProvisionalEdits = function (parent) {
-    let hasEdits = false;
-    const childrenKey = 'tileid' in parent ? 'cards' : 'tiles';
-    ko.unwrap(parent[childrenKey]).forEach(function (child) {
+var doesChildHaveProvisionalEdits = function(parent) {
+    var hasEdits = false;
+    var childrenKey = 'tileid' in parent ? 'cards': 'tiles';
+    ko.unwrap(parent[childrenKey]).forEach(function(child) {
         if (child.hasprovisionaledits && child.hasprovisionaledits() || doesChildHaveProvisionalEdits(child)) {
             hasEdits = true;
         }
@@ -37,11 +46,11 @@ const doesChildHaveProvisionalEdits = function (parent) {
     return hasEdits;
 };
 
-const updateDisplayName = function (resourceId, displayname) {
+var updateDisplayName = function(resourceId, displayname) {
     $.get(
         arches.urls.resource_descriptors + resourceId(),
-        function (descriptors) {
-            if (typeof descriptors.displayname == "string") {
+        function(descriptors) {
+            if(typeof descriptors.displayname == "string"){
                 displayname(descriptors.displayname);
             } else {
                 displayname(descriptors.displayname.find(displayname => displayname.language == arches.activeLanguage)?.value);
@@ -50,8 +59,8 @@ const updateDisplayName = function (resourceId, displayname) {
     );
 };
 
-var CardViewModel = function (params) {
-    var TileViewModel = require('viewmodels/tile');
+
+var CardViewModel = function(params) {
     var self = this;
     var hover = params.hover || ko.observable();
     var scrollTo = params.scrollTo || ko.observable();
@@ -67,7 +76,7 @@ var CardViewModel = function (params) {
     var selection;
     var emptyConstraint = [{
         uniquetoallinstances: false,
-        nodes: [],
+        nodes:[],
         cardid: params.card.cardid,
         constraintid: uuid.generate()
     }];
@@ -87,7 +96,7 @@ var CardViewModel = function (params) {
     } else {
         selection = params.selection || ko.observable();
     }
-    var nodegroup = _.find(ko.unwrap(nodegroups), function (group) {
+    var nodegroup = _.find(ko.unwrap(nodegroups), function(group) {
         return ko.unwrap(group.nodegroupid) === ko.unwrap(params.card.nodegroup_id);
     });
     var cardModel = new CardModel({
@@ -100,14 +109,14 @@ var CardViewModel = function (params) {
         datatypelookup: params.graphModel.get('datatypelookup'),
     });
 
-    var applySelectedComputed = function (widgets) {
-        widgets.forEach(function (widget) {
+    var applySelectedComputed = function(widgets){
+        widgets.forEach(function(widget){
             widget.parent = self;
             widget.selected = ko.pureComputed({
-                read: function () {
+                read: function() {
                     return selection() === this;
                 },
-                write: function (value) {
+                write: function(value) {
                     if (value) {
                         selection(this);
                     }
@@ -115,10 +124,10 @@ var CardViewModel = function (params) {
                 owner: widget
             });
             widget.hovered = ko.pureComputed({
-                read: function () {
+                read: function() {
                     return hover() === this;
                 },
-                write: function (value) {
+                write: function(value) {
                     if (value === true) {
                         hover(this);
                     }
@@ -133,7 +142,7 @@ var CardViewModel = function (params) {
 
     applySelectedComputed(cardModel.widgets());
 
-    var widgetsSubscription = cardModel.widgets.subscribe(function (widgets) {
+    var widgetsSubscription = cardModel.widgets.subscribe(function(widgets){
         applySelectedComputed(widgets);
     });
 
@@ -152,13 +161,13 @@ var CardViewModel = function (params) {
         perms: perms,
         constraints: params.constraints || emptyConstraint,
         permsLiteral: permsLiteral,
-        scrollTo: ko.pureComputed(function () {
+        scrollTo: ko.pureComputed(function() {
             return scrollTo() === this;
         }, this),
-        fullyProvisional: ko.pureComputed(function () {
+        fullyProvisional: ko.pureComputed(function(){
             var res;
             var provisionalindex;
-            var summary = _.map(this.tiles(), function (tile) {
+            var summary = _.map(this.tiles(), function(tile){
                 var dataEmpty = _.keys(koMapping.toJS(tile.data)).length === 0;
                 if (ko.unwrap(tile.provisionaledits) !== null && dataEmpty) {
                     return 2;
@@ -168,9 +177,9 @@ var CardViewModel = function (params) {
                     return 0;
                 }
             });
-            provisionalindex = _.reduce(summary, function (a, b) { return a + b; });
+            provisionalindex = _.reduce(summary, function(a, b){return a + b;});
             if (provisionalindex > 0) {
-                if (_.every(summary, function (val) { return val === 2; })) {
+                if (_.every(summary, function(val){return val === 2;})) {
                     res = 'fullyprovisional';
                 }
                 else {
@@ -179,7 +188,7 @@ var CardViewModel = function (params) {
             }
             return res;
         }, this),
-        highlight: ko.computed(function () {
+        highlight: ko.computed(function() {
             var filterText = filter();
             if (!filterText) {
                 return false;
@@ -190,11 +199,11 @@ var CardViewModel = function (params) {
             }
         }, this),
         tiles: ko.observableArray(
-            _.filter(params.tiles, function (tile) {
+            _.filter(params.tiles, function(tile) {
                 return (
                     params.tile ? (tile.parenttile_id === params.tile.tileid) : true
                 ) && ko.unwrap(tile.nodegroup_id) === ko.unwrap(params.card.nodegroup_id);
-            }).map(function (tile) {
+            }).map(function(tile) {
                 return new TileViewModel({
                     tile: tile,
                     card: self,
@@ -215,15 +224,15 @@ var CardViewModel = function (params) {
             })
         ),
         cards: ko.observableArray(
-            _.filter(params.cards, function (card) {
-                var nodegroup = _.find(ko.unwrap(nodegroups), function (group) {
+            _.filter(params.cards, function(card) {
+                var nodegroup = _.find(ko.unwrap(nodegroups), function(group) {
                     return ko.unwrap(group.nodegroupid) === ko.unwrap(card.nodegroup_id);
                 });
 
                 if (nodegroup) {
                     return ko.unwrap(nodegroup.parentnodegroup_id) === ko.unwrap(params.card.nodegroup_id);
                 }
-            }).map(function (card) {
+            }).map(function(card) {
                 return new CardViewModel({
                     card: _.clone(card),
                     graphModel: params.graphModel,
@@ -247,8 +256,8 @@ var CardViewModel = function (params) {
                 });
             })
         ),
-        hasprovisionaledits: ko.computed(function () {
-            return _.filter(params.tiles, function (tile) {
+        hasprovisionaledits: ko.computed(function() {
+            return _.filter(params.tiles, function(tile) {
                 return (params.tile ? (tile.parenttile_id === params.tile.tileid) : true)
                     && ko.unwrap(tile.nodegroup_id) === ko.unwrap(params.card.nodegroup_id)
                     && ko.unwrap(tile.provisionaledits)
@@ -256,17 +265,17 @@ var CardViewModel = function (params) {
             }).length;
         }),
         selected: ko.pureComputed({
-            read: function () {
+            read: function() {
                 if (self.multiselect) {
                     return _.contains(selection(), this);
                 } else {
                     return selection() === this;
                 }
             },
-            write: function (value) {
-                if (self.multiselect) {
-                    if (value === true) {
-                        if (_.contains(selection(), this) === false) {
+            write: function(value) {
+                if (self.multiselect){
+                    if (value === true){
+                        if (_.contains(selection(), this) === false){
                             selection.push(this);
                         }
                     } else if (value === false) {
@@ -281,18 +290,18 @@ var CardViewModel = function (params) {
             owner: this
         }).extend({ throttle: 1 }),
         showForm: ko.observable(false),
-        showSummary: ko.pureComputed(function () {
+        showSummary: ko.pureComputed(function(){
             return self.canAdd() && self.showForm() === false && self.selected();
         }),
         canAdd: ko.pureComputed({
-            read: function () {
+            read: function() {
                 return this.cardinality === 'n' || this.tiles().length === 0;
             },
             owner: this
         }),
-        reorderTiles: function () {
+        reorderTiles: function() {
             loading(true);
-            var tiles = _.map(self.tiles(), function (tile) {
+            var tiles = _.map(self.tiles(), function(tile) {
                 return tile.getAttributes();
             });
             $.ajax({
@@ -301,7 +310,7 @@ var CardViewModel = function (params) {
                     tiles: tiles
                 }),
                 url: arches.urls.reorder_tiles,
-                complete: function () {
+                complete: function() {
                     loading(false);
                     updateDisplayName(params.resourceId, params.displayname);
                     // update the index on the tiles themselves
@@ -311,9 +320,9 @@ var CardViewModel = function (params) {
                 }
             });
         },
-        reorderCards: function () {
+        reorderCards: function() {
             loading(true);
-            var cards = _.map(self.cards(), function (card, i) {
+            var cards = _.map(self.cards(), function(card, i) {
                 card.model.get('sortorder')(i);
                 return {
                     id: card.model.id,
@@ -327,16 +336,16 @@ var CardViewModel = function (params) {
                     cards: cards
                 }),
                 url: arches.urls.reorder_cards,
-                complete: function () {
+                complete: function() {
                     loading(false);
                 }
             });
         },
 
         // used to generate parent tile for nexted data
-        saveParentTile: async (optionalParentTile) => {
+        saveParentTile: async(optionalParentTile) => {
             return new Promise((resolve, reject) => {
-                if (optionalParentTile && !optionalParentTile.tileid) {
+                if(optionalParentTile && !optionalParentTile.tileid) {
                     optionalParentTile.save((err) => {
                         reject(err);
                     }, () => {
@@ -357,14 +366,14 @@ var CardViewModel = function (params) {
             });
         },
 
-        getNewTile: function (forceNewTile) {
+        getNewTile: function(forceNewTile) {
             if (!this.newTile || forceNewTile) this.newTile = new TileViewModel({
                 tile: {
                     tileid: '',
                     resourceinstance_id: ko.unwrap(params.resourceId),
                     nodegroup_id: ko.unwrap(self.model.nodegroup_id),
                     parenttile_id: self.parent ? self.parent.tileid : null,
-                    data: _.reduce(self.widgets(), function (data, widget) {
+                    data: _.reduce(self.widgets(), function(data, widget) {
                         data[widget.node_id()] = null;
                         return data;
                     }, {})
@@ -386,18 +395,18 @@ var CardViewModel = function (params) {
             });
             return this.newTile;
         },
-        isFuncNode: function () {
+        isFuncNode: function() {
             var primaryDescriptorNodes = {}, pdFunction = params.primaryDescriptorFunction;
 
-            if (!pdFunction || !params.card)
+            if(!pdFunction || !params.card)
                 return false;
 
-            ['name', 'description'].forEach(function (descriptor) {
+            ['name', 'description'].forEach(function(descriptor) {
                 try {
                     primaryDescriptorNodes[pdFunction['config']['descriptor_types'][descriptor]['nodegroup_id']] = descriptor;
                 } catch (e) {
                     // Descriptor doesn't exist so ignore the exception
-                    console.log("No descriptor configuration for " + descriptor);
+                    console.log("No descriptor configuration for "+descriptor);
                 }
             });
 
@@ -409,40 +418,40 @@ var CardViewModel = function (params) {
         }
     });
 
-    this.selected.subscribe(function (selected) {
+    this.selected.subscribe(function(selected) {
         if (selected) this.expanded(true);
     }, this);
-    this.expanded.subscribe(function (expanded) {
+    this.expanded.subscribe(function(expanded) {
         if (expanded && this.parent?.expanded) this.parent.expanded(true);
     }, this);
 
-    this.isChildSelected = ko.computed(function () {
+    this.isChildSelected = ko.computed(function() {
         return isChildSelected(this);
     }, this);
-    this.doesChildHaveProvisionalEdits = ko.computed(function () {
+    this.doesChildHaveProvisionalEdits = ko.computed(function() {
         return doesChildHaveProvisionalEdits(this);
     }, this);
 
-    var expandParents = function (item) {
+    var expandParents = function(item) {
         if (item.parent) {
             item.parent.expanded(true);
             expandParents(item.parent);
         }
     };
 
-    this.isDirty = function () {
+    this.isDirty = function(){
         // Returns true if a tile is dirty and dirty state is not triggered by default values.
         var tile = self.newTile;
 
-        if (tile) {
-            if (tile.dirty()) {
+        if(tile) {
+            if(tile.dirty()) {
                 var res = {};
-                self.widgets().forEach(function (w) {
+                self.widgets().forEach(function(w){
                     res[w.node.nodeid] = ko.unwrap(w.config.defaultValue);
                 });
                 for (var k in tile.data) {
                     if (Object.keys(res).indexOf(k) > -1) {
-                        if ((res[k] || null) == (tile.data[k]() || null) !== true) {
+                        if ((res[k]||null) == (tile.data[k]()||null) !== true) {
                             return true;
                         } else {
                             return false;
@@ -455,8 +464,8 @@ var CardViewModel = function (params) {
         return false;
     };
 
-    this.selectChildCards = function (value) {
-        if (value !== undefined) {
+    this.selectChildCards = function(value) {
+        if (value !== undefined){
             this.selected(value);
         } else {
             if (this.selected() === false) {
@@ -470,20 +479,20 @@ var CardViewModel = function (params) {
         if (this.cards().length > 0) {
             this.expanded(true);
 
-            this.cards().forEach(function (childCard) {
+            this.cards().forEach(function(childCard){
                 childCard.selectChildCards(value);
             }, this);
         }
     };
 
-    var higlightSubscription = this.highlight.subscribe(function (highlight) {
+    var higlightSubscription = this.highlight.subscribe(function(highlight) {
         if (highlight) {
             this.expanded(true);
             expandParents(this);
         }
     }, this);
 
-    this.copyTile = function (tile) {
+    this.copyTile = function(tile) {
         var newTile = self.getNewTile();
         newTile.noDefaults = true;
         self.showForm(true);
@@ -504,16 +513,16 @@ var CardViewModel = function (params) {
     this.disposables.push(this.isChildSelected);
     this.disposables.push(this.doesChildHaveProvisionalEdits);
     this.disposables.push(
-        this.cards.subscribe(function () {
+        this.cards.subscribe(function() {
             this.model.parseNodes.call(this.model);
         }, this)
     );
     this.disposables.push(this.model);
 
-    this.dispose = function () {
+    this.dispose = function() {
         dispose(self);
     };
 
 };
-
 export default CardViewModel;
+

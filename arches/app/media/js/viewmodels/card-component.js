@@ -4,7 +4,7 @@ import arches from 'arches';
 import AlertViewModel from 'viewmodels/alert';
 import 'bindings/scrollTo';
 
-export default function (params) {
+export default function(params) {
     var self = this;
 
     if (!params.card && ko.unwrap(params.form.card)) {
@@ -31,30 +31,31 @@ export default function (params) {
     this.showHeaderLine = params.showHeaderLine;
 
     this.config = this.card.model ? this.card.model.get('config') : {};
-    _.each(this.configKeys, function (key) {
+    _.each(this.configKeys, function(key) {
         self[key] = self.config[key];
     });
 
-    this.showChildCards = ko.computed(function () {
+    this.showChildCards = ko.computed(function() {
         return this.card.widgets().length === 0;
     }, this);
 
-    this.componentCssClasses = function (widget) {
+    this.componentCssClasses = function(widget) {
         return ["card_component",
             ko.unwrap(widget.node?.graph?.attributes?.slug),
             ko.unwrap(widget.node?.alias),
             widget?.widgetLookup[ko.unwrap(widget?.widget_id)].name].join(" ");
     };
 
-    this.initialize = function () {
+
+    this.initialize = function() {
         self.card.showForm(true);
 
-        self.tiles = ko.computed(function () {
+        self.tiles = ko.computed(function() {
             var tiles = [];
             if (self.tile) {
                 return self.getTiles(self.tile);
             } else {
-                self.card.tiles().forEach(function (tile) {
+                self.card.tiles().forEach(function(tile) {
                     self.getTiles(tile, tiles);
                 });
             }
@@ -63,25 +64,25 @@ export default function (params) {
         if (ko.isObservable(params.tiles)) {
             params.tiles(self.tiles());
 
-            self.tiles.subscribe(function (tiles) {
+            self.tiles.subscribe(function(tiles) {
                 params.tiles(tiles);
             });
         }
 
-        self.cardIdentifier = ko.computed(function () {
+        self.cardIdentifier = ko.computed(function() {
             return self.card.model.attributes.source_identifier_id ? self.card.model.attributes.source_identifier_id : self.card.model.nodegroup_id();
         });
 
-        self.widgetNodeIdentifier = function (widget) {
+        self.widgetNodeIdentifier = function(widget) {
             return ko.unwrap(widget.node.sourceIdentifierId) ? ko.unwrap(widget.node.sourceIdentifierId) : widget.node.id;
         };
 
-        self.dirty = ko.computed(function () {
+        self.dirty = ko.computed(function() {
             if (!ko.unwrap(self.tiles)) {
                 return true;
             }
             else {
-                return ko.unwrap(self.tiles).reduce(function (acc, tile) {
+                return ko.unwrap(self.tiles).reduce(function(acc, tile) {
                     if (tile.dirty()) {
                         acc = true;
                     }
@@ -90,10 +91,11 @@ export default function (params) {
             }
         });
         if (ko.isObservable(params.dirty)) {
-            self.dirty.subscribe(function (dirty) {
+            self.dirty.subscribe(function(dirty) {
                 params.dirty(dirty);
             });
         }
+
 
         if (self.preview) {
             if (!self.card.newTile) {
@@ -111,17 +113,17 @@ export default function (params) {
         }
     };
 
-    this.revealForm = function (card) {
-        if (!card.selected()) { card.selected(true); }
-        setTimeout(function () {
+    this.revealForm = function(card){
+        if (!card.selected()) {card.selected(true);}
+        setTimeout(function(){
             card.showForm(true);
         }, 50);
     };
 
-    this.getTiles = function (tile, tiles) {
+    this.getTiles = function(tile, tiles) {
         tiles = tiles || [tile];
-        tile.cards.forEach(function (card) {
-            card.tiles().forEach(function (tile) {
+        tile.cards.forEach(function(card) {
+            card.tiles().forEach(function(tile) {
                 tiles.push(tile);
                 self.getTiles(tile, tiles);
             });
@@ -129,21 +131,21 @@ export default function (params) {
         return tiles;
     };
 
-    this.beforeMove = function (e) {
-        e.cancelDrop = (e.sourceParent !== e.targetParent);
+    this.beforeMove = function(e) {
+        e.cancelDrop = (e.sourceParent!==e.targetParent);
     };
 
-    this.startDrag = function (e, ui) {
+    this.startDrag = function(e, ui) {
         ko.utils.domData.get(ui.item[0], 'ko_sortItem').selected(true);
     };
 
-    this.getValuesByDatatype = function (type) {
+    this.getValuesByDatatype = function(type) {
         var values = {};
         if (self.tile && self.form) {
             var data = self.tile.getAttributes().data;
-            _.each(data, function (value, key) {
+            _.each(data, function(value, key) {
                 var node = self.form.nodeLookup[key];
-                if (node && ko.unwrap(node.datatype) === type) {
+                if (node && ko.unwrap(node.datatype) === type){
                     values[ko.unwrap(node.id)] = {
                         name: ko.unwrap(node.name),
                         value: value
@@ -154,39 +156,41 @@ export default function (params) {
         return values;
     };
 
-    this.selectWorkflowTile = function (tile) {
+    this.selectWorkflowTile = function(tile) {  // used for cardinality 'n' cards in workflows
         tile.selected(true);
         self.tile = tile;
         params.dirty(true);
     };
 
-    var keyListener = function (e) {
+    // ctrl+S to save any edited/dirty tiles in resource view 
+    var keyListener = function(e) {
         if (e.ctrlKey && e.key === "s") {
             e.preventDefault();
-            if (self?.tile?.dirty() == true &&
+            if (self?.tile?.dirty() == true && 
                 self?.tile?.parent?.isWritable === true) {
-                self.saveTile();
+                    self.saveTile();
             }
         }
     };
     document.addEventListener("keydown", keyListener)
-    this.dispose = function () {
+    // dispose of eventlistener
+    this.dispose = function(){
         document.removeEventListener("keydown", keyListener);
     };
 
-    this.saveTile = function (callback) {
+    this.saveTile = function(callback) {
         self.loading(true);
         self.tile.transactionId = params.form?.workflowId || undefined;
 
         if (params.resourceid) {
             self.tile.resourceinstance_id = params.resourceid;
         }
-        else if (ko.unwrap(params.form?.resourceId)) {
+        else if (ko.unwrap(params.form?.resourceId)){
             self.tile.resourceinstance_id = ko.unwrap(params.form.resourceId);
         }
-        self.tile.save(function (response) {
+        self.tile.save(function(response) {
             self.loading(false);
-            if (params?.form?.error) {
+            if(params?.form?.error){
                 params.form.error(response.responseJSON.message);
             }
             params.pageVm.alert(
@@ -195,13 +199,13 @@ export default function (params) {
                     response.responseJSON.title,
                     response.responseJSON.message,
                     null,
-                    function () { }
+                    function(){}
                 )
             );
             if (params.form.onSaveError) {
                 params.form.onSaveError(self.tile);
             }
-        }, function () {
+        }, function() {
             self.loading(false);
             if (typeof self.onSaveSuccess === 'function') self.onSaveSuccess();
             if (params.form.onSaveSuccess) {
@@ -211,8 +215,8 @@ export default function (params) {
         });
     };
 
-    var saveTileInWorkflow = function () {
-        self.saveTile(function () {
+    var saveTileInWorkflow = function() {
+        self.saveTile(function() {
             params.form.complete(true);
         });
     };
@@ -223,31 +227,36 @@ export default function (params) {
         params.form.save = saveTileInWorkflow;
     }
 
+    /*
+        TODO: Reverse this logic to be in-line with card UX in resource_editor using this logic:
+                params.card && params.card.cardinality === 'n'
+                && params.form.componentData.cardinalityOverride !== '1'
+    */
     if (params.renderContext === 'workflow') {
         if (params.form.componentData.cardinalityOverride === 'n') {
-            self.card.selected(true);
+            self.card.selected(true);  // cardinality 'n' cards will display appropriately
             self.inResourceEditor = true;
         }
     }
 
-    this.saveTileAddNew = function () {
-        self.saveTile(function () {
-            window.setTimeout(function () {
+    this.saveTileAddNew = function() {
+        self.saveTile(function() {
+            window.setTimeout(function() {
                 self.card.selected(true);
             }, 1);
         });
     };
 
-    this.deleteTile = function () {
-        params.pageVm.alert(
+    this.deleteTile = function() {
+        params.pageVm.alert(            
             new AlertViewModel(
                 'ep-alert-red',
                 'Item Deletion.',
                 'Are you sure you would like to delete this item?',
-                function () { },
-                function () {
+                function(){}, //does nothing when canceled
+                function() {
                     self.loading(true);
-                    self.tile.deleteTile(function (response) {
+                    self.tile.deleteTile(function(response) {
                         self.loading(false);
                         params.pageVm.alert(
                             new AlertViewModel(
@@ -255,13 +264,13 @@ export default function (params) {
                                 response.responseJSON.title,
                                 response.responseJSON.message,
                                 null,
-                                function () { }
+                                function(){}
                             )
                         );
                         if (params.form.onDeleteError) {
                             params.form.onDeleteError(self.tile);
                         }
-                    }, function () {
+                    }, function() {
                         self.loading(false);
                         if (typeof self.onDeleteSuccess === 'function') self.onDeleteSuccess();
                         if (params.form.onDeleteSuccess) {
@@ -269,16 +278,16 @@ export default function (params) {
                         }
                     });
                 })
-        );
+            );
     };
 
-    this.createParentAndChild = async (parenttile, childcard) => {
-        try {
+    this.createParentAndChild = async(parenttile, childcard) => {
+        try{
             const newSave = await self.card.saveParentTile(parenttile);
-            if (newSave) {
+            if(newSave){
                 childcard.selected(true);
             }
-        } catch (err) {
+        } catch (err){
             console.log(err);
         }
     };

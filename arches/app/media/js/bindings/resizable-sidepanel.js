@@ -51,5 +51,6 @@ ko.bindingHandlers.resizableSidepanel = {
         }, false);
     }
 };
+ko.bindingHandlers.resizableSidepanel.init = ko.bindingHandlers.resizableSidepanel.init.bind(ko.bindingHandlers.resizableSidepanel);
 
 export default ko.bindingHandlers.resizableSidepanel;

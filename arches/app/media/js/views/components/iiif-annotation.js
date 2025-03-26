@@ -7,7 +7,7 @@ import uuid from 'uuid';
 import geojsonExtent from 'geojson-extent';
 import IIIFViewerViewmodel from 'views/components/iiif-viewer';
 
-class IIIFEditorViewModel extends IIIFViewerViewmodel {
+export default class IIIFEditorViewModel extends IIIFViewerViewmodel {
     constructor(params) {
         super(params);
         const self = this;
@@ -630,10 +630,3 @@ class IIIFEditorViewModel extends IIIFViewerViewmodel {
         };
     }
 }
-
-ko.components.register('iiif-viewer', {
-    viewModel: IIIFEditorViewModel,
-    template: iiifViewerTemplate,
-});
-
-export default IIIFEditorViewModel;

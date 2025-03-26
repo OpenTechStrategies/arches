@@ -31,5 +31,6 @@ ko.bindingHandlers.smartresize = {
         $(window).ready(update_grid);
     }
 };
+ko.bindingHandlers.smartresize.init = ko.bindingHandlers.smartresize.init.bind(ko.bindingHandlers.smartresize);
 
 export default ko.bindingHandlers.smartresize;

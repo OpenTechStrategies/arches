@@ -8,19 +8,18 @@ import selectFeatureLayersFactory from 'views/components/cards/select-feature-la
 import reportHeaderMapTemplate from 'templates/views/components/map.htm';
 
 const viewModel = function (params) {
-    const self = this;
+    var self = this;
 
     self.translations = arches.translations;
-
-    const featureCollection = ko.computed(function () {
-        let features = [];
+    var featureCollection = ko.computed(function () {
+        var features = [];
         ko.unwrap(params.tiles).forEach(function (tile) {
             _.each(tile.data, function (val) {
                 if (val?.features) {
                     features = features.concat(koMapping.toJS(val.features));
                 }
-            });
-        });
+            }, this);
+        }, this);
         return {
             type: 'FeatureCollection',
             features: features
@@ -33,9 +32,9 @@ const viewModel = function (params) {
     }
 
     params.sources = Object.assign({
-        'report-header-map-data': {
-            type: 'geojson',
-            data: featureCollection()
+        "report-header-map-data": {
+            "type": "geojson",
+            "data": featureCollection()
         }
     }, params.sources);
 
@@ -47,20 +46,21 @@ const viewModel = function (params) {
         true
     );
 
-    MapComponentViewModel.apply(this, [Object.assign({}, params, {
-        activeTab: ko.observable(false),
-        zoom: null
-    })]);
+    MapComponentViewModel.apply(this, [Object.assign({}, params,
+        {
+            "activeTab": ko.observable(false),
+            "zoom": null
+        }
+    )]);
 
     featureCollection.subscribe(function (featureCollection) {
-        const map = self.map();
-        if (map && map.getStyle()) {
-            map.getSource('report-header-map-data').setData(featureCollection);
-        }
+        var map = self.map();
+        if (map && map.getStyle()) map.getSource('report-header-map-data')
+            .setData(featureCollection);
     });
 };
 
-export default ko.components.register('report-header-map', {
+ko.components.register('report-header-map', {
     viewModel: viewModel,
     template: reportHeaderMapTemplate
 });

@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import ko from 'knockout';
 import numeral from 'numeral';
 
@@ -24,5 +23,6 @@ ko.bindingHandlers.formattedNumber = {
             });
     }
 };
+ko.bindingHandlers.formattedNumber.init = ko.bindingHandlers.formattedNumber.init.bind(ko.bindingHandlers.formattedNumber);
 
 export default ko.bindingHandlers.formattedNumber;

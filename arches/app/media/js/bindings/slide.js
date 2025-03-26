@@ -1,11 +1,11 @@
-import $ from 'jquery';
+import $ from 'jquery'; 
 import ko from 'knockout';
 
 ko.bindingHandlers.slide = {
-    init: function () {
+    init: function() {
         this.initted = true;
     },
-    update: function (element, valueAccessor, allBindingsAccessor) {
+    update: function(element, valueAccessor, allBindingsAccessor) {
         var value = valueAccessor();
         var bindings = allBindingsAccessor();
         var direction = bindings.direction;
@@ -19,5 +19,7 @@ ko.bindingHandlers.slide = {
         this.initted = false;
     }
 };
+ko.bindingHandlers.slide.init = ko.bindingHandlers.slide.init.bind(ko.bindingHandlers.slide);
+ko.bindingHandlers.slide.update = ko.bindingHandlers.slide.update.bind(ko.bindingHandlers.slide);
 
 export default ko.bindingHandlers.slide;

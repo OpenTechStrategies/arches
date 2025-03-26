@@ -18,5 +18,7 @@ ko.bindingHandlers.fadeVisible = {
         // ko.unwrap(value) ? $(element).fadeOut() : $(element).fadeIn();
     }
 };
+ko.bindingHandlers.fadeVisible.init = ko.bindingHandlers.fadeVisible.init.bind(ko.bindingHandlers.fadeVisible);
+ko.bindingHandlers.fadeVisible.update = ko.bindingHandlers.fadeVisible.update.bind(ko.bindingHandlers.fadeVisible);
 
 export default ko.bindingHandlers.fadeVisible;

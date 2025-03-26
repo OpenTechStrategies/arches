@@ -236,5 +236,7 @@ ko.bindingHandlers.timeWheel = {
 
     }
 };
+ko.bindingHandlers.timeWheel.init = ko.bindingHandlers.timeWheel.init.bind(ko.bindingHandlers.timeWheel);
+ko.bindingHandlers.timeWheel.update = ko.bindingHandlers.timeWheel.update.bind(ko.bindingHandlers.timeWheel);
 
 export default ko.bindingHandlers.timeWheel;

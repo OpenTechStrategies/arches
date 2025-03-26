@@ -4,27 +4,28 @@ import koMapping from 'knockout-mapping';
 import arches from 'arches';
 import ReportViewModel from 'viewmodels/report';
 import imageReportTemplate from 'templates/views/report-templates/image.htm';
+
 import 'knockstrap';
 import 'bindings/chosen';
 
 export default ko.components.register('image-report', {
     viewModel: function (params) {
-        const self = this;
+        var self = this;
         params.configKeys = ['nodes'];
 
         ReportViewModel.apply(this, [params]);
 
         self.imgs = ko.computed(function () {
-            let imgs = [];
-            const nodes = ko.unwrap(self.nodes);
+            var imgs = [];
+            var nodes = ko.unwrap(self.nodes);
             self.tiles().forEach(function (tile) {
                 _.each(tile.data, function (val, key) {
                     val = koMapping.toJS(val);
                     if (Array.isArray(val)) {
                         val.forEach(function (item) {
-                            if (
-                                item.status === 'uploaded' &&
+                            if (item.status &&
                                 item.type &&
+                                item.status === 'uploaded' &&
                                 item.type.indexOf('image') > -1 &&
                                 _.contains(nodes, key)
                             ) {
@@ -35,8 +36,8 @@ export default ko.components.register('image-report', {
                             }
                         });
                     }
-                });
-            });
+                }, self);
+            }, self);
             if (imgs.length === 0) {
                 imgs = [{
                     src: arches.urls.media + 'img/photo_missing.png',
@@ -46,15 +47,20 @@ export default ko.components.register('image-report', {
             return imgs;
         });
 
-        let widgets = [];
-        const getCardWidgets = function (card) {
+        var widgets = [];
+        var getCardWidgets = function (card) {
             widgets = widgets.concat(card.model.get('widgets')());
-            card.cards().forEach(getCardWidgets);
+            card.cards().forEach(function (card) {
+                getCardWidgets(card);
+            });
         };
         ko.unwrap(self.report.cards).forEach(getCardWidgets);
-
         this.nodeOptions = ko.observableArray(
-            widgets.map(widget => widget.node).filter(node => ko.unwrap(node.datatype) === 'file-list')
+            widgets.map(function (widget) {
+                return widget.node;
+            }).filter(function (node) {
+                return ko.unwrap(node.datatype) === 'file-list';
+            })
         );
     },
     template: imageReportTemplate,

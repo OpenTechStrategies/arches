@@ -5,7 +5,7 @@ import MapEditorViewModel from 'viewmodels/map-editor';
 import mapCardTemplate from 'templates/views/components/cards/map.htm';
 import 'bindings/chosen';
 import 'bindings/codemirror';
-import 'views/components/datatypes/geojson-feature-collection';
+// import 'views/components/datatypes/geojson-feature-collection';
 
 const viewModel = function (params) {
     var self = this;

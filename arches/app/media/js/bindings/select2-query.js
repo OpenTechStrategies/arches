@@ -137,5 +137,6 @@ ko.bindingHandlers.select2Query = {
         }
     }
 };
+ko.bindingHandlers.select2Query.init = ko.bindingHandlers.select2Query.init.bind(ko.bindingHandlers.select2Query);
 
 export default ko.bindingHandlers.select2Query;

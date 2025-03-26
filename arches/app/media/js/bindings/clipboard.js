@@ -24,5 +24,6 @@ ko.bindingHandlers.clipboard = {
         });
     }
 };
+ko.bindingHandlers.clipboard.init = ko.bindingHandlers.clipboard.init.bind(ko.bindingHandlers.clipboard);
 
 export default ko.bindingHandlers.clipboard;

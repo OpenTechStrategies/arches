@@ -2,7 +2,7 @@ import ko from 'knockout';
 import ReportViewModel from 'viewmodels/report';
 import defaultTemplate from 'templates/views/report-templates/default.htm';
 
-const viewModel = function (params) {
+const viewModel = function(params) {
     params.configKeys = [];
     ReportViewModel.apply(this, [params]);
 };

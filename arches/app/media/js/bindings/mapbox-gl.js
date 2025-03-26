@@ -1,93 +1,92 @@
 import $ from 'jquery';
 import _ from 'underscore';
 import ko from 'knockout';
+import 'mapbox-gl';
+
 import arches from 'arches';
+import 'bindings/nouislider';
+import 'bindings/sortable';
 
-const initialize = function (element, valueAccessor, mapboxgl) {
-    var defaults = {
-        container: element
-    };
-    var options = ko.unwrap(valueAccessor()).mapOptions || {};
-    var mapInitOptions = {};
-    mapboxgl.accessToken = arches.mapboxApiKey;
-
-    _.each(options, function (option, key) {
-        if (ko.isObservable(option)) {
-            mapInitOptions[key] = option();
-        } else {
-            mapInitOptions[key] = option;
+export const mapboxglBinding = {
+    init: function (element, valueAccessor, mapboxgl) {
+        var defaults = {
+            container: element
+        };
+        var options = ko.unwrap(valueAccessor()).mapOptions || {};
+        var mapInitOptions = {};
+        mapboxgl.accessToken = arches.mapboxApiKey;
+    
+        _.each(options, function (option, key) {
+            if (ko.isObservable(option)) {
+                mapInitOptions[key] = option();
+            } else {
+                mapInitOptions[key] = option;
+            }
+        });
+    
+        if (mapInitOptions.centerX && mapInitOptions.centerY) {
+            mapInitOptions['center'] = [
+                mapInitOptions.centerX,
+                mapInitOptions.centerY
+            ];
         }
-    });
-
-    if (mapInitOptions.centerX && mapInitOptions.centerY) {
-        mapInitOptions['center'] = [
-            mapInitOptions.centerX,
-            mapInitOptions.centerY
-        ];
-    }
-
-    var map = new mapboxgl.Map(
-        _.defaults(mapInitOptions, defaults)
-    );
-    map.on('load', function () {
-        _.each(arches.mapMarkers, function (marker) {
-            map.loadImage(marker.url, function (error, image) {
-                if (error) throw error;
-                map.addImage(marker.name, image);
+    
+        var map = new mapboxgl.Map(
+            _.defaults(mapInitOptions, defaults)
+        );
+        map.on('load', function () {
+            _.each(arches.mapMarkers, function (marker) {
+                map.loadImage(marker.url, function (error, image) {
+                    if (error) throw error;
+                    map.addImage(marker.name, image);
+                });
             });
         });
-    });
-
-    // prevents drag events from bubbling
-    $(element).mousedown(function (event) {
-        event.stopPropagation();
-    });
-
-    if (typeof ko.unwrap(valueAccessor()).afterRender === 'function') {
-        ko.unwrap(valueAccessor()).afterRender(map);
-    }
-
-    if (ko.isObservable(options.zoom)) {
-        options.zoom.subscribe(function (val) {
-            map.setZoom(val);
-        }, this);
-    }
-
-    if (ko.isObservable(options.centerX)) {
-        options.centerX.subscribe(function (val) {
-            map.setCenter(new mapboxgl.LngLat(val, options.centerY()));
-        }, this);
-    }
-
-    if (ko.isObservable(options.centerY)) {
-        options.centerY.subscribe(function (val) {
-            map.setCenter(new mapboxgl.LngLat(options.centerX(), val));
-        }, this);
-    }
-
-    if (ko.isObservable(options.pitch)) {
-        options.pitch.subscribe(function (val) {
-            map.setPitch(val);
-        }, this);
-    }
-
-    if (ko.isObservable(options.setBearing)) {
-        options.bearing.subscribe(function (val) {
-            map.setBearing(val);
-        }, this);
-    }
-
-    ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
-        map.remove();
-    });
-};
-
-ko.bindingHandlers.mapboxgl = {
-    init: (element, valueAccessor) => {
-        import('mapbox-gl').then((mapbox) => {
-            initialize(element, valueAccessor, mapbox);
+    
+        // prevents drag events from bubbling
+        $(element).mousedown(function (event) {
+            event.stopPropagation();
+        });
+    
+        if (typeof ko.unwrap(valueAccessor()).afterRender === 'function') {
+            ko.unwrap(valueAccessor()).afterRender(map);
+        }
+    
+        if (ko.isObservable(options.zoom)) {
+            options.zoom.subscribe(function (val) {
+                map.setZoom(val);
+            }, this);
+        }
+    
+        if (ko.isObservable(options.centerX)) {
+            options.centerX.subscribe(function (val) {
+                map.setCenter(new mapboxgl.LngLat(val, options.centerY()));
+            }, this);
+        }
+    
+        if (ko.isObservable(options.centerY)) {
+            options.centerY.subscribe(function (val) {
+                map.setCenter(new mapboxgl.LngLat(options.centerX(), val));
+            }, this);
+        }
+    
+        if (ko.isObservable(options.pitch)) {
+            options.pitch.subscribe(function (val) {
+                map.setPitch(val);
+            }, this);
+        }
+    
+        if (ko.isObservable(options.setBearing)) {
+            options.bearing.subscribe(function (val) {
+                map.setBearing(val);
+            }, this);
+        }
+    
+        ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+            map.remove();
         });
     }
 };
+ko.bindingHandlers.mapboxglBinding.init = ko.bindingHandlers.mapboxglBinding.init.bind(ko.bindingHandlers.mapboxglBinding);
 
-export default ko.bindingHandlers.mapboxgl;
+export default mapboxglBinding;

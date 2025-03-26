@@ -20,6 +20,8 @@ ko.bindingHandlers.datatable = {
         }
     }
 };
+ko.bindingHandlers.datatable.init = ko.bindingHandlers.datatable.init.bind(ko.bindingHandlers.datatable);
+
 
 ko.bindingHandlers.dataTablesForEach = {
     page: 0,
@@ -71,5 +73,8 @@ ko.bindingHandlers.dataTablesForEach = {
         };
     }
 };
+ko.bindingHandlers.dataTablesForEach.init = ko.bindingHandlers.dataTablesForEach.init.bind(ko.bindingHandlers.dataTablesForEach);
+ko.bindingHandlers.dataTablesForEach.update = ko.bindingHandlers.dataTablesForEach.update.bind(ko.bindingHandlers.dataTablesForEach);
+
 
 export default ko.bindingHandlers.datatable;

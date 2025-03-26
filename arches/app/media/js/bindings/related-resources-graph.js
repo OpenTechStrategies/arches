@@ -4,9 +4,10 @@ import _ from 'underscore';
 import * as d3 from 'd3';
 import arches from 'arches';
 
+
 ko.bindingHandlers.relatedResourcesGraph = {
-    init: function (element, valueAccessor) {
-        var modelMap = arches.resources.reduce(function (a, v) {
+    init: function(element, valueAccessor) {
+        var modelMap = arches.resources.reduce(function(a, v) {
             a[v.graphid] = v;
             return a;
         }, {});
@@ -30,16 +31,16 @@ ko.bindingHandlers.relatedResourcesGraph = {
         var simulation = d3.forceSimulation(data.nodes)
             .force("link", d3.forceLink(data.links))
             .force("charge", d3.forceCollide().radius(100))
-            .force("radial", d3.forceRadial(300, width / 2, height / 2))
+            .force("radial", d3.forceRadial(300, width/2, height/2))
             .force("center", d3.forceCenter(width / 2, height / 2))
             .alpha(0.01);
-
+            
         var nodeList = options.nodeList;
         var currentResource = options.currentResource;
 
-        var selectNode = function (d) {
+        var selectNode = function(d) {
             nodesElement.selectAll("circle")
-                .attr("class", function (d1) {
+                .attr("class", function(d1) {
                     var className = 'node-' + (d.isRoot ? 'current' : 'ancestor');
                     if (d1 === d) {
                         className += '-selected';
@@ -49,19 +50,19 @@ ko.bindingHandlers.relatedResourcesGraph = {
                     return className;
                 });
             linksElement.selectAll("line")
-                .attr('class', function (l) {
+                .attr('class', function(l) {
                     return (l.source === d || l.target === d) ? 'linkMouseover' : 'link';
                 });
             nodeSelection([d]);
             updateNodeInfo(d);
         };
 
-        var clearHover = function (d) {
+        var clearHover = function(d) {
             linksElement.selectAll("line")
-                .attr('class', function (l) {
+                .attr('class', function(l) {
                     return 'link';
                 });
-            nodesElement.selectAll("circle").attr("class", function (d1) {
+            nodesElement.selectAll("circle").attr("class", function(d1) {
                 var className = 'node-' + (d1.isRoot ? 'current' : 'ancestor');
                 if (d1.selected()) {
                     className += '-selected';
@@ -70,9 +71,9 @@ ko.bindingHandlers.relatedResourcesGraph = {
             });
         };
 
-        var hoverNode = function (d) {
+        var hoverNode = function(d) {
             nodesElement.selectAll("circle")
-                .attr("class", function (d1) {
+                .attr("class", function(d1) {
                     var className = 'node-' + (d.isRoot ? 'current' : 'ancestor');
                     if (d1 === d) {
                         className += d1.selected() ? '-selected' : '-over';
@@ -91,28 +92,28 @@ ko.bindingHandlers.relatedResourcesGraph = {
                     return className;
                 });
             linksElement.selectAll("line")
-                .attr('class', function (l) {
+                .attr('class', function(l) {
                     return (l.source === d || l.target === d) ? 'linkMouseover' : 'link';
                 });
         };
 
-        var updateSelected = function (item) {
-            return function (val) {
+        var updateSelected = function(item) {
+            return function(val) {
                 selectedState(val);
                 if (val === true) {
                     selectNode(item);
                 } else {
                     nodeSelection.removeAll();
                     nodesElement.selectAll("circle")
-                        .attr("class", function (d1) {
+                        .attr("class", function(d1) {
                             return 'node-' + (d1.isRoot ? 'current' : 'ancestor');
                         });
                 }
             };
         };
 
-        var updateHovered = function (item) {
-            return function (val) {
+        var updateHovered = function(item) {
+            return function(val) {
                 if (val === true) {
                     hoverNode(item);
                 } else {
@@ -129,7 +130,7 @@ ko.bindingHandlers.relatedResourcesGraph = {
             .call(d3.zoom()
                 .extent([[0, 0], [width, height]])
                 .scaleExtent([0.25, 8])
-                .on("zoom", function (event) {
+                .on("zoom", function(event) {
                     groupElement.attr("transform", event.transform);
                 }));
 
@@ -137,7 +138,7 @@ ko.bindingHandlers.relatedResourcesGraph = {
         var linksElement = groupElement.append('svg:g');
         var nodesElement = groupElement.append('svg:g');
 
-        var update = function () {
+        var update = function() {
             var linkMap = linkMap;
 
             $(window).trigger("resize");
@@ -149,11 +150,11 @@ ko.bindingHandlers.relatedResourcesGraph = {
                 .data(data.links)
                 .join("line")
                 .attr("class", "link")
-                .on("mouseover", function (event, d) {
+                .on("mouseover", function(event, d) {
                     var hoveredNodes = [];
                     var linkMap = linkMap;
                     d3.select(this).attr("class", "linkMouseover");
-                    nodesElement.selectAll("circle").attr("class", function (d1) {
+                    nodesElement.selectAll("circle").attr("class", function(d1) {
                         var matrix;
                         var className = 'node-' + (d1.isRoot ? 'current' : 'ancestor');
                         if (d.source === d1 || d.target === d1) {
@@ -172,9 +173,9 @@ ko.bindingHandlers.relatedResourcesGraph = {
                     });
                     nodeSelection(hoveredNodes);
                 })
-                .on("mouseout", function (event, d) {
+                .on("mouseout", function(event, d) {
                     d3.select(this).attr("class", "link");
-                    nodesElement.selectAll("circle").attr("class", function (d1) {
+                    nodesElement.selectAll("circle").attr("class", function(d1) {
                         var className = 'node-' + (d1.isRoot ? 'current' : 'ancestor');
                         if (d1.selected()) {
                             className += '-selected';
@@ -187,26 +188,26 @@ ko.bindingHandlers.relatedResourcesGraph = {
                 .remove();
 
             var node = nodesElement.selectAll("circle")
-                .data(data.nodes, function (d) {
+                .data(data.nodes, function(d) {
                     return d.id;
                 })
                 .join("circle")
-                .style('fill', function (d) {
+                .style('fill', function(d) {
                     return d.color;
                 })
-                .attr("r", function (d) {
+                .attr("r", function(d) {
                     return d.isRoot ? 24 : 18;
                 })
-                .attr("class", function (d) {
+                .attr("class", function(d) {
                     return 'node-' + (d.isRoot ? 'current' : 'ancestor');
                 })
-                .on("mouseover", function (event, d) {
+                .on("mouseover", function(event, d) {
                     nodesElement.selectAll("circle")
-                        .attr("class", function (d1) {
+                        .attr("class", function(d1) {
                             var className = 'node-' + (d.isRoot ? 'current' : 'ancestor');
                             if (d1 === d) {
                                 className += d1.selected() ? '-selected' : '-over';
-                                _.each(nodeList(), function (n) {
+                                _.each(nodeList(), function(n) {
                                     if (n.entityid === d.entityid) {
                                         n.hovered(true);
                                     } else {
@@ -225,18 +226,18 @@ ko.bindingHandlers.relatedResourcesGraph = {
                             return className;
                         });
                     linksElement.selectAll("line")
-                        .attr('class', function (l) {
+                        .attr('class', function(l) {
                             return (l.source === d || l.target === d) ? 'linkMouseover' : 'link';
                         });
                 })
-                .on('mouseout', function (event, d) {
+                .on('mouseout', function(event, d) {
                     nodesElement.selectAll("circle")
-                        .attr("class", function (d1) {
+                        .attr("class", function(d1) {
                             var className = 'node-' + (d.isRoot ? 'current' : 'ancestor');
                             if (d1.selected()) {
                                 className += '-selected';
                             }
-                            _.each(nodeList(), function (n) {
+                            _.each(nodeList(), function(n) {
                                 n.hovered(false);
                                 if (n.relationCount) {
                                     n.loaded(n.relationCount.loaded);
@@ -251,15 +252,15 @@ ko.bindingHandlers.relatedResourcesGraph = {
                     linksElement.selectAll("line")
                         .attr('class', 'link');
                 })
-                .on("click", function (event, d) {
+                .on("click", function(event, d) {
                     if (!event.defaultPrevented) {
-                        d.loadcount(d.loadcount() + 1);
+                        d.loadcount(d.loadcount()+1);
                     }
                     nodesElement.selectAll("circle")
-                        .attr("class", function (d1) {
+                        .attr("class", function(d1) {
                             var className = 'node-' + (d.isRoot ? 'current' : 'ancestor');
                             if (d1 === d) {
-                                _.each(nodeList(), function (n) {
+                                _.each(nodeList(), function(n) {
                                     if (n.entityid === d.entityid) {
                                         if (n.selected() === false) {
                                             n.selected(true);
@@ -277,7 +278,7 @@ ko.bindingHandlers.relatedResourcesGraph = {
                             return className;
                         });
                     linksElement.selectAll("line")
-                        .attr('class', function (l) {
+                        .attr('class', function(l) {
                             return (l.source === d || l.target === d) ? 'linkMouseover' : 'link';
                         });
                     updateNodeInfo(d);
@@ -293,17 +294,17 @@ ko.bindingHandlers.relatedResourcesGraph = {
                 d.fx = d.x;
                 d.fy = d.y;
             }
-
+            
             function dragged(event, d) {
                 d.fx = event.x;
                 d.fy = event.y;
             }
-
+            
             function dragended(event, d) {
                 if (!event.active) { simulation.alphaTarget(0); }
                 d.fx = null;
                 d.fy = null;
-            }
+            }    
 
             if (texts) {
                 texts.remove();
@@ -312,52 +313,52 @@ ko.bindingHandlers.relatedResourcesGraph = {
             texts = nodesElement.selectAll("text.nodeLabels")
                 .data(data.nodes)
                 .join("text")
-                .attr("class", function (d) {
+                .attr("class", function(d){
                     return d.isRoot ? 'root-node-label' : 'nodeLabels';
                 })
                 .attr("dy", ".35em")
-                .text(function (d) {
+                .text(function(d) {
                     return d.name;
                 });
 
-            simulation.on("tick", function () {
-                link.attr("x1", function (d) {
+            simulation.on("tick", function() {
+                link.attr("x1", function(d) {
                     return d.source.x;
                 })
-                    .attr("y1", function (d) {
+                    .attr("y1", function(d) {
                         return d.source.y;
                     })
-                    .attr("x2", function (d) {
+                    .attr("x2", function(d) {
                         return d.target.x;
                     })
-                    .attr("y2", function (d) {
+                    .attr("y2", function(d) {
                         return d.target.y;
                     });
 
-                node.attr("cx", function (d) {
+                node.attr("cx", function(d) {
                     return d.x;
                 })
-                    .attr("cy", function (d) {
+                    .attr("cy", function(d) {
                         return d.y;
                     })
-                    .attr("x", function () {
+                    .attr("x", function() {
                         return width / 2;
                     })
-                    .attr("y", function () {
+                    .attr("y", function() {
                         return height / 2;
                     });
                 texts
-                    .attr("x", function (d) {
+                    .attr("x", function(d) {
                         return d.x;
                     })
-                    .attr("y", function (d) {
+                    .attr("y", function(d) {
                         return d.y;
                     });
 
             });
         };
 
-        var updateNodeInfo = function (d) {
+        var updateNodeInfo = function(d) {
             var iconEl = $el.find('.resource-type-icon');
             $el.find('.selected-resource-name').html(d.name);
             $el.find('.selected-resource-name').attr('href', arches.urls.reports + d.entityid);
@@ -384,8 +385,8 @@ ko.bindingHandlers.relatedResourcesGraph = {
             selectedNode = d;
         };
 
-        var getResourceDataForNode = function (d) {
-            getResourceData(d.entityid, d.name, d.entitytypeid, function (newData) {
+        var getResourceDataForNode = function(d) {
+            getResourceData(d.entityid, d.name, d.entitytypeid, function(newData) {
                 if (newData.nodes.length > 0 || newData.links.length > 0) {
                     data.nodes = data.nodes.concat(newData.nodes);
                     data.links = data.links.concat(newData.links);
@@ -394,15 +395,15 @@ ko.bindingHandlers.relatedResourcesGraph = {
             }, false);
         };
 
-        var getMoreData = function (item) {
-            return function (val) {
+        var getMoreData = function(item) {
+            return function(val) {
                 if (val) {
                     getResourceDataForNode(item);
                 }
             };
         };
 
-        var getResourceData = function (resourceId, resourceName, resourceTypeId, callback, isRoot) {
+        var getResourceData = function(resourceId, resourceName, resourceTypeId, callback, isRoot) {
             var load = true;
             var start = 0;
             var page = 1;
@@ -426,11 +427,11 @@ ko.bindingHandlers.relatedResourcesGraph = {
                         start: start,
                         page: page > 0 ? page : 1
                     },
-                    error: function (e) {
+                    error: function(e) {
                         // eslint-disable-next-line no-console
                         console.log('request failed', e);
                     },
-                    success: function (response) {
+                    success: function(response) {
                         var links = [];
                         var nodes = [];
                         var rr = response.related_resources;
@@ -469,7 +470,7 @@ ko.bindingHandlers.relatedResourcesGraph = {
                         rootNode.loading = false;
                         updateNodeInfo(rootNode);
 
-                        var getRelated = function (relatedResource) {
+                        var getRelated = function(relatedResource) {
                             var nodeConfigLookup = rr.node_config_lookup;
                             if (!nodeMap[relatedResource.resourceinstanceid]) {
                                 var node = {
@@ -495,7 +496,7 @@ ko.bindingHandlers.relatedResourcesGraph = {
                         };
                         _.each(rr.related_resources, getRelated);
 
-                        _.each(rr.resource_relationships, function (resourceRelationships) {
+                        _.each(rr.resource_relationships, function(resourceRelationships) {
                             var sourceId = nodeMap[resourceRelationships.resourceinstanceidfrom];
                             var targetId = nodeMap[resourceRelationships.resourceinstanceidto];
                             var relationshipSource = resourceRelationships.relationshiptype_label;
@@ -514,10 +515,10 @@ ko.bindingHandlers.relatedResourcesGraph = {
                             });
 
                             if (!_.has(linkMap, [sourceId.id + '_' + targetId.id])) {
-                                linkMap[sourceId.id + '_' + targetId.id] = { relationships: [] };
+                                linkMap[sourceId.id + '_' + targetId.id] = {relationships:[]};
                             }
                             if (!_.has(linkMap, [targetId.id + '_' + sourceId.id])) {
-                                linkMap[targetId.id + '_' + sourceId.id] = { relationships: [] };
+                                linkMap[targetId.id + '_' + sourceId.id] = {relationships:[]};
                             }
                             if (_.contains(linkMap[sourceId.id + '_' + targetId.id]['relationships'], relationshipSource) === false) {
                                 linkMap[sourceId.id + '_' + targetId.id]['relationships'].push(relationshipSource);
@@ -527,11 +528,11 @@ ko.bindingHandlers.relatedResourcesGraph = {
                             }
                         });
 
-                        links = _.uniq(links, function (item, key, source) {
+                        links = _.uniq(links, function(item, key, source) {
                             return item.source.id + '_' + item.target.id;
                         });
 
-                        _.each(links, function (l) {
+                        _.each(links, function(l){
                             if (_.has(linkMap, l.source.id + '_' + l.target.id)) {
                                 l.all_relationships = linkMap[l.source.id + '_' + l.target.id].relationships;
                             }
@@ -548,12 +549,12 @@ ko.bindingHandlers.relatedResourcesGraph = {
             }
         };
 
-        var setRoot = function (val) {
+        var setRoot = function(val) {
             if (val.graphid !== undefined) {
                 nodeMap = {};
                 linkMap = {};
                 nodeList([]);
-                getResourceData(val.resourceinstanceid, val.displayname, val.graphid, function (newData) {
+                getResourceData(val.resourceinstanceid, val.displayname, val.graphid, function(newData) {
                     $el.removeClass('loading');
                     data = newData;
                     data.nodes[0].x = width / 2;
@@ -570,14 +571,14 @@ ko.bindingHandlers.relatedResourcesGraph = {
         if (ko.isObservable(currentResource)) {
             var subscription = currentResource.subscribe(setRoot, this);
             if (subscriptions.length > 0) {
-                _.each(subscriptions, function (s) {
+                _.each(subscriptions, function(s) {
                     s.dispose();
                 });
             }
             subscriptions.push(subscription);
         }
 
-        $(window).on("resize", function () {
+        $(window).on("resize", function() {
             var w = $el.parent().width();
             var h = $el.parent().height();
             svg.attr("width", w);
@@ -585,8 +586,9 @@ ko.bindingHandlers.relatedResourcesGraph = {
             svg.attr("viewBox", [0, 0, w, h]);
         }).trigger("resize");
 
-        nodeList.subscribe(function (list) {
-            _.each(list, function (item) {
+
+        nodeList.subscribe(function(list) {
+            _.each(list, function(item) {
                 if (item.selectedSubscription) {
                     item.selectedSubscription.dispose();
                     item.hoveredSubscription.dispose();
@@ -609,5 +611,6 @@ ko.bindingHandlers.relatedResourcesGraph = {
         nodeList([]);
     }
 };
+ko.bindingHandlers.relatedResourcesGraph.init = ko.bindingHandlers.relatedResourcesGraph.init.bind(ko.bindingHandlers.relatedResourcesGraph);
 
 export default ko.bindingHandlers.relatedResourcesGraph;

@@ -39,4 +39,5 @@ ko.bindingHandlers.colorPicker = {
     }
 };
 
+ko.bindingHandlers.colorPicker.init = ko.bindingHandlers.colorPicker.init.bind(ko.bindingHandlers.colorPicker);
 export default ko.bindingHandlers.colorPicker;

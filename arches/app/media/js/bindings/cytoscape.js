@@ -26,4 +26,5 @@ ko.bindingHandlers.cytoscape = {
     },
 };
 
+ko.bindingHandlers.cytoscape.init = ko.bindingHandlers.cytoscape.init.bind(ko.bindingHandlers.cytoscape);
 export default ko.bindingHandlers.cytoscape;

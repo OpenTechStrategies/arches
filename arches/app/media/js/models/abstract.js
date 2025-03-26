@@ -1,5 +1,5 @@
-import Backbone from 'backbone';
 import $ from 'jquery';
+import Backbone from 'backbone';
 
 export default Backbone.Model.extend({
     /**
@@ -15,7 +15,7 @@ export default Backbone.Model.extend({
      * @param  {object} scope - (optional) the scope used for the callback
      * @return  {jqXHR} - a Proimise compatible asynchronous request
     */
-    read: function (callback, scope) {
+    read: function(callback, scope) {
         var method = "GET";
         return this._doRequest({
             type: method,
@@ -33,7 +33,7 @@ export default Backbone.Model.extend({
      * @param  {object} scope - (optional) the scope used for the callback
      * @return  {jqXHR} - a Proimise compatible asynchronous request
     */
-    save: function (callback, scope) {
+    save: function(callback, scope) {
         var method = "POST";
         return this._doRequest({
             type: method,
@@ -49,7 +49,7 @@ export default Backbone.Model.extend({
      * @param  {object} scope - (optional) the scope used for the callback
      * @return  {jqXHR} - a Proimise compatible asynchronous request
     */
-    delete: function (callback, scope) {
+    delete: function(callback, scope) {
         var method = "DELETE";
         return this._doRequest({
             type: method,
@@ -64,14 +64,14 @@ export default Backbone.Model.extend({
      * @memberof AbstractModel.prototype
      * @param  {string} method - the type of request being made either "GET", "POST", "DELETE"
     */
-    _getURL: function (method) {
+    _getURL: function(method){
         var id = this.get('id');
-        if (!(id)) {
+        if(!(id)){
             id = '';
         }
-        if (this.url.indexOf('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') > -1) {
+        if(this.url.indexOf('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') > -1){
             return this.url.replace('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', id);
-        } else {
+        }else{
             return this.url + id;
         }
     },
@@ -85,13 +85,13 @@ export default Backbone.Model.extend({
      * @param  {string} eventname - (optional) the event to trigger upon successfull return of the request
      * @return  {jqXHR} - a Proimise compatible asynchronous request
      */
-    _doRequest: function (config, callback, scope, eventname) {
+    _doRequest: function(config, callback, scope, eventname) {
         var self = this;
-        if (!scope) {
+        if (! scope){
             scope = self;
         }
         return $.ajax($.extend({
-            complete: function (request, status) {
+            complete: function(request, status) {
                 if (typeof callback === 'function') {
                     callback.call(scope, request, status, self);
                 }

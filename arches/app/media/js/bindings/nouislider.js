@@ -1,21 +1,21 @@
 import ko from 'knockout';
-import noUiSlider from 'noUiSlider';
+import noUiSlider from 'nouislider';
 
 ko.bindingHandlers.noUiSlider = {
-    init: function (element, valueAccessor) {
+    init: function(element, valueAccessor) {
         var options = ko.unwrap(valueAccessor());
         var values = [];
         var sliding = false;
-        var updateValues = function () {
+        var updateValues = function() {
             if (!sliding) {
-                slider.set(values.map(function (value) {
+                slider.set(values.map(function(value) {
                     return value();
                 }));
             }
         };
 
         var keys = ['start', 'end'];
-        keys.forEach(function (key) {
+        keys.forEach(function(key) {
             var value = options[key];
             if (ko.isObservable(value)) {
                 value.subscribe(updateValues);
@@ -26,14 +26,15 @@ ko.bindingHandlers.noUiSlider = {
 
         var slider = noUiSlider.create(element, options);
 
-        element.noUiSlider.on('slide', function (newValues) {
+        element.noUiSlider.on('slide', function(newValues) {
             sliding = true;
-            values.forEach(function (value, i) {
+            values.forEach(function(value, i) {
                 value(newValues[i]);
             });
             sliding = false;
         });
     }
 };
+ko.bindingHandlers.noUiSlider.init = ko.bindingHandlers.noUiSlider.init.bind(ko.bindingHandlers.noUiSlider);
 
 export default ko.bindingHandlers.noUiSlider;

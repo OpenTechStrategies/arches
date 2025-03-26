@@ -16,5 +16,6 @@ ko.bindingHandlers.leaflet = {
         });
     }
 };
+ko.bindingHandlers.leaflet.init = ko.bindingHandlers.leaflet.init.bind(ko.bindingHandlers.leaflet);
 
 export default ko.bindingHandlers.leaflet;

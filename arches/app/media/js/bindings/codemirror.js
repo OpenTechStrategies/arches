@@ -1,7 +1,8 @@
 import $ from 'jquery';
 import ko from 'knockout';
 
-const initialize = function (element, valueAccessor, CodeMirror) {
+
+ko.bindingHandlers.codemirror = function (element, valueAccessor, CodeMirror) {
     var options = ko.toJS(valueAccessor());
     options.value = options.value || '';
     var editor = new CodeMirror(element, options);
@@ -33,16 +34,6 @@ const initialize = function (element, valueAccessor, CodeMirror) {
             subscriptions[i].dispose();
         }
     });
-};
-
-ko.bindingHandlers.codemirror = {
-    init: (element, valueAccessor) => {
-        import('codemirror').then(codemirror => {
-            import('codemirror/mode/javascript/javascript').then(() => {
-                initialize(element, valueAccessor, codemirror);
-            });
-        });
-    }
 };
 
 export default ko.bindingHandlers.codemirror;

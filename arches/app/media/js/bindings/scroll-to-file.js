@@ -22,5 +22,6 @@ ko.bindingHandlers.scrollToFile = {
         }
     }
 };
+ko.bindingHandlers.scrollToFile.update = ko.bindingHandlers.scrollToFile.update.bind(ko.bindingHandlers.scrollToFile);
 
 export default ko.bindingHandlers.scrollToFile;

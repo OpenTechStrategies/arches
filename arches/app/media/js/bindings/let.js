@@ -20,6 +20,7 @@ ko.bindingHandlers['let'] = {
         return { controlsDescendantBindings: true };
     }
 };
+ko.bindingHandlers['let'].init = ko.bindingHandlers['let'].init.bind(ko.bindingHandlers['let']);
 
 ko.virtualElements.allowedBindings['let'] = true;
 

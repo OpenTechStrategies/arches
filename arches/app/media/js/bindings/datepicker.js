@@ -100,5 +100,6 @@ ko.bindingHandlers.datepicker = {
         });
     }
 };
+ko.bindingHandlers.datepicker.init = ko.bindingHandlers.datepicker.init.bind(ko.bindingHandlers.datepicker);
 
 export default ko.bindingHandlers.datepicker;

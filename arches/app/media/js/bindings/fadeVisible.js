@@ -1,3 +1,6 @@
+// Here's a custom Knockout binding that makes elements shown/hidden via jQuery's fadeIn()/fadeOut() methods
+// Could be stored in a separate utility library
+
 import $ from 'jquery';
 import ko from 'knockout';
 
@@ -19,5 +22,8 @@ ko.bindingHandlers.fadeVisible = {
         }
     }
 };
+ko.bindingHandlers.fadeVisible.init = ko.bindingHandlers.fadeVisible.init.bind(ko.bindingHandlers.fadeVisible);
+ko.bindingHandlers.fadeVisible.update = ko.bindingHandlers.fadeVisible.update.bind(ko.bindingHandlers.fadeVisible);
+
 
 export default ko.bindingHandlers.fadeVisible;

@@ -1,10 +1,10 @@
-import $ from 'jquery';
 import ko from 'knockout';
+import $ from 'jquery';
 
 ko.bindingHandlers.scrollTo = {
-    update: function (element, valueAccessor, allBindings) {
+    update: function(element, valueAccessor, allBindings) {
         var _value = valueAccessor();
-
+        
         if (ko.unwrap(_value)) {
             var target = $(element);
             var container = $(allBindings.get('container') || 'html, body');
@@ -33,7 +33,7 @@ ko.bindingHandlers.scrollTo = {
                         scrollLeft: container.scrollLeft() + targetOffsetLeft - leftScreenBoundary
                     }, 500);
 
-                }
+                } 
                 else if (targetOffsetRight > rightScreenBoundary) {
                     container.stop().animate({
                         scrollLeft: container.scrollLeft() + targetOffsetRight - rightScreenBoundary
@@ -43,5 +43,6 @@ ko.bindingHandlers.scrollTo = {
         }
     }
 };
+ko.bindingHandlers.scrollTo.update = ko.bindingHandlers.scrollTo.update.bind(ko.bindingHandlers.scrollTo);
 
 export default ko.bindingHandlers.scrollTo;
