@@ -1,11 +1,14 @@
 import _ from 'underscore';
-import AbstractModel from 'models/abstract';
-import CardWidgetModel from 'models/card-widget';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
-import CardConstraintsViewModel from 'viewmodels/card-constraints';
-import dispose from 'utils/dispose';
+import 'utils/dispose';
 import 'regenerator-runtime/runtime';
+
+import arches from 'arches';
+import AbstractModel from 'models/abstract';
+import CardWidgetModel from 'models/card-widget';
+import CardConstraintsViewModel from 'viewmodels/card-constraints';
+import cardComponentLookup from 'card-components';
 
 export default AbstractModel.extend({
     /**

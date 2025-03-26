@@ -1,40 +1,46 @@
 import ko from 'knockout';
 import arches from 'arches';
 
+
 /**
- * A viewmodel used for alert messages from JSON responses
- *
- * @constructor
- * @name JsonErrorAlertViewModel
- *
- * @param  {string} type - the CSS class name to use to display alert level
- * @param  {object} responseJSON - The response JSON received from the backend
- * @param  {function} cancel (optional) - a function to call on cancel
- * @param  {function} ok (optional) - a function to call on confirmation
- */
-const getPropertyOrDefaultMessage = (property, defaultMessage) =>
-    typeof property === 'undefined' ? defaultMessage : property;
+* A viewmodel used for alert messages from JSON responses
+*
+* @constructor
+* @name JsonErrorAlertViewModel
+*
+* @param  {string} type - the CSS class name to use to display alert level
+* @param  {object} responseJSON - The response JSON received from the backend
+* @param  {function} cancel (optional) - a function to call on cancel
+* @param  {function} ok (optional) - a function to call on confirmation
+*/
+var getPropertyOrDefaultMessage = function(property, defaultMessage) {
+    if (typeof property === 'undefined') {
+        return defaultMessage;
+    }
+    else {
+        return property;
+    }
+};
 
-const initializeResponseJSON = (responseJSON) =>
-    typeof responseJSON === 'undefined' ? {} : responseJSON;
-
-const parseResponseJson = (responseJSON) => {
-    responseJSON = initializeResponseJSON(responseJSON);
-    responseJSON.title = getPropertyOrDefaultMessage(
-        responseJSON.title,
-        arches.translations.requestFailed.title
-    );
-    responseJSON.message = getPropertyOrDefaultMessage(
-        responseJSON.message,
-        arches.translations.requestFailed.text
-    );
+var initializeResponseJSON = function(responseJSON) {
+    if (typeof responseJSON === 'undefined') {
+        responseJSON = {};
+    }
     return responseJSON;
 };
 
-const JsonErrorAlertViewModel = function (type, responseJSON, cancel, ok) {
-    const self = this;
+var parseResponseJson = function(responseJSON) {
+    responseJSON = initializeResponseJSON(responseJSON);
+    responseJSON.title = getPropertyOrDefaultMessage(responseJSON.title, arches.translations.requestFailed.title);
+    responseJSON.message = getPropertyOrDefaultMessage(responseJSON.message, arches.translations.requestFailed.text);
+
+    return responseJSON;
+};
+
+export default function(type, responseJSON, cancel, ok) {
+    var self = this;
     this.active = ko.observable(true);
-    this.close = function () {
+    this.close = function() {
         self.active(false);
     };
 
@@ -45,19 +51,16 @@ const JsonErrorAlertViewModel = function (type, responseJSON, cancel, ok) {
     this.text = ko.observable(responseJSON.message);
     this.ok = false;
     this.cancel = false;
-
     if (typeof ok === 'function') {
-        this.ok = function () {
+        this.ok = function() {
             self.close();
             ok();
         };
     }
     if (typeof cancel === 'function') {
-        this.cancel = function () {
+        this.cancel = function() {
             self.close();
             cancel();
         };
     }
 };
-
-export default JsonErrorAlertViewModel;
