@@ -9298,11 +9298,9 @@ a.search-query-link-captions:focus {
 
 .search-attribute-widget {
     display: inline-block;
-    // border: 1px solid red;
 }
 
 .search-inline-filters-row {
-    // border: 1px solid green;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -9310,7 +9308,6 @@ a.search-query-link-captions:focus {
 }
 
 .search-inline-filters-btns {
-    // border: 1px solid green;
     display: flex;
     justify-content: start;
     gap: 6px;
@@ -9340,17 +9337,14 @@ a.search-query-link-captions:focus {
     background: #f4f4f4;
     padding: 8px 10px;
     border-top: 1px solid #ddd;
-    // border: 1px solid pink;
 }
 
 .search-filter-tools-container {
     background: #f4f4f4;
     padding: 8px 10px;
-    // border: 1px solid pink;
 }
 
 .search-count-container {
-    // border: 1px solid orange;
     padding-left: 2px;
     text-align-last: justify;
     height: 25px;
@@ -9360,14 +9354,12 @@ a.search-query-link-captions:focus {
 }
 
 .search-dropdowns-row {
-    // border: 1px solid orange;
     height: 25px;
     display: flex;
     justify-content: start;
 }
 
 .search-dropdowns-container {
-    // border: 1px solid purple;
     display: flex;
     gap: 6px;
 }
