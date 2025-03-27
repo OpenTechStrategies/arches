@@ -1,9 +1,12 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import ko from 'knockout';
+import koMapping from 'knockout-mapping';
 import SearchComponents from 'search-components';
 import BaseManagerView from 'views/base-manager';
 import ariaUtils from 'utils/aria';
-import 'datatype-config-components';
+import DatatypeConfigComponents from 'datatype-config-components';
+
 
 // a method to track the old and new values of a subscribable
 // from https://github.com/knockout/knockout/issues/914
@@ -14,20 +17,20 @@ import 'datatype-config-components';
 //     this.OldValue1(oldValue);
 // }, this);
 
-ko.subscribable.fn.subscribeChanged = function (callback, context) {
+ko.subscribable.fn.subscribeChanged = function(callback, context) {
     var savedValue = this.peek();
-    return this.subscribe(function (latestValue) {
+    return this.subscribe(function(latestValue) {
         var oldValue = savedValue;
         savedValue = latestValue;
         callback.call(context, latestValue, oldValue);
     });
 };
 
-var getQueryObject = function () {
+var getQueryObject = function() {
     var query = _.chain(decodeURIComponent(location.search).slice(1).split('&'))
         // Split each array item into [key, value]
         // ignore empty string if search is empty
-        .map(function (item) {
+        .map(function(item) {
             if (item) return item.split('=');
         })
         // Remove undefined in the case the search is empty
@@ -39,17 +42,17 @@ var getQueryObject = function () {
     return query;
 };
 
-var CommonSearchViewModel = function () {
+var CommonSearchViewModel = function() {
     this.searchFilterVms = {};
     this.searchFilterConfigs = Object.values(SearchComponents);
     this.defaultSearchViewConfig = this.searchFilterConfigs.find(filter => filter.type == "search-view");
     this.searchViewComponentName = ko.observable(false);
-    this.getFilter = function (filterName, unwrap = true) {
+    this.getFilter = function(filterName, unwrap=true) {
         if (unwrap)
             return ko.unwrap(this.searchFilterVms[filterName]);
         return this.searchFilterVms[filterName];
     };
-    this.getFilterByType = function (type, unwrap = true) {
+    this.getFilterByType = function(type, unwrap=true) {
         const filter = this.searchFilterConfigs.find(component => component.type == type);
         if (!filter)
             return null;
@@ -57,14 +60,14 @@ var CommonSearchViewModel = function () {
             return ko.unwrap(this.searchFilterVms[filter.componentname]);
         return this.searchFilterVms[filter.componentname];
     };
-    Object.values(SearchComponents).forEach(function (component) {
+    Object.values(SearchComponents).forEach(function(component) {
         this.searchFilterVms[component.componentname] = ko.observable(null);
         // uncomment below to test for any filters that don't load as expected
         // this.searchFilterVms[component.componentname].subscribe(vm => {console.log(component.componentname+" loaded");})
     }, this);
-    this.searchViewFiltersLoaded = ko.computed(function () {
+    this.searchViewFiltersLoaded = ko.computed(function() {
         let res = true;
-        Object.entries(this.searchFilterVms).forEach(function ([componentName, filter]) {
+        Object.entries(this.searchFilterVms).forEach(function([componentName, filter]) {
             res = res && ko.unwrap(filter);
         });
         return res;
@@ -75,18 +78,18 @@ var CommonSearchViewModel = function () {
     } else {
         this.searchViewComponentName(this.defaultSearchViewConfig.componentname);
     }
-    this.queryString = ko.computed(function () {
+    this.queryString = ko.computed(function() {
         return JSON.stringify(this.query());
     }, this);
     this.mouseoverInstanceId = ko.observable();
     this.mapLinkData = ko.observable(null);
     this.userIsReviewer = ko.observable(null);
     this.userid = ko.observable(null);
-    this.searchResults = { 'timestamp': ko.observable() };
+    this.searchResults = {'timestamp': ko.observable()};
 };
 
 var SearchView = BaseManagerView.extend({
-    initialize: function (options) {
+    initialize: function(options) {
         this.viewModel.sharedStateObject = new CommonSearchViewModel();
         this.viewModel.total = ko.observable();
         this.viewModel.hits = ko.observable();
@@ -100,6 +103,7 @@ var SearchView = BaseManagerView.extend({
         this.viewModel.sharedStateObject.userCanReadResources = this.viewModel.userCanReadResources;
         this.shiftFocus = ariaUtils.shiftFocus;
         this.viewModel.loading(true);
+
         BaseManagerView.prototype.initialize.call(this, options);
         this.viewModel.sharedStateObject.menuActive = this.viewModel.menuActive;
     },

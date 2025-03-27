@@ -3,6 +3,7 @@ import BaseManagerView from 'views/base-manager';
 import data from 'views/plugin-data';
 import 'plugins';
 
+
 if (!data.config) data.config = {};
 
 data.config.loading = ko.observable(false);

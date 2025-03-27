@@ -4,27 +4,31 @@ import Backbone from 'backbone';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import arches from 'arches';
+import ResourceInstanceSelect from 'views/components/widgets/resource-instance-multiselect';
+import RelatedResourcesNodeList from 'views/resource/related-resources-node-list';
 import ontologyUtils from 'utils/ontology';
 import relatedResourcesManagerTemplate from 'templates/views/resource/related-resources/related-resources-manager.htm';
+import 'views/components/related-resources-graph';
 import 'bindings/datepicker';
 import 'bindings/datatable';
 
-const viewModel = Backbone.View.extend({
-    initialize: function (options) {
-        var self = this;
 
+const viewModel = Backbone.View.extend({
+    initialize: function(options) {
+        var self = this;
+            
         this.searchResults = options.searchResultsVm;
         this.editingInstanceId = options.editing_instance_id;
         this.graph = options.graph;
         this.urls = arches.urls;
         this.loading = options.loading;
-        this.rootOntologyClass = '';
+        this.rootOntologyClass  = '';
         this.activeTab = ko.observable();
         if (this.graph) {
-            if (!!options.graph.ontologyclass) {
+            if(!!options.graph.ontologyclass){
                 this.rootOntologyClass = options.graph.ontologyclass;
-            } else {
-                if (options.graph.root) {
+            }else{
+                if(options.graph.root){
                     this.rootOntologyClass = options.graph.root.ontologyclass;
                 }
             }
@@ -53,13 +57,13 @@ const viewModel = Backbone.View.extend({
         this.resourceRelationships = ko.observableArray();
         this.paginator = koMapping.fromJS({});
         this.totalRelationships = ko.observable(0);
-        this.relationshipsInFilter = ko.computed(function () {
-            return self.resourceRelationships().filter(function (relationship) {
+        this.relationshipsInFilter = ko.computed(function() {
+            return self.resourceRelationships().filter(function(relationship) {
                 return self.filter().toLowerCase() === '' || relationship.resource.displayname.toLowerCase().includes(self.filter().toLowerCase());
             });
         });
 
-        this.toggleTab = function (tabName) {
+        this.toggleTab = function(tabName) {
             if (self.activeTab() === tabName) {
                 self.activeTab(null);
             } else {
@@ -67,7 +71,7 @@ const viewModel = Backbone.View.extend({
             }
         };
 
-        this.toggleSelectedResourceRelationship = function (resourceRelationship) {
+        this.toggleSelectedResourceRelationship = function(resourceRelationship) {
             if (self.selectedResourceRelationship() === resourceRelationship) {
                 self.selectedResourceRelationship(null);
             } else {
@@ -75,7 +79,7 @@ const viewModel = Backbone.View.extend({
             }
         };
 
-        this.selectedResourceRelationship.subscribe(function (resourceRelationship) {
+        this.selectedResourceRelationship.subscribe(function(resourceRelationship) {
             if (!!resourceRelationship) {
                 self.selectedOntologyClass(resourceRelationship.resource.root_ontology_class);
             } else {
@@ -83,7 +87,7 @@ const viewModel = Backbone.View.extend({
             }
         });
 
-        this.selectedOntologyClass.subscribe(function () {
+        this.selectedOntologyClass.subscribe(function() {
             if (self.graphIsSemantic) {
                 self.relationshipTypes(self.validproperties[self.selectedOntologyClass()]);
             } else {
@@ -91,7 +95,7 @@ const viewModel = Backbone.View.extend({
             }
         });
 
-        this.disableSearchResults = function (result) {
+        this.disableSearchResults = function(result) {
             var resourceinstanceid = this.editingInstanceId;
             var graph = this.graph;
             if (result._id === resourceinstanceid || _.contains(graph.relatable_resources, result._source.graph_id) === false) {
@@ -101,10 +105,10 @@ const viewModel = Backbone.View.extend({
             }
         };
 
-        this.selected = ko.computed(function () {
+        this.selected = ko.computed(function() {
             var res = _.filter(
                 self.resourceRelationships(),
-                function (rr) {
+                function(rr) {
                     if (rr.selected() === true) {
                         return rr;
                     }
@@ -112,14 +116,14 @@ const viewModel = Backbone.View.extend({
             if (self.graphIsSemantic && self.resourceEditorContext === true) {
                 if (res.length > 0 && self.graphIsSemantic) {
                     self.selectedOntologyClass(res[0].resource.root_ontology_class);
-                    self.resourceRelationships().forEach(function (rr) {
+                    self.resourceRelationships().forEach(function(rr) {
                         if (rr.resource.root_ontology_class !== self.selectedOntologyClass()) {
                             rr.unselectable(true);
                         }
                     });
                 } else {
                     self.selectedOntologyClass(undefined);
-                    self.resourceRelationships().forEach(function (rr) {
+                    self.resourceRelationships().forEach(function(rr) {
                         rr.unselectable(false);
                     });
                 }
@@ -127,35 +131,35 @@ const viewModel = Backbone.View.extend({
             return res;
         });
 
-        this.dirty = ko.computed(function () {
-            return self.resourceRelationships().some(function (rr) {
+        this.dirty = ko.computed(function() {
+            return self.resourceRelationships().some(function(rr) {
                 return rr.dirty();
             }, self);
         });
 
 
-        this.newPage = function (page, e) {
+        this.newPage = function(page, e) {
             if (page) {
                 this.currentResource().get(page);
             }
         };
 
-        var getNodeData = function (nodeid, relationship) {
+        var getNodeData = function(nodeid, relationship) {
             $.ajax({
                 url: arches.urls.api_nodes(nodeid),
                 context: this,
                 dataType: 'json'
             })
-                .done(function (data) {
+                .done(function(data) {
                     relationship.node.name(data[0].name);
                     relationship.node.ontologyclass(data[0].ontologyclass);
                 })
-                .fail(function (data) {
+                .fail(function(data) {
                     console.log('Failed to get Node data', data);
                 });
         };
 
-        this.createResource = function (resourceinstanceid) {
+        this.createResource = function(resourceinstanceid) {
             var self = this;
             return {
                 resourceinstanceid: resourceinstanceid,
@@ -163,12 +167,12 @@ const viewModel = Backbone.View.extend({
                 relationships: ko.observableArray(),
                 resourceRelationships: ko.observableArray(),
                 paging: ko.observable(),
-                parse: function (data, viewModel) {
+                parse: function(data, viewModel) {
                     var rr = data.related_resources;
                     var relationshipsWithResource = [];
                     var resources = rr.related_resources;
-                    rr.resource_relationships.forEach(function (relationship) {
-                        var res = _.filter(resources, function (resource) {
+                    rr.resource_relationships.forEach(function(relationship) {
+                        var res = _.filter(resources, function(resource) {
                             if (_.contains([relationship.resourceinstanceidto, relationship.resourceinstanceidfrom], resource.resourceinstanceid)) {
                                 return resource;
                             }
@@ -178,17 +182,17 @@ const viewModel = Backbone.View.extend({
                             'name': ko.observable(),
                             'ontologyclass': ko.observable()
                         };
-                        relationship.reset = function () {
+                        relationship.reset = function() {
                             koMapping.fromJS(JSON.parse(this._json()), relationship);
                         };
                         relationship._json = ko.observable(JSON.stringify(koMapping.toJS(relationship)));
-                        relationship.dirty = ko.computed(function () {
+                        relationship.dirty = ko.computed(function() {
                             return JSON.stringify(koMapping.toJS(relationship)) !== relationship._json();
                         });
                         relationship.selected = ko.observable(false);
                         relationship.unselectable = ko.observable(false);
-                        relationship.updateSelection = function (val) {
-                            return function (rr) {
+                        relationship.updateSelection = function(val) {
+                            return function(rr) {
                                 var vm = viewModel;
                                 if (!vm.graphIsSemantic) {
                                     rr.selected(!rr.selected());
@@ -207,7 +211,7 @@ const viewModel = Backbone.View.extend({
                         relationshipsWithResource.push(relationship);
                     }, this);
                     var sorted = _(relationshipsWithResource).chain()
-                        .sortBy(function (relate) {
+                        .sortBy(function(relate) {
                             return relate.created;
                         }).value().reverse();
                     this.paging(data.paginator);
@@ -216,7 +220,7 @@ const viewModel = Backbone.View.extend({
                     this.graphid = rr.resource_instance.graph_id;
                     self.totalRelationships(rr.total.value);
                 },
-                get: function (newPage) {
+                get: function(newPage) {
                     var page = newPage || 1;
                     $.ajax({
                         url: arches.urls.related_resources + resourceinstanceid,
@@ -226,16 +230,16 @@ const viewModel = Backbone.View.extend({
                             page: page
                         }
                     })
-                        .done(function (data) {
+                        .done(function(data) {
                             self.graphNameLookup = _.indexBy(arches.resources, 'graphid');
                             this.parse(data, self);
                             self.newResource(this);
                         })
-                        .fail(function (data) {
+                        .fail(function(data) {
                             console.log('Related resource request failed', data);
                         });
                 },
-                save: function (candidateIds, relationshipProperties, relationshipIds) {
+                save: function(candidateIds, relationshipProperties, relationshipIds) {
                     this.defaultRelationshipType = options.relationship_types.default;
 
                     if (!relationshipProperties.relationshiptype) {
@@ -254,14 +258,14 @@ const viewModel = Backbone.View.extend({
                         type: 'POST',
                         dataType: 'json'
                     })
-                        .done(function (data) {
+                        .done(function(data) {
                             this.parse(data, self);
                         })
-                        .fail(function (data) {
+                        .fail(function(data) {
                             console.log('Related resource request failed', data);
                         });
                 },
-                delete: function (relationshipIds) {
+                delete: function(relationshipIds) {
                     var payload = {
                         resourcexids: relationshipIds,
                         root_resourceinstanceid: resourceinstanceid
@@ -272,10 +276,10 @@ const viewModel = Backbone.View.extend({
                         context: this,
                         dataType: 'json'
                     })
-                        .done(function (data) {
+                        .done(function(data) {
                             this.parse(data, self);
                         })
-                        .fail(function (data) {
+                        .fail(function(data) {
                             console.log('Related resource request failed', data);
                         });
                 }
@@ -289,8 +293,8 @@ const viewModel = Backbone.View.extend({
             }
 
             this.validproperties = {};
-            this.graph.domain_connections.forEach(function (item) {
-                item.ontology_classes.forEach(function (ontologyclass) {
+            this.graph.domain_connections.forEach(function(item) {
+                item.ontology_classes.forEach(function(ontologyclass) {
                     if (!this.validproperties[ontologyclass]) {
                         this.validproperties[ontologyclass] = [];
                     } else {
@@ -302,8 +306,8 @@ const viewModel = Backbone.View.extend({
                 }, this);
             }, this);
 
-            _.each(this.validproperties, function (ontologyClass) {
-                ontologyClass.sort(function (a, b) {
+            _.each(this.validproperties, function(ontologyClass) {
+                ontologyClass.sort(function(a, b) {
                     if (a.id > b.id) {
                         return 1;
                     } else {
@@ -322,29 +326,29 @@ const viewModel = Backbone.View.extend({
 
             this.currentResource(self.createResource(this.editingInstanceId));
             this.getRelatedResources();
-            this.currentResource().resourceRelationships.subscribe(function (val) {
+            this.currentResource().resourceRelationships.subscribe(function(val) {
                 this.resourceRelationships(val);
                 if (val.length === 0) {
                     this.displaySplash(true);
                 }
             }, this);
-            this.currentResource().paging.subscribe(function (val) {
+            this.currentResource().paging.subscribe(function(val) {
                 koMapping.fromJS(val, this.paginator);
             }, this);
         } else {
-            this.searchResults.relationshipCandidates.subscribe(function (val) {
+            this.searchResults.relationshipCandidates.subscribe(function(val) {
                 if (val.length > 0) {
                     this.saveRelationships(val);
                 }
             }, this);
 
-            this.searchResults.showRelationships.subscribe(function (val) {
+            this.searchResults.showRelationships.subscribe(function(val) {
                 this.currentResource(this.createResource(val.resourceinstanceid));
                 this.getRelatedResources();
-                this.currentResource().resourceRelationships.subscribe(function (val) {
+                this.currentResource().resourceRelationships.subscribe(function(val) {
                     this.resourceRelationships(val);
                 }, this);
-                this.currentResource().paging.subscribe(function (val) {
+                this.currentResource().paging.subscribe(function(val) {
                     koMapping.fromJS(val, this.paginator);
                 }, this);
             }, this);
@@ -361,14 +365,18 @@ const viewModel = Backbone.View.extend({
             allowClear: true,
             disabled: this.disabled,
             ajax: {
-                url: function () {
+                url: function() {
                     return url();
                 },
                 dataType: 'json',
                 quietMillis: 250,
-                data: function (requestParams) {
+                data: function(requestParams) {
                     let term = requestParams.term || '';
                     let page = requestParams.page || 1;
+                    //TODO This regex isn't working, but it would nice fix it so that we can do more robust url checking
+                    // var expression = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+                    // var regex = new RegExp(expression);
+                    // var isUrl = val.target.value.match(regex)
                     var isUrl = term.startsWith('http');
                     if (isUrl) {
                         url(term.replace('search', 'search/resources'));
@@ -378,7 +386,7 @@ const viewModel = Backbone.View.extend({
                         var data = { 'paging-filter': page };
                         if (self.graph.relatable_resources.length > 0) {
                             data['resource-type-filter'] = JSON.stringify(
-                                self.graph.relatable_resources.map(function (id) {
+                                self.graph.relatable_resources.map(function(id) {
                                     return {
                                         "graphid": id,
                                         "inverted": false
@@ -400,8 +408,8 @@ const viewModel = Backbone.View.extend({
                         return data;
                     }
                 },
-                processResults: function (data) {
-                    data.results.hits.hits.forEach(function (hit) {
+                processResults: function(data) {
+                    data.results.hits.hits.forEach(function(hit){
                         if (self.disableSearchResults(hit) === true) {
                             hit.disabled = true;
                         }
@@ -415,22 +423,22 @@ const viewModel = Backbone.View.extend({
                     };
                 }
             },
-            onSelect: function (item) {
+            onSelect: function(item) {
                 $.ajax(arches.urls.related_resource_candidates, {
                     dataType: 'json',
                     data: { resourceids: item._id }
-                }).done(function (data) {
+                }).done(function(data) {
                     self.relationshipCandidates(data);
                     self.saveRelationships();
                     self.relationshipCandidateIds(null);
                 });
             },
-            templateResult: function (item) {
+            templateResult: function(item) {
                 var ret = '';
-                if (!item.id) {
+                if(!item.id){
                     return item.text;
                 }
-                if (item.disabled) {
+                if(item.disabled){
                     ret = '<span>' + item._source.displayname + ' Cannot be related</span>';
                 } else {
                     if (item._source) {
@@ -441,7 +449,7 @@ const viewModel = Backbone.View.extend({
                 }
                 return $(ret);
             },
-            templateSelection: function (item) {
+            templateSelection: function(item) {
                 if (item._source) {
                     return item._source.displayname;
                 } else {
@@ -451,7 +459,7 @@ const viewModel = Backbone.View.extend({
         };
     },
 
-    deleteRelationships: function (relationship) {
+    deleteRelationships: function(relationship) {
         var resourcexids;
         var resource = this.currentResource();
         if (!!relationship) {
@@ -462,16 +470,16 @@ const viewModel = Backbone.View.extend({
         resource.delete(resourcexids);
     },
 
-    saveRelationship: function (relationship) {
+    saveRelationship: function(relationship) {
         var resource = this.currentResource();
         resource.save([], koMapping.toJS(relationship), [relationship.resourcexid()]);
     },
 
-    saveRelationships: function () {
+    saveRelationships: function() {
         var candidateIds = _.pluck(this.relationshipCandidates(), 'resourceinstanceid');
         var selectedResourceXids = _.pluck(this.selected(), 'resourcexid');
         var resource = this.currentResource();
-        this.relationshipCandidates().forEach(function (rr) {
+        this.relationshipCandidates().forEach(function(rr) {
             if (!this.relatedProperties.relationshiptype() && rr.ontologyclass && this.validproperties[rr.ontologyclass]) {
                 this.relatedProperties.relationshiptype(this.validproperties[rr.ontologyclass][0].id);
             } else {
@@ -487,13 +495,13 @@ const viewModel = Backbone.View.extend({
         this.relatedProperties.relationshiptype(undefined);
     },
 
-    getRelatedResources: function () {
+    getRelatedResources: function() {
         var resource = this.currentResource();
         resource.get();
         this.resourceRelationships(resource.resourceRelationships());
     },
 
-    updateTile: function (options, relationship) {
+    updateTile: function(options, relationship) {
         var self = this;
         self.loading(true);
         window.fetch(arches.urls.api_tiles(relationship.tileid()), {
@@ -503,16 +511,16 @@ const viewModel = Backbone.View.extend({
                 'Content-Type': 'application/json'
             },
         })
-            .then(function (response) {
+            .then(function(response) {
                 if (response.ok) {
                     return response.json();
                 }
             })
-            .then(function (tile) {
+            .then(function(tile) {
                 var newResourceRelations = [];
                 var tiledata = tile.data;
                 var resourceRelations = tiledata[relationship.nodeid()];
-                resourceRelations.forEach(function (relation) {
+                resourceRelations.forEach(function(relation) {
                     if (relation.resourceXresourceId === relationship.resourcexid()) {
                         relation.ontologyProperty = relationship.relationshiptype();
                         relation.inverseOntologyProperty = relationship.inverserelationshiptype();
@@ -532,31 +540,31 @@ const viewModel = Backbone.View.extend({
                         'Content-Type': 'application/json'
                     },
                 })
-                    .then(function (response) {
+                    .then(function(response) {
                         if (response.ok) {
                             relationship._json(JSON.stringify(koMapping.toJS(relationship)));
                             if (!!options.delete) {
-                                window.setTimeout(function () {
+                                window.setTimeout(function() {
                                     self.newPage(1);
                                     self.loading(false);
                                 }, 1000);
                             }
                         }
                     })
-                    .catch(function (err) {
+                    .catch(function(err) {
                         console.log('Tile update failed', err);
                         self.loading(false);
                     });
 
             })
-            .catch(function (err) {
+            .catch(function(err) {
                 console.log('Tile update failed', err);
                 self.loading(false);
             });
     },
 });
 
-ko.components.register('related-resources-manager', {
+export default ko.components.register('related-resources-manager', {
     viewModel: viewModel,
     template: relatedResourcesManagerTemplate,
 });

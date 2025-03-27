@@ -11,7 +11,8 @@ import 'bindings/hover';
 import 'bindings/chosen';
 import 'utils/set-csrf-token';
 
-class GraphView extends BaseManager {
+
+var GraphView = BaseManager.extend({
     /**
     * Initializes an instance of BaseManager, optionally using a passed in view
     * model
@@ -20,8 +21,8 @@ class GraphView extends BaseManager {
     * @param {object} options - additional options to pass to the view
     * @return {object} an instance of GraphView
     */
-    initialize(options) {
-        const self = this;
+    initialize: function(options) {
+        var self = this;
         /**
         * creates a request to add a new graph; redirects to the graph settings
         * page for the new graph on success
@@ -29,31 +30,31 @@ class GraphView extends BaseManager {
         * @param  {string} url - the url to be used in the request
         * @param  {object} data (optional) - data to be included in request
         */
-        const newGraph = function (url, data) {
+        var newGraph = function(url, data) {
             data = data || {};
             self.viewModel.loading(true);
             $.ajax({
                 type: "POST",
                 url: url,
                 data: JSON.stringify(data),
-                success: function (response) {
+                success: function(response) {
                     window.location = arches.urls.graph_designer(response.graphid);
                 },
-                error: function () {
+                error: function() {
                     self.viewModel.loading(false);
                 }
             });
         };
 
-        this.viewModel.leaveDropdown = function () {
+        this.viewModel.leaveDropdown = function(){
             $('.dropdown').dropdown('toggle');
         };
 
-        this.viewModel.allGraphs().forEach(function (graph) {
+        this.viewModel.allGraphs().forEach(function(graph) {
             graph.root = null;
             graph.isCard = false;
             if (graphManagerData && typeof graphManagerData.root_nodes === 'object') {
-                graph.root = _.find(graphManagerData.root_nodes, function (node) {
+                graph.root = _.find(graphManagerData.root_nodes, function(node) {
                     return node.graph_id === graph.graphid;
                 });
                 if (graph.root) {
@@ -62,28 +63,28 @@ class GraphView extends BaseManager {
             }
 
             graph.hover = ko.observable(false);
-            graph.clone = function () {
+            graph.clone = function() {
                 newGraph(arches.urls.clone_graph(graph.graphid));
             };
-            graph.exportGraph = function (model) {
+            graph.exportGraph = function(model) {
                 window.open(arches.urls.export_graph(graph.graphid), '_blank');
             };
-            graph.exportMappingFile = function (model) {
+            graph.exportMappingFile = function(model) {
                 window.open(arches.urls.export_mapping_file(graph.graphid), '_blank');
             };
-            graph.deleteGraph = function () {
+            graph.deleteGraph = function() {
                 self.viewModel.alert(new AlertViewModel(
                     'ep-alert-red',
                     arches.translations.confirmGraphDelete.title,
                     arches.translations.confirmGraphDelete.text,
-                    function () {
+                    function() {
                         return;
-                    }, function () {
+                    }, function(){
                         self.viewModel.loading(true);
                         $.ajax({
                             type: "DELETE",
                             url: arches.urls.delete_graph(graph.graphid),
-                            complete: function (response, status) {
+                            complete: function(response, status) {
                                 self.viewModel.loading(false);
                                 if (status === 'success') {
                                     self.viewModel.allGraphs.remove(graph);
@@ -95,19 +96,19 @@ class GraphView extends BaseManager {
                     }
                 ));
             };
-            graph.deleteInstances = function () {
+            graph.deleteInstances = function() {
                 self.viewModel.alert(new AlertViewModel(
                     'ep-alert-red',
                     arches.translations.confirmAllResourceDelete.title,
                     arches.translations.confirmAllResourceDelete.text,
-                    function () {
+                    function() {
                         return;
-                    }, function () {
+                    }, function(){
                         self.viewModel.loading(true);
                         $.ajax({
                             type: "DELETE",
                             url: arches.urls.delete_instances(graph.graphid),
-                            complete: function (response, status) {
+                            complete: function(response, status) {
                                 self.viewModel.loading(false);
                                 if (status === 'success') {
                                     self.viewModel.alert(new AlertViewModel('ep-alert-blue', response.responseJSON.title, response.responseJSON.message));
@@ -121,7 +122,7 @@ class GraphView extends BaseManager {
             };
         });
 
-        this.viewModel.showResources = ko.observable(window.location.hash !== '#branches');
+        this.viewModel.showResources = ko.observable(window.location.hash!=='#branches');
 
         _.defaults(this.viewModel, {
             arches: arches,
@@ -133,33 +134,38 @@ class GraphView extends BaseManager {
             }),
             graphId: ko.observable(null),
             showFind: ko.observable(false),
-            currentList: ko.computed(function () {
+            currentList: ko.computed(function() {
                 let resources;
+
                 if (self.viewModel.showResources()) {
                     resources = self.viewModel.resources();
                 } else {
                     resources = self.viewModel.graphs();
                 }
+
                 return resources.reduce((acc, resource) => {
                     if (!resource.source_identifier_id) {
                         const editableFutureGraph = resources.find(graph => graph.source_identifier_id === resource.graphid);
+
                         if (editableFutureGraph) {
                             resource['has_unpublished_changes'] = editableFutureGraph['has_unpublished_changes'];
                         }
+
                         acc.push(resource);
                     }
                     return acc;
                 }, []);
             }),
-            newResource: function () {
-                newGraph('new', { isresource: true });
+            newResource: function() {
+                newGraph('new', {isresource: true});
             },
-            newGraph: function () {
-                newGraph('new', { isresource: false });
+            newGraph: function() {
+                newGraph('new', {isresource: false});
             },
-            importGraph: function (data, e) {
+            importGraph: function(data, e) {
                 var formData = new FormData();
                 formData.append("importedGraph", e.target.files[0]);
+
                 self.viewModel.loading(true);
                 $.ajax({
                     type: "POST",
@@ -168,9 +174,10 @@ class GraphView extends BaseManager {
                     data: formData,
                     cache: false,
                     contentType: false,
-                    success: function (response) {
+                    success: function(response) {
                         if (response[0].length != 0) {
-                            if (typeof (response[0])) {
+                            // eslint-disable-next-line no-constant-condition
+                            if (typeof(response[0])) {
                                 response = response[0].join('<br />');
                             }
                             self.viewModel.alert(new AlertViewModel('ep-alert-red', arches.translations.graphImportFailed.title, response));
@@ -179,7 +186,7 @@ class GraphView extends BaseManager {
                             window.location.reload(true);
                         }
                     },
-                    error: function (response) {
+                    error: function(response) {
                         self.viewModel.alert(
                             new AlertViewModel('ep-alert-red', arches.translations.graphImportFailed.title, arches.translations.pleaseContactSystemAdministrator)
                         );
@@ -187,19 +194,20 @@ class GraphView extends BaseManager {
                     },
                 });
             },
-            importButtonClick: function () {
+            importButtonClick: function() {
                 $("#fileupload").trigger('click');
             }
         });
 
-        this.viewModel.graphId.subscribe(function (graphid) {
-            if (graphid && graphid !== "") {
+
+        this.viewModel.graphId.subscribe(function(graphid) {
+            if(graphid && graphid !== ""){
                 self.viewModel.navigate(arches.urls.graph_designer(graphid));
             }
         });
 
         BaseManager.prototype.initialize.call(this, options);
     }
-}
 
+});
 export default new GraphView();

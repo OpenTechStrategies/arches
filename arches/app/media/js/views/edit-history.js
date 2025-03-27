@@ -1,8 +1,12 @@
 import BaseManagerView from 'views/base-manager';
 import 'bindings/datatable';
 
-class EditHistory extends BaseManagerView {
-    initialize(options) {
+
+/**
+* a BaseManagerView representing the recent edits pages
+*/
+var EditHistory = BaseManagerView.extend({
+    initialize: function(options){
         options.viewModel.resourceTableConfig = {
             "responsive": true,
             "paging": true,
@@ -14,7 +18,7 @@ class EditHistory extends BaseManagerView {
                     "next": '<i class="fa fa-angle-right"></i>'
                 }
             },
-            "order": [[3, "desc"]],
+            "order": [[ 3, "desc" ]],
             "columns": [
                 null,
                 null,
@@ -26,8 +30,7 @@ class EditHistory extends BaseManagerView {
                 { "visible": false }
             ]
         };
-        super.initialize(options);
+        BaseManagerView.prototype.initialize.call(this, options);
     }
-}
-
+});
 export default new EditHistory();

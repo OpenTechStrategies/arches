@@ -2,22 +2,26 @@ import $ from 'jquery';
 import Backbone from 'backbone';
 import arches from 'arches';
 
-export default class ImageSchemeForm extends Backbone.View {
-    initialize(options) {
-        const self = this;
+
+export default Backbone.View.extend({
+
+    initialize: function(options){
+        var self = this;
         this.modal = this.$el.find('.modal');
         this.viewModel = options.viewModel;
+
         this.select2 = this.$el.find('[name=language_dd]').select2({
             minimumResultsForSearch: -1
-        });
+        });                
+
         this.modal.validate({
             ignore: null,
             rules: {
                 skosfile: "required",
                 overwrite_options: "required"
             },
-            submitHandler: function (form) {
-                const data = new FormData(form);
+            submitHandler: function(form) {
+                var data = new FormData(form);
                 self.viewModel.loading(true);
                 $.ajax({
                     url: arches.urls.concept.replace('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ''),
@@ -25,14 +29,15 @@ export default class ImageSchemeForm extends Backbone.View {
                     data: data,
                     processData: false,
                     contentType: false,
-                    complete: function (response, status) {
+                    complete: function(response, status){
                         self.modal.modal('hide');
                         self.viewModel.loading(false);
                         self.trigger('conceptSchemeAdded', response, status);
                     }
                 });
+
                 return false;
             }
-        });
+        });            
     }
-}
+});

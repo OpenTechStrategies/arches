@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import arches from 'arches';
+import Backbone from 'backbone';
 import ConceptModel from 'models/concept';
 import ConceptTree from 'views/rdm/concept-tree';
 import ConceptReport from 'views/rdm/concept-report';
@@ -14,11 +15,12 @@ import BaseManagerView from 'views/base-manager';
 import JsonErrorAlertViewModel from 'viewmodels/alert-json';
 import 'jquery-validate';
 
+
 var RDMView = BaseManagerView.extend({
-    initialize: function (options) {
+    initialize: function(options){
         // allow select2 to retain focus when used in a bootsrap modal
         // see: https://select2.org/troubleshooting/common-problems#select2-does-not-function-properly-when-i-use-it-inside-a-bootst
-        $.fn.modal.Constructor.prototype.enforceFocus = function () { };
+        $.fn.modal.Constructor.prototype.enforceFocus = function() {};
         var mode = 'semantic';
 
         // Models and views
@@ -47,32 +49,32 @@ var RDMView = BaseManagerView.extend({
         });
 
         concept.on({
-            'change': function () {
+            'change': function(){
                 window.history.pushState({}, "conceptid", concept.get('id'));
             },
-            'save': function () {
+            'save': function(){
                 conceptTree.render();
                 dropdownTree.render();
                 conceptReport.render();
                 concept.reset();
             },
-            'delete': function () {
+            'delete': function(){
                 conceptTree.render();
                 dropdownTree.render();
                 conceptReport.render();
                 concept.reset();
             },
-            'collection_created': function () {
+            'collection_created': function() {
                 //window.location.reload();
                 dropdownTree.render();
             },
         });
 
         conceptTree.on({
-            'conceptMoved': function () {
+            'conceptMoved': function() {
                 conceptReport.render();
             },
-            'conceptSelected': function (conceptid) {
+            'conceptSelected': function(conceptid){
                 concept.clear();
                 concept.set('id', conceptid);
                 conceptReport.mode = 'semantic';
@@ -81,10 +83,10 @@ var RDMView = BaseManagerView.extend({
         });
 
         dropdownTree.on({
-            'conceptMoved': function () {
+            'conceptMoved': function() {
                 conceptReport.render();
             },
-            'conceptSelected': function (conceptid) {
+            'conceptSelected': function(conceptid){
                 concept.clear();
                 concept.set('id', conceptid);
                 conceptReport.mode = 'collections';
@@ -93,30 +95,30 @@ var RDMView = BaseManagerView.extend({
         });
 
         conceptReport.on({
-            'conceptSelected': function (conceptid) {
+            'conceptSelected': function(conceptid) {
                 concept.clear();
                 concept.set('id', conceptid);
 
                 conceptReport.mode = 'semantic';
                 conceptReport.render();
             },
-            'dropdownConceptSelected': function (conceptid) {
+            'dropdownConceptSelected': function(conceptid) {
                 concept.clear();
                 concept.set('id', conceptid);
 
                 conceptReport.mode = 'collections';
                 conceptReport.render();
             },
-            'parentsChanged': function () {
+            'parentsChanged': function() {
                 conceptTree.render();
                 conceptReport.render();
             },
-            'conceptsImported': function () {
+            'conceptsImported': function() {
                 conceptReport.render();
             }
         });
 
-        conceptsearch.on("select2:selecting", function (e) {
+        conceptsearch.on("select2:selecting", function(e) {
             concept.clear();
             concept.set('id', e.params.args.data.id);
             conceptTree.render();
@@ -124,7 +126,7 @@ var RDMView = BaseManagerView.extend({
         }, conceptsearch);
 
 
-        $('a[href="#rdm-panel"]').on("click", function () {
+        $('a[href="#rdm-panel"]').on( "click", function(){
             var selectedNode = conceptTree.tree.tree('getSelectedNode');
             concept.clear();
             concept.set('id', selectedNode.id || '');
@@ -133,7 +135,7 @@ var RDMView = BaseManagerView.extend({
             conceptReport.render();
         });
 
-        $('a[href="#dropdown-panel"]').on("click", function () {
+        $('a[href="#dropdown-panel"]').on( "click", function(){
             var selectedNode = dropdownTree.tree.tree('getSelectedNode');
             concept.clear();
             concept.set('id', selectedNode.id || '');
@@ -142,13 +144,13 @@ var RDMView = BaseManagerView.extend({
             conceptReport.render();
         });
 
-        $('a[data-toggle="#add-scheme-form"]').on("click", function () {
+        $('a[data-toggle="#add-scheme-form"]').on( "click", function(){
             var form = new AddSchemeForm({
                 el: $('#add-scheme-form')
             });
             form.modal.modal('show');
             form.on({
-                'conceptSchemeAdded': function (newScheme) {
+                'conceptSchemeAdded': function(newScheme){
                     conceptTree.render();
                     concept.set('id', newScheme.id);
                     conceptReport.render();
@@ -156,14 +158,14 @@ var RDMView = BaseManagerView.extend({
             });
         });
 
-        $('a[data-toggle="#export-scheme-form"]').on("click", function () {
+        $('a[data-toggle="#export-scheme-form"]').on( "click", function(){
             var form = new ExportSchemeForm({
                 el: $('#export-scheme-form')
             });
             form.modal.modal('show');
         });
 
-        $('a[data-toggle="#delete-scheme-form"]').on("click", function () {
+        $('a[data-toggle="#delete-scheme-form"]').on( "click", function(){
             var form = new DeleteSchemeForm({
                 el: $('#delete-scheme-form'),
                 model: null,
@@ -171,13 +173,13 @@ var RDMView = BaseManagerView.extend({
             });
             form.modal.modal('show');
             form.on({
-                'conceptSchemeDeleted': function () {
+                'conceptSchemeDeleted': function(){
                     window.location = arches.urls.rdm;
                 }
             });
         }.bind(this));
 
-        $('a[data-toggle="#import-scheme-form"]').on("click", function () {
+        $('a[data-toggle="#import-scheme-form"]').on( "click", function(){
             var self = this;
             var form = new ImportSchemeForm({
                 el: $('#import-scheme-form'),
@@ -186,8 +188,8 @@ var RDMView = BaseManagerView.extend({
             });
             form.modal.modal('show');
             form.on({
-                'conceptSchemeAdded': function (response, status) {
-                    if (status === 'success') {
+                'conceptSchemeAdded': function(response, status){
+                    if (status === 'success'){
                         conceptTree.render();
                         concept.set('id', response.responseJSON.id);
                         conceptReport.render();
@@ -199,13 +201,13 @@ var RDMView = BaseManagerView.extend({
             });
         }.bind(this));
 
-        $('a[data-toggle="#add-collection-form"]').on("click", function () {
+        $('a[data-toggle="#add-collection-form"]').on( "click", function(){
             var form = new AddCollectionForm({
                 el: $('#add-collection-form')
             });
             form.modal.modal('show');
             form.on({
-                'collectionAdded': function (newCollection) {
+                'collectionAdded': function(newCollection){
                     dropdownTree.render();
                     concept.set('id', newCollection.id);
                     conceptReport.render();
@@ -213,21 +215,21 @@ var RDMView = BaseManagerView.extend({
             });
         });
 
-        $('a[data-toggle="#delete-collection-form"]').on("click", function () {
+        $('a[data-toggle="#delete-collection-form"]').on( "click", function(){
             var form = new DeleteCollectionForm({
                 el: $('#delete-collection-form'),
                 model: null
             });
             form.modal.modal('show');
             form.on({
-                'collectionDeleted': function () {
+                'collectionDeleted': function(){
                     dropdownTree.render();
                 }
             });
         });
 
-        $('a[data-toggle="#export-all-collections"]').on("click", function () {
-            window.open(arches.urls.export_concept_collections, '_blank');
+        $('a[data-toggle="#export-all-collections"]').on( "click", function(){
+            window.open(arches.urls.export_concept_collections,'_blank');
         });
 
 

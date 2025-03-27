@@ -3,7 +3,7 @@ import _ from 'underscore';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import arches from 'arches';
-import AlertViewModel from 'viewmodels/alert';
+import AlertViewModel from 'viewmodels/alert';  
 import BaseManagerView from 'views/base-manager';
 import data from 'views/profile-manager-data';
 import 'utils/set-csrf-token';

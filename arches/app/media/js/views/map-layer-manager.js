@@ -8,7 +8,7 @@ import BaseManagerView from 'views/base-manager';
 import NodeModel from 'models/node';
 import AlertViewModel from 'viewmodels/alert';
 import binFeatureCollection from 'views/components/widgets/map/bin-feature-collection';
-import data from 'views/map-layer-manager-data';
+import data from 'view-data';
 import 'bindings/mapbox-gl';
 import 'bindings/codemirror';
 import 'codemirror/mode/javascript/javascript';
@@ -16,6 +16,7 @@ import 'datatype-config-components';
 import 'views/components/icon-selector';
 import 'views/components/datatypes/geojson-feature-collection';
 import 'views/components/widgets/number';
+
 
 var vm = {
     map: null,
@@ -29,13 +30,13 @@ var vm = {
     selectedList: ko.observable()
 };
 
-vm.icons = ko.computed(function () {
-    return _.filter(data.icons, function (icon) {
+vm.icons = ko.computed(function() {
+    return _.filter(data.icons, function(icon) {
         return icon.name.indexOf(vm.iconFilter()) >= 0;
     });
 });
 var mapLayers = ko.observableArray($.extend(true, [], arches.mapLayers));
-_.each(mapLayers(), function (layer) {
+_.each(mapLayers(), function(layer) {
     layer._layer = ko.observable(JSON.stringify(layer));
     layer.layerJSON = ko.observable(JSON.stringify(layer.layer_definitions, null, '\t'));
     layer.activated = ko.observable(layer.activated);
@@ -49,7 +50,7 @@ _.each(mapLayers(), function (layer) {
     layer.zoom = ko.observable(layer.zoom);
     layer.sortOrder = ko.observable(layer.sortorder);
     layer.isPublic = ko.observable(layer.ispublic);
-    layer.toJSON = ko.computed(function () {
+    layer.toJSON = ko.computed(function() {
         var layers;
         try {
             layers = JSON.parse(layer.layerJSON());
@@ -75,45 +76,45 @@ _.each(mapLayers(), function (layer) {
             "ispublic": layer.isPublic()
         });
     });
-    layer.dirty = ko.computed(function () {
+    layer.dirty = ko.computed(function() {
         return layer.toJSON() !== layer._layer();
     });
-    layer.save = function () {
+    layer.save = function() {
         vm.loading(true);
         $.ajax({
             type: "POST",
             url: window.location.pathname + '/' + layer.maplayerid,
             data: layer.toJSON(),
-            success: function (response) {
+            success: function(response) {
                 layer._layer(layer.toJSON());
                 pageView.viewModel.loading(false);
-                var mapLayer = _.find(arches.mapLayers, function (mapLayer) {
+                var mapLayer = _.find(arches.mapLayers, function(mapLayer) {
                     return mapLayer.maplayerid === layer.maplayerid;
                 });
                 _.extend(mapLayer, JSON.parse(layer._layer()));
                 if (!mapLayer.isoverlay && mapLayer.addtomap) {
-                    _.each(vm.basemaps(), function (basemap) {
+                    _.each(vm.basemaps(), function(basemap) {
                         if (basemap.maplayerid !== layer.maplayerid) {
                             basemap.addtomap(false);
                         }
                     });
-                    _.each(arches.mapLayers, function (mapLayer) {
+                    _.each(arches.mapLayers, function(mapLayer) {
                         if (!mapLayer.isoverlay && mapLayer.maplayerid !== layer.maplayerid) {
                             mapLayer.addtomap = false;
                         }
                     });
                 }
             },
-            error: function (response) {
+            error: function(response) {
                 pageView.viewModel.loading(false);
             }
         });
     };
-    layer.reset = function () {
+    layer.reset = function() {
         var _layer = JSON.parse(layer._layer());
         layer.layerJSON(JSON.stringify(_layer.layer_definitions, null, '\t'));
         layer.activated(_layer.activated);
-        layer.addtomap(_layer.addtomap);
+        layer.addtomap(_layer.addtomap),
         layer.name(_layer.name);
         layer.icon(_layer.icon);
         layer.centerX(_layer.centerx);
@@ -124,19 +125,19 @@ _.each(mapLayers(), function (layer) {
         layer.legend(_layer.legend);
         layer.searchonly(_layer.searchonly);
     };
-    layer.delete = function () {
+    layer.delete = function() {
         pageView.viewModel.alert(new AlertViewModel(
             'ep-alert-red',
             arches.translations.confirmMaplayerDelete.title,
             arches.translations.confirmMaplayerDelete.text,
-            function () {
+            function() {
                 return;
-            }, function () {
+            }, function(){
                 vm.loading(true);
                 $.ajax({
                     type: "DELETE",
                     url: window.location.pathname + '/' + layer.maplayerid,
-                    success: function (response) {
+                    success: function(response) {
                         mapLayers.remove(layer);
                         arches.mapLayers = _.without(arches.mapLayers, _.findWhere(arches.mapLayers, {
                             maplayerid: layer.maplayerid
@@ -149,7 +150,7 @@ _.each(mapLayers(), function (layer) {
                         vm.selection(selection);
                         pageView.viewModel.loading(false);
                     },
-                    error: function (response) {
+                    error: function(response) {
                         pageView.viewModel.loading(false);
                     }
                 });
@@ -159,17 +160,17 @@ _.each(mapLayers(), function (layer) {
 });
 
 vm.selectedBasemapName = ko.observable('');
-vm.basemaps = ko.computed(function () {
-    return _.filter(mapLayers(), function (layer) {
+vm.basemaps = ko.computed(function() {
+    return _.filter(mapLayers(), function(layer) {
         return !layer.isoverlay;
     });
 });
-vm.basemaps().forEach(function (basemap) {
-    basemap.select = function () {
+vm.basemaps().forEach(function(basemap) {
+    basemap.select = function() {
         vm.selectedBasemapName(basemap.name());
     };
 });
-var defaultBasemap = _.find(vm.basemaps(), function (basemap) {
+var defaultBasemap = _.find(vm.basemaps(), function(basemap) {
     return basemap.addtomap();
 });
 if (!defaultBasemap) {
@@ -178,20 +179,21 @@ if (!defaultBasemap) {
 if (defaultBasemap) {
     vm.selectedBasemapName(defaultBasemap.name());
 }
-vm.overlays = ko.computed(function () {
-    return _.filter(mapLayers(), function (layer) {
+vm.overlays = ko.computed(function() {
+    return _.filter(mapLayers(), function(layer) {
         return layer.isoverlay && !layer.is_resource_layer;
     });
 });
 
-var getBasemapLayers = function () {
-    return _.filter(vm.basemaps(), function (layer) {
+var getBasemapLayers = function() {
+    return _.filter(vm.basemaps(), function(layer) {
         return layer.name() === vm.selectedBasemapName();
-    }).reduce(function (layers, layer) {
+    }).reduce(function(layers, layer) {
         return layers.concat(layer.layer_definitions);
     }, []);
 };
 var sources = $.extend(true, {}, arches.mapSources);
+
 
 sources["search-results-hex"] = {
     "type": "geojson",
@@ -215,9 +217,9 @@ sources["search-results-hashes"] = {
     }
 };
 
-_.each(sources, function (sourceConfig, name) {
+_.each(sources, function(sourceConfig, name) {
     if (sourceConfig.tiles) {
-        sourceConfig.tiles.forEach(function (url, i) {
+        sourceConfig.tiles.forEach(function(url, i) {
             if (url.startsWith('/')) {
                 sourceConfig.tiles[i] = window.location.origin + url;
             }
@@ -226,11 +228,11 @@ _.each(sources, function (sourceConfig, name) {
 });
 
 var datatypelookup = {};
-_.each(data.datatypes, function (datatype) {
+_.each(data.datatypes, function(datatype){
     datatypelookup[datatype.datatype] = datatype;
 }, this);
 
-_.each(data.geom_nodes, function (node) {
+_.each(data.geom_nodes, function(node) {
     vm.geomNodes.push(
         new NodeModel({
             url: arches.urls.node_layer,
@@ -239,13 +241,13 @@ _.each(data.geom_nodes, function (node) {
             source: node,
             datatypelookup: datatypelookup,
             icons: data.icons,
-            layer: _.find(data.resource_map_layers, function (layer) {
+            layer: _.find(data.resource_map_layers, function(layer) {
                 return layer.nodeid === node.nodeid;
             }),
-            mapSource: _.find(data.resource_map_sources, function (source) {
+            mapSource: _.find(data.resource_map_sources, function(source) {
                 return source.nodeid === node.nodeid;
             }),
-            graph: _.find(data.graphs, function (graph) {
+            graph: _.find(data.graphs, function(graph) {
                 return graph.graphid === node.graph_id;
             })
         })
@@ -253,25 +255,25 @@ _.each(data.geom_nodes, function (node) {
 });
 var selectedList;
 switch (window.location.hash) {
-    case "#basemaps":
-        selectedList = vm.basemaps;
-        break;
-    case "#overlays":
-        selectedList = vm.overlays;
-        break;
-    default:
-        selectedList = vm.geomNodes;
+case "#basemaps":
+    selectedList = vm.basemaps;
+    break;
+case "#overlays":
+    selectedList = vm.overlays;
+    break;
+default:
+    selectedList = vm.geomNodes;
 }
 vm.selectedList(selectedList);
 vm.selection = ko.observable(ko.unwrap(selectedList)[0] || null);
 vm.selectedLayerJSON = ko.computed({
-    read: function () {
+    read: function() {
         if (!vm.selection() || !vm.selection().maplayerid) {
             return '[]';
         }
         return vm.selection().layerJSON();
     },
-    write: function (value) {
+    write: function(value) {
         if (vm.selection() && vm.selection().maplayerid) {
             vm.selection().layerJSON(value);
         }
@@ -298,7 +300,7 @@ var searchAggregations = ko.observable(null);
 var searchResults = ko.observable(null);
 var bins = binFeatureCollection(searchAggregations);
 
-var getSearchAggregationGeoJSON = function () {
+var getSearchAggregationGeoJSON = function() {
     var agg = ko.unwrap(searchAggregations);
     if (!agg || !agg.geo_aggs.grid.buckets) {
         return {
@@ -307,7 +309,7 @@ var getSearchAggregationGeoJSON = function () {
         };
     }
     var features = [];
-    _.each(agg.geo_aggs.grid.buckets, function (cell) {
+    _.each(agg.geo_aggs.grid.buckets, function(cell) {
         var pt = geohash.decode(cell.key);
         var feature = turf.point([pt.lon, pt.lat], {
             doc_count: cell.doc_count
@@ -315,18 +317,20 @@ var getSearchAggregationGeoJSON = function () {
         features.push(feature);
     });
     var pointsFC = turf.featureCollection(features);
+
     var aggregated = turf.collect(ko.unwrap(bins), pointsFC, 'doc_count', 'doc_count');
-    _.each(aggregated.features, function (feature) {
-        feature.properties.doc_count = _.reduce(feature.properties.doc_count, function (i, ii) {
+    _.each(aggregated.features, function(feature) {
+        feature.properties.doc_count = _.reduce(feature.properties.doc_count, function(i, ii) {
             return i + ii;
         }, 0);
     });
+
     return {
         points: pointsFC,
         agg: aggregated
     };
 };
-var updateSearchPointsGeoJSON = function () {
+var updateSearchPointsGeoJSON = function() {
     var pointSource = vm.map.getSource('search-results-points');
     if (vm.map && pointSource) {
         var aggResults = ko.unwrap(searchResults);
@@ -336,9 +340,10 @@ var updateSearchPointsGeoJSON = function () {
                 "features": []
             };
         }
+
         var features = [];
-        _.each(aggResults.results.hits.hits, function (result) {
-            _.each(result._source.points, function (point) {
+        _.each(aggResults.results.hits.hits, function(result) {
+            _.each(result._source.points, function(point) {
                 var feature = turf.point([point.point.lon, point.point.lat], _.extend(result._source, {
                     resourceinstanceid: result._id,
                     highlight: false
@@ -346,11 +351,13 @@ var updateSearchPointsGeoJSON = function () {
                 features.push(feature);
             });
         });
+
         var pointsFC = turf.featureCollection(features);
         pointSource.setData(pointsFC);
     }
 };
-var updateSearchResultsLayer = function () {
+
+var updateSearchResultsLayer = function() {
     if (vm.map && searchAggregations()) {
         var aggSource = vm.map.getSource('search-results-hex');
         var hashSource = vm.map.getSource('search-results-hashes');
@@ -363,9 +370,9 @@ var updateSearchResultsLayer = function () {
     }
 };
 
-vm.setupMap = function (map) {
+vm.setupMap = function(map) {
     vm.map = map;
-    map.on('moveend', function (e) {
+    map.on('moveend', function(e) {
         if (e.originalEvent) {
             var center = map.getCenter();
             var zoom = map.getZoom();
@@ -376,6 +383,7 @@ vm.setupMap = function (map) {
             vm.centerY(center.lat);
         }
     });
+
     searchAggregations.subscribe(updateSearchResultsLayer);
     if (ko.isObservable(bins)) {
         bins.subscribe(updateSearchResultsLayer);
@@ -389,14 +397,14 @@ $.ajax({
     data: {
         'paging-filter': 1
     },
-    success: function (results) {
+    success: function(results) {
         results.results.aggregations['geo_aggs'] = results.results.aggregations['geo_aggs'].inner.buckets[0];
         searchAggregations(results.results.aggregations);
         searchResults(results);
     }
 });
 
-var updateMapStyle = function () {
+var updateMapStyle = function() {
     var displayLayers;
     try {
         displayLayers = JSON.parse(vm.selectedLayerJSON());
@@ -419,7 +427,7 @@ var updateMapStyle = function () {
 vm.selectedBasemapName.subscribe(updateMapStyle);
 vm.selection.subscribe(updateMapStyle);
 vm.selectedLayerJSON.subscribe(updateMapStyle);
-vm.selectedList.subscribe(function (selectedList) {
+vm.selectedList.subscribe(function(selectedList) {
     var selection = null;
     var layerList = ko.unwrap(selectedList);
     if (layerList && layerList.length > 0) {
@@ -428,10 +436,10 @@ vm.selectedList.subscribe(function (selectedList) {
     vm.selection(selection);
 });
 vm.listFilter = ko.observable('');
-vm.listItems = ko.computed(function () {
+vm.listItems = ko.computed(function() {
     var listFilter = vm.listFilter().toLowerCase();
     var layerList = ko.unwrap(vm.selectedList());
-    return _.filter(layerList, function (item) {
+    return _.filter(layerList, function(item) {
         var name = item.nodeid ?
             (item.config.layerName() ? item.config.layerName() : item.layer.name) :
             item.name();
@@ -439,9 +447,9 @@ vm.listItems = ko.computed(function () {
         return name.indexOf(listFilter) > -1;
     });
 });
-var addMapConfig = function (key, defaultValue) {
+var addMapConfig = function(key, defaultValue) {
     vm[key] = ko.computed({
-        read: function () {
+        read: function() {
             var val;
             var selection = vm.selection();
             if (selection && selection[key]) {
@@ -449,9 +457,9 @@ var addMapConfig = function (key, defaultValue) {
             }
             return val || defaultValue;
         },
-        write: function (val) {
+        write: function(val) {
             var selection = vm.selection();
-            val = val === defaultValue ? null : val;
+            val = val===defaultValue ? null : val;
             if (selection && selection[key]) {
                 selection[key](val);
             }

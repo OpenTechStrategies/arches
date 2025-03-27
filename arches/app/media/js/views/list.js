@@ -1,5 +1,7 @@
+import $ from 'jquery';
 import Backbone from 'backbone';
 import ko from 'knockout';
+
 
 var ListView = Backbone.View.extend({
     /**

@@ -4,8 +4,10 @@ import ConceptSearch from 'views/concept-search';
 import ConceptModel from 'models/concept';
 import ValueModel from 'models/value';
 
-export default class AddChildForm extends Backbone.View {
-    initialize(e) {
+
+export default Backbone.View.extend({
+
+    initialize: function(e){
         var self = this;
         this.modal = this.$el.find('form');
         this.modal.on('hidden.bs.modal', function() {
@@ -14,8 +16,8 @@ export default class AddChildForm extends Backbone.View {
             // self.render();
         });
         // test to see if select2 has already been applied to the dom
-        if (!this.modal.find('.select2').attr('id')) {
-            this.select2 = this.modal.find('.select2').select2();
+        if (! this.modal.find('.select2').attr('id')){
+            this.select2 = this.modal.find('.select2').select2();                
         }
         this.modal.validate({
             ignore: null,
@@ -51,4 +53,4 @@ export default class AddChildForm extends Backbone.View {
             }
         });
     }
-}
+});

@@ -3,17 +3,19 @@ import Backbone from 'backbone';
 import ConceptModel from 'models/concept';
 import ValueModel from 'models/value';
 
-export default class AddCollectionForm extends Backbone.View {
-    initialize(e) {
+
+export default Backbone.View.extend({
+
+    initialize: function(e){
         var self = this;
         this.modal = this.$el.find('.modal');
-        this.modal.on('hidden.bs.modal', function () {
+        this.modal.on('hidden.bs.modal', function() {
             self.$el.find('input[type=text], textarea').val('');
         });
 
         this.select2 = this.$el.find('[name=language_dd]').select2({
             minimumResultsForSearch: -1
-        });
+        });                
 
         this.modal.validate({
             ignore: null,
@@ -22,7 +24,7 @@ export default class AddCollectionForm extends Backbone.View {
                 language_dd: 'required',
                 scheme_group_dd: 'required'
             },
-            submitHandler: function (form) {
+            submitHandler: function(form) {
                 var label = new ValueModel({
                     value: $(form).find('[name=label]').val(),
                     language: $(form).find('[name=language_dd]').val(),
@@ -36,8 +38,8 @@ export default class AddCollectionForm extends Backbone.View {
                     nodetype: 'Collection'
                 });
 
-                self.modal.on('hidden.bs.modal', function (e) {
-                    collection.save(function (response, status) {
+                self.modal.on('hidden.bs.modal', function(e) {
+                    collection.save(function(response, status) {
                         self.trigger('collectionAdded', response.responseJSON);
                     }, self);
                 });
@@ -47,4 +49,4 @@ export default class AddCollectionForm extends Backbone.View {
             }
         });
     }
-}
+});
