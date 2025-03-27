@@ -2,7 +2,7 @@ import ko from 'knockout';
 import _ from 'underscore';
 import arches from 'arches';
 import proj4 from 'proj4';
-import turf from 'turf';
+import * as turf from 'turf';
 
 
 /**

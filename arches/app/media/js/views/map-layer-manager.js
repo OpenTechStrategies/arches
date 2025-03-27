@@ -2,7 +2,7 @@ import $ from 'jquery';
 import ko from 'knockout';
 import _ from 'underscore';
 import arches from 'arches';
-import turf from 'turf';
+import * as turf from 'turf';
 import geohash from 'geohash';
 import BaseManagerView from 'views/base-manager';
 import NodeModel from 'models/node';

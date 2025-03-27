@@ -7,7 +7,7 @@ import BaseFilter from 'views/components/search/base-filter';
 import MapComponentViewModel from 'views/components/map';
 import binFeatureCollection from 'views/components/widgets/map/bin-feature-collection';
 import mapStyles from 'views/components/widgets/map/map-styles';
-import turf from 'turf';
+import * as turf from 'turf';
 import geohash from 'geohash';
 import geojsonExtent from 'geojson-extent';
 import uuid from 'uuid';
@@ -33,9 +33,6 @@ const viewModel = BaseFilter.extend({
         self.mapboxgl = mapbox;
         self.MapboxDraw = mbdraw;
         self.dependenciesLoaded(true);
-        if(self.map()){
-            self.map.valueHasMutated();
-        }
 
         options.name = "Map Filter";
         BaseFilter.prototype.initialize.call(this, options);
