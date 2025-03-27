@@ -2,7 +2,8 @@ import ko from 'knockout';
 import WidgetViewModel from 'viewmodels/widget';
 import urlDatatypeWidgetTemplate from 'templates/views/components/widgets/urldatatype.htm';
 
-const name = 'urldatatype';
+
+var name = 'urldatatype';
 const viewModel = function(params) {
     const self = this;
     params.configKeys = ['url_placeholder','url_label_placeholder','link_color'];
@@ -50,9 +51,12 @@ const viewModel = function(params) {
             return "--";
         }
     }, this);
+    
 };
 
-export default ko.components.register(name, {
+ko.components.register(name, {
     viewModel: viewModel,
     template: urlDatatypeWidgetTemplate,
 });
+
+export default name;

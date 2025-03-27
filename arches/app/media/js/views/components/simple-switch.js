@@ -3,6 +3,7 @@ import WidgetViewModel from 'viewmodels/widget';
 import simpleSwitchTemplate from 'templates/views/components/simple-switch.htm';
 import 'bindings/key-events-click';
 
+
 /**
 * knockout components namespace used in arches
 * @external "ko.components"
@@ -20,28 +21,22 @@ import 'bindings/key-events-click';
 * @param {string|true} [params.config.on=true] - the value to use for the "on" state of the switch
 * @param {string|false} [params.config.off=false] - the value to use for the "off" state of the switch
 */
-class SimpleSwitch extends WidgetViewModel {
-    constructor(params) {
+export default ko.components.register('views/components/simple-switch', {
+    viewModel: function(params) {
         params.configKeys = ['subtitle'];
-        super(params);
+        WidgetViewModel.apply(this, [params]);
         this.on = this.config().on || true;
         this.off = this.config().off || false;
-        this.setvalue = this.config().setvalue || ((self, evt) => {
-            if (self.value() === self.on) {
+        this.setvalue = this.config().setvalue || function(self, evt){
+            if(self.value() === self.on){
                 self.value(self.off);
-            } else {
+            }else{
                 self.value(self.on);
             }
-        });
-        this.getvalue = this.config().getvalue || ko.computed(() => {
+        };
+        this.getvalue = this.config().getvalue || ko.computed(function(){
             return this.value() === this.on;
         }, this);
-    }
-}
-
-ko.components.register('views/components/simple-switch', {
-    viewModel: SimpleSwitch,
+    },
     template: simpleSwitchTemplate,
 });
-
-export default SimpleSwitch;

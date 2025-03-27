@@ -4,7 +4,8 @@ import ko from 'knockout';
 import ListView from 'views/list';
 import GraphModel from 'models/graph';
 
-class BranchList extends ListView {
+
+var BranchList = ListView.extend({
     /**
     * A backbone view to manage a list of branch graphs
     * @augments ListView
@@ -19,10 +20,9 @@ class BranchList extends ListView {
     * @param {boolean} options.graphModel - a reference to the selected {@link GraphModel}
     * @param {boolean} options.branches - an observableArray of branches
     */
-    initialize(options) {
+    initialize: function(options) {
         var self = this;
-        console.log(options, self)
-        super.initialize(...arguments);
+        ListView.prototype.initialize.apply(this, arguments);
 
         this.loading = options.loading || ko.observable(false);
         this.disableAppendButton = options.disableAppendButton || ko.observable(false);
@@ -44,8 +44,7 @@ class BranchList extends ListView {
                 return !item.filtered() && !item.source_identifier_id; 
             }, this);
             filtered_items.sort(function(a,b) {
-                return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
-            });
+                return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;});
             return filtered_items;
         }, this);
 
@@ -65,13 +64,14 @@ class BranchList extends ListView {
         valueListener.subscribe(function(){
             this.loadDomainConnections();
         }, this);
-    }
+
+    },
 
     /**
     * Downloads domain connection data for each branch (usually an expensive operation)
     * @memberof BranchList.prototype
     */
-    loadDomainConnections(){
+    loadDomainConnections: function(){
         var self = this;
         var domainConnections = [];
 
@@ -85,13 +85,14 @@ class BranchList extends ListView {
                 self.loadingBranchDomains(false);
                 self.filterFunction();
             });
-    }
+
+    },
 
     /**
     * Callback function called every time a user types into the filter input box
     * @memberof ListView.prototype
     */
-    filterFunction(){
+    filterFunction: function(){
         var filter = this.filter().toLowerCase();
         this.items().forEach(function(item){
             var name = typeof item.name === 'string' ? item.name : item.name();
@@ -103,7 +104,8 @@ class BranchList extends ListView {
                 item.filtered(false);
             }
         }, this);
-    }
+    },
+
 
     /**
     * Appends the currently selected branch onto the currently selected node in the graph
@@ -111,7 +113,7 @@ class BranchList extends ListView {
     * @param {object} item - the branch object the user selected
     * @param {object} evt - click event object
     */
-    appendBranch(item, evt){
+    appendBranch: function(item, evt){
         var self = this;
         if(this.selectedNode()){
             this.loading(true);
@@ -128,16 +130,17 @@ class BranchList extends ListView {
                 }, this), 300, true);
             }, this);
         }
-    }
+    },
 
     /**
     * Closes the form and deselects the currently selected branch
     * @memberof BranchList.prototype
     */
-    closeForm(){
+    closeForm: function(){
         this.clearSelection();
         this.trigger('close');
-    }
-}
+    },
 
+
+});
 export default BranchList;

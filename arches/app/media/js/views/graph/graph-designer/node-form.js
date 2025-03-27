@@ -1,18 +1,27 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import Backbone from 'backbone';
 import ko from 'knockout';
+import arches from 'arches';
 import 'views/components/simple-switch';
 import 'bindings/chosen';
 
-export default class NodeFormView extends Backbone.View {
+
+var NodeFormView = Backbone.View.extend({
     /**
     * A backbone view representing a node form
     * @augments Backbone.View
     * @constructor
     * @name NodeFormView
     */
-    constructor(options) {
-        super(options);
+
+    /**
+    * Initializes the view with optional parameters
+    * @memberof NodeFormView.prototype
+    * @param {object} options
+    * @param {object} options.graphModel - a reference to the selected {@link GraphModel}
+    */
+    initialize: function(options) {
         var self = this;
         _.extend(this, _.pick(options, 'graphModel'));
         this.datatypes = _.keys(this.graphModel.get('datatypelookup'));
@@ -20,79 +29,95 @@ export default class NodeFormView extends Backbone.View {
         this.isExportable = ko.observable(null);
         this.graph = options.graph;
         this.loading = options.loading || ko.observable(false);
-        this.hasOntology = ko.computed(function () {
+        this.hasOntology = ko.computed(function(){
             return self.graph.ontology_id() === null ? false : true;
         });
-        this.isResourceTopNode = ko.computed(function () {
+        this.isResourceTopNode = ko.computed(function() {
             var node = self.node();
             return self.graphModel.get('isresource') && node && node.istopnode;
         });
-        this.nodegroup = ko.computed(function () {
+        this.nodegroup = ko.computed(function() {
             const node = ko.unwrap(self.node);
             let nodegroup;
+
             if (node) {
-                nodegroup = self.graph.nodegroups().find(function (nodegroup) {
+                nodegroup = self.graph.nodegroups().find(function(nodegroup) { 
                     return nodegroup.nodegroupid() === node.nodeGroupId();
                 });
             }
+
             return nodegroup;
         });
         this.restrictedNodegroups = options.restrictedNodegroups;
         this.appliedFunctions = options.appliedFunctions;
         this.primaryDescriptorFunction = options.primaryDescriptorFunction;
-        options.updatedCardinalityData.subscribe(function (updatedCardinalityData) {
+
+        options.updatedCardinalityData.subscribe(function(updatedCardinalityData) {
             const data = updatedCardinalityData[0];
             const graphSettingsViewModel = updatedCardinalityData[1];
+
             self.loading(true);
             self.graph['nodegroups'](ko.mapping.fromJS(data['nodegroups'])());
             graphSettingsViewModel.save();
         });
-        this.updateCardinality = function () {
+
+        this.updateCardinality = function() {
             if (self.nodegroup() && self.node().nodeid === self.node().nodeGroupId()) {
                 self.nodegroup().cardinality(self.nodegroup().cardinality() === '1' ? 'n' : '1');
             }
         };
-        this.isFuncNode = function () {
+
+        this.isFuncNode = function() {
             var node = self.node();
             var primaryDescriptorNodes = {}, descriptorType = null, pdFunction = this.primaryDescriptorFunction;
+
             if (!pdFunction || !pdFunction())
                 return false;
-            ['name', 'description'].forEach(function (descriptor) {
+
+            ['name', 'description'].forEach(function(descriptor){
                 try {
                     primaryDescriptorNodes[pdFunction()['config']['descriptor_types'][descriptor]['nodegroup_id']] = descriptor;
-                } catch (e) {
+                } catch (e)
+                {
                     // Descriptor doesn't exist so ignore the exception
-                    console.log("No descriptor configuration for " + descriptor);
+                    console.log("No descriptor configuration for "+descriptor);
                 }
             });
+
             [node].concat(!!node['childNodes']() ? node['childNodes']() : [])
                 .find(nodeToCheck => !!(descriptorType = primaryDescriptorNodes[nodeToCheck['id']]));
+
             return !descriptorType ? false :
                 (descriptorType === "name" ?
                     "This node participates in the name function" :
                     "This node participates in the descriptor function"
                 );
         };
+
         /**
         * Checks if a node's card is editable and returns a boolean useful
         * in disabling node properties not to be changed in cards/nodegroups with data saved against them.
         * @memberof NodeFormView.prototype
         * @return {boolean}
         */
-        this.checkIfImmutable = function () {
+        this.checkIfImmutable = function() {
             var isImmutable = _.contains(this.restrictedNodegroups, self.node().nodeGroupId());
             return isImmutable;
         };
-        this.extendNode = function (node, parameters) {
+
+        this.extendNode = function(node, parameters)
+        {
             return _.extend(node, parameters);
         };
-        this.toggleRequired = function () {
+
+        this.toggleRequired = function() {
             var isImmutable = self.checkIfImmutable();
             if (isImmutable === false) {
                 self.node().isrequired(!self.node().isrequired());
             }
         };
-        this.disableDatatype = ko.computed(function () {
+
+        this.disableDatatype = ko.computed(function() {
             var isImmutable = false;
             var node = self.node();
             if (node) {
@@ -100,7 +125,8 @@ export default class NodeFormView extends Backbone.View {
             }
             return self.isResourceTopNode() || isImmutable;
         });
-        this.displayMakeCard = ko.computed(function () {
+
+        this.displayMakeCard = ko.computed(function() {
             var res = true;
             if (self.node() && self.graphModel.get('isresource')) {
                 var parentNode = self.graphModel.getParentNode(self.node());
@@ -110,7 +136,8 @@ export default class NodeFormView extends Backbone.View {
             }
             return res;
         });
-        this.disableIsCollector = ko.computed(function () {
+
+        this.disableIsCollector = ko.computed(function() {
             var node = self.node();
             var isCollector = false;
             var isNodeInChildGroup = false;
@@ -125,13 +152,13 @@ export default class NodeFormView extends Backbone.View {
                 var childNodes = self.graphModel.getChildNodesAndEdges(node).nodes;
                 childNodes.push(node);
                 var parentGroupNodes = _.difference(groupNodes, childNodes);
-                hasNonSemanticParentNodes = !!_.find(parentGroupNodes, function (node) {
+                hasNonSemanticParentNodes = !!_.find(parentGroupNodes, function(node) {
                     return node.datatype() !== 'semantic';
                 });
-                groupHasNonSemanticNodes = !!_.find(groupNodes, function (node) {
+                groupHasNonSemanticNodes = !!_.find(groupNodes, function(node) {
                     return node.datatype() !== 'semantic';
                 });
-                hasDownstreamCollector = !!_.find(childNodes, function (node) {
+                hasDownstreamCollector = !!_.find(childNodes, function(node) {
                     return node.isCollector();
                 });
                 isInParentGroup = self.graphModel.isNodeInParentGroup(node);
@@ -142,15 +169,16 @@ export default class NodeFormView extends Backbone.View {
                 (isCollector && groupHasNonSemanticNodes && (isInParentGroup || isNodeInChildGroup)) ||
                 (self.graphModel.get('nodes')().length > 1 && node && node.istopnode);
         });
-    }
+    },
 
     /**
      * Resets the edited model
      * @memberof NodeFormView.prototype
      */
-    cancel() {
+    cancel: function() {
         this.node().reset();
-    }
+    },
+
 
     /**
      * Calls an async method on the graph model based on the passed in
@@ -160,37 +188,38 @@ export default class NodeFormView extends Backbone.View {
      *
      * @param  {string} methodName - method to call on the graph model
      */
-    callAsync(methodName) {
+    callAsync: function(methodName) {
         var self = this;
         this.loading(true);
-        this.graphModel[methodName](this.node(), function () {
+        this.graphModel[methodName](this.node(), function(){
             self.loading(false);
         });
-    }
+    },
 
     /**
      * Calls the updateNode method on the graph model for the edited node
      * @memberof NodeFormView.prototype
      */
-    save() {
+    save: function() {
         this.callAsync('updateNode');
-    }
+    },
 
     /**
      * Calls the deleteNode method on the graph model for the edited node
      * @memberof NodeFormView.prototype
      */
-    deleteNode() {
+    deleteNode: function() {
         this.callAsync('deleteNode');
-    }
+    },
 
     /**
      * Calls the toggleIsCollector method on the node model
      * @memberof NodeFormView.prototype
      */
-    toggleIsCollector() {
+    toggleIsCollector: function() {
         if (this.checkIfImmutable() === false) {
             this.node().toggleIsCollector();
         }
     }
-}
+});
+export default NodeFormView;

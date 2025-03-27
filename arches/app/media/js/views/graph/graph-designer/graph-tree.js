@@ -8,7 +8,7 @@ import 'bindings/clipboard';
 
 var loading = ko.observable(false);
 
-export default TreeView.extend({
+var GraphTree = TreeView.extend({
     /**
     * A backbone view to manage a list of graph nodes
     * @augments TreeView
@@ -277,4 +277,5 @@ export default TreeView.extend({
     }
 
 });
+export default GraphTree;
 

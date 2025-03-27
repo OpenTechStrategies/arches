@@ -4,14 +4,21 @@ import Backbone from 'backbone';
 import ko from 'knockout';
 import arches from 'arches';
 
-export default class PermissionSettingsForm extends Backbone.View {
+
+var PermissionSettingsForm = Backbone.View.extend({
     /**
     * A backbone view representing a card component form
     * @augments Backbone.View
     * @constructor
     * @name PermissionSettingsForm
     */
-    initialize(options) {
+
+    /**
+    * Initializes the view with optional parameters
+    * @memberof PermissionSettingsForm.prototype
+    * @param {boolean} options.selection - the selected item, either a {@link CardModel} or a {@link NodeModel}
+    */
+    initialize: function(options) {
         this.selectedIdentities = options.selectedIdentities;
         this.identityList = options.identityList;
         this.selectedCards = options.selectedCards;
@@ -19,29 +26,30 @@ export default class PermissionSettingsForm extends Backbone.View {
         this.whiteListPerms = [];
         this.groupedNodeList = options.groupedNodeList;
 
-        this.groups = ko.utils.arrayFilter(this.identityList.items(), function (identity) {
+        this.groups = ko.utils.arrayFilter(this.identityList.items(), function(identity) {
             return identity.type === 'group';
         });
 
-        this.groups = _.forEach(this.groups, function (group) {
+        this.groups = _.forEach(this.groups, function(group) {
             group.combinedId = 'group-' + group.id;
         });
 
-        this.users = ko.utils.arrayFilter(this.identityList.items(), function (identity) {
+        this.users = ko.utils.arrayFilter(this.identityList.items(), function(identity) {
             return identity.type === 'user';
         });
 
-        this.users = _.forEach(this.users, function (user) {
+        this.users = _.forEach(this.users, function(user) {
             user.combinedId = 'user-' + user.id;
         });
 
         this.identityid = ko.observable(this.groups[0]);
 
-        this.identityid.subscribe(function (val) {
-            _.forEach(options.identityList.items(), function (item) {
+        this.identityid.subscribe(function(val) {
+            _.forEach(options.identityList.items(), function(item) {
                 if (item.combinedId != val) {
                     item.selected(false);
-                } else {
+                }
+                else {
                     item.selected(true);
                 }
             });
@@ -54,20 +62,20 @@ export default class PermissionSettingsForm extends Backbone.View {
             ]
         });
 
-        options.nodegroupPermissions.forEach(function (perm) {
+        options.nodegroupPermissions.forEach(function(perm) {
             perm.selected = ko.observable(false);
             if (perm.codename === 'no_access_to_nodegroup') {
                 this.noAccessPerm = perm;
-                perm.selected.subscribe(function (selected) {
+                perm.selected.subscribe(function(selected) {
                     if (selected) {
-                        this.whiteListPerms.forEach(function (perm) {
+                        this.whiteListPerms.forEach(function(perm) {
                             perm.selected(false);
                         }, this);
                     }
                 }, this);
             } else {
                 this.whiteListPerms.push(perm);
-                perm.selected.subscribe(function (selected) {
+                perm.selected.subscribe(function(selected) {
                     if (selected) {
                         this.noAccessPerm.selected(false);
                     }
@@ -76,25 +84,25 @@ export default class PermissionSettingsForm extends Backbone.View {
         }, this);
 
         this.nodegroupPermissions = ko.observableArray(options.nodegroupPermissions);
-    }
+    },
 
-    save() {
+    save: function() {
         var self = this;
         var postData = {
-            'selectedIdentities': this.selectedIdentities().map(function (identity) {
+            'selectedIdentities': this.selectedIdentities().map(function(identity) {
                 return {
                     type: identity.type,
                     id: identity.id
                 };
             }),
-            'selectedCards': this.selectedCards().map(function (card) {
+            'selectedCards': this.selectedCards().map(function(card) {
                 return {
                     nodegroupid: card.nodegroupid || ko.unwrap(card.model.nodegroup_id)
                 };
             }),
-            'selectedPermissions': _.filter(this.nodegroupPermissions(), function (perm) {
+            'selectedPermissions': _.filter(this.nodegroupPermissions(), function(perm) {
                 return perm.selected();
-            }).map(function (perm) {
+            }).map(function(perm) {
                 return {
                     codename: perm.codename
                 };
@@ -105,7 +113,7 @@ export default class PermissionSettingsForm extends Backbone.View {
             type: 'POST',
             url: arches.urls.permission_data,
             data: JSON.stringify(postData),
-            success: function (res) {
+            success: function(res) {
                 self.trigger('save');
                 self.clearUserPermissionCache();
                 // adds event to trigger dirty state in graph-designer
@@ -114,9 +122,9 @@ export default class PermissionSettingsForm extends Backbone.View {
                 );
             }
         });
-    }
+    },
 
-    revert() {
+    revert: function() {
         var self = this;
         var postData = {
             'selectedIdentities': this.selectedIdentities(),
@@ -127,7 +135,7 @@ export default class PermissionSettingsForm extends Backbone.View {
             type: 'DELETE',
             url: arches.urls.permission_data,
             data: JSON.stringify(postData),
-            success: function (res) {
+            success: function(res) {
                 self.clearUserPermissionCache();
                 self.trigger('revert');
                 // adds event to trigger dirty state in graph-designer
@@ -136,12 +144,13 @@ export default class PermissionSettingsForm extends Backbone.View {
                 );
             }
         });
-    }
+    },
 
-    clearUserPermissionCache() {
+    clearUserPermissionCache: function() {
         return $.ajax({
             type: 'POST',
             url: arches.urls.clear_user_permission_cache,
         });
     }
-}
+});
+export default PermissionSettingsForm;

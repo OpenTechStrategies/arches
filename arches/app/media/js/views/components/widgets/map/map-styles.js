@@ -1,4 +1,5 @@
-const getDrawStyles = (resource) => {
+
+var getDrawStyles = function(resource) {
     return [{
         "id": "gl-draw-point",
         "type": "circle",
@@ -16,7 +17,7 @@ const getDrawStyles = (resource) => {
         "filter": ["all", ["!=", "meta", "vertex"],
             ["==", "$type", "Point"],
             ["!=", "mode", "static"],
-            ["==", "active", 'true'],
+            ["==", "active", "true"],
         ],
         "paint": {
             "circle-radius": resource.pointsize() * 1.25,
@@ -46,6 +47,7 @@ const getDrawStyles = (resource) => {
         },
         "paint": {
             "line-color": resource.color(),
+            // "line-dasharray": [0.2, 2],
             "line-width": resource.linewidth()
         }
     }, {
@@ -71,6 +73,7 @@ const getDrawStyles = (resource) => {
         },
         "paint": {
             "line-color": resource.color(),
+            // "line-dasharray": [0.2, 2],
             "line-width": resource.linewidth()
         }
     }, {
@@ -120,7 +123,8 @@ const getDrawStyles = (resource) => {
     }];
 };
 
-const getSearchQueryStyles = () => {
+
+var getSearchQueryStyles = function() {
     return [
         {
             "id": "search-poly",
@@ -171,11 +175,10 @@ const getSearchQueryStyles = () => {
                 "fill-outline-color": "#0000FF",
                 "fill-opacity": 0.1
             }
-        }
-    ];
+        }];
 };
 
 export default {
-    getDrawStyles,
-    getSearchQueryStyles
+    getDrawStyles: getDrawStyles,
+    getSearchQueryStyles: getSearchQueryStyles
 };

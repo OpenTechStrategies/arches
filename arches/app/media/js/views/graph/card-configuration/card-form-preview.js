@@ -1,45 +1,59 @@
-import Backbone from 'backbone';
-import _ from 'underscore';
-import ko from 'knockout';
-import widgets from 'widgets';
-import 'bindings/sortable';
+import Backbone from "backbone";
+import _ from "underscore";
+import ko from "knockout";
+import widgets from "widgets";
+import "bindings/sortable";
 
-export default class CardFormPreview extends Backbone.View {
+
+var CardFormPreview = Backbone.View.extend({
     /**
     * A backbone view representing a card form preview
     * @augments Backbone.View
     * @constructor
     * @name CardFormPreview
     */
-    constructor(options) {
-        super(options);
-        const self = this;
+
+    /**
+    * Initializes the view with optional parameters
+    * @memberof CardFormPreview.prototype
+    */
+    initialize: function(options) {
+        var self = this;
         this.card = options.card;
         this.graph = options.graphModel;
         this.selection = options.selection || ko.observable(this.card);
         this.helpPreviewActive = options.helpPreviewActive || ko.observable(false);
         this.widgetLookup = widgets;
-        this.currentTabIndex = ko.computed(function () {
+        this.currentTabIndex = ko.computed(function() {
             if (!self.card.isContainer() || self.selection() === self.card) {
                 return 0;
             }
-            let card = self.selection();
+            var card = self.selection();
             if (card.node) {
                 card = card.card;
             }
-            const index = self.card.get('cards')().indexOf(card);
+            var index = self.card.get('cards')().indexOf(card);
             return index;
         });
-        this.currentTabCard = ko.computed(function () {
-            if (this.card.get('cards')().length === 0) {
+        this.currentTabCard = ko.computed(function() {
+            if(this.card.get('cards')().length === 0){
                 return this.card;
-            } else {
+            }else{
                 return this.card.get('cards')()[this.currentTabIndex()];
             }
         }, this);
-    }
+    },
 
-    beforeMove(e) {
-        e.cancelDrop = (e.sourceParent !== e.targetParent);
+    /**
+    * beforeMove - prevents dropping of widgets/tabs into other cards
+    * this provides for sorting within preview and tabs, but prevents
+    * moving of cards/widgets between containers/cards
+    * @memberof CardFormPreview.prototype
+    * @param  {object} e - the ko.sortable event object
+    */
+    beforeMove: function(e) {
+        e.cancelDrop = (e.sourceParent!==e.targetParent);
     }
-}
+});
+export default CardFormPreview;
+

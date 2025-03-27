@@ -1,13 +1,16 @@
+import ko from 'knockout';
 import ListView from 'views/list';
 
-export default class IdentityList extends ListView {
+
+var IdentityList = ListView.extend({
     /**
     * A backbone view to manage a list of graph nodes
     * @augments ListView
     * @constructor
     * @name IdentityList
     */
-    singleSelect = true;
+
+    singleSelect: true,
 
     /**
     * initializes the view with optional parameters
@@ -16,8 +19,10 @@ export default class IdentityList extends ListView {
     * @param {boolean} options.permissions - a list of allowable permissions
     * @param {boolean} options.card - a reference to the selected {@link CardModel}
     */
-    constructor(options) {
-        super(options);
+    initialize: function(options) {
+        ListView.prototype.initialize.apply(this, arguments);
         this.items = options.items;
     }
-}
+
+});
+export default IdentityList;

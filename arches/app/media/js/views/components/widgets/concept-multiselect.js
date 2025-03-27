@@ -3,15 +3,18 @@ import ConceptSelectViewModel from 'viewmodels/concept-select';
 import conceptMultiselectTemplate from 'templates/views/components/widgets/concept-select.htm';
 import 'bindings/select2-query';
 
+
 const viewModel = function(params) {
     params.multiple = true;
     params.configKeys = ['defaultValue'];
-     
+
+        
     ConceptSelectViewModel.apply(this, [params]);
 
-    const self = this;
+    var defaultValue = ko.unwrap(this.defaultValue);
+    var self = this;
 
-    if (self.configForm) {
+    if (self.configForm){
         self.select2Config.value = self.defaultValue;
     }
 };

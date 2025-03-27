@@ -4,12 +4,31 @@ import WidgetViewModel from 'viewmodels/widget';
 import radioBooleanWidgetTemplate from 'templates/views/components/widgets/radio-boolean.htm';
 import 'bindings/key-events-click';
 
-const viewModel = function (params) {
-    params.configKeys = ['trueLabel', 'falseLabel', 'defaultValue'];
 
+/**
+* knockout components namespace used in arches
+* @external "ko.components"
+* @see http://knockoutjs.com/documentation/component-binding.html
+*/
+
+/**
+* registers a radio-boolean-widget component for use in forms
+* @function external:"ko.components".radio-boolean-widget
+* @param {object} params
+* @param {boolean} params.value - the value being managed
+* @param {boolean} params.defaultValue - automatically assigned to value when the widget appears in a form
+* @param {object} params.config -
+* @param {string} params.config.label - label to use alongside the select input
+* @param {string} params.config.trueValue - label alongside the true boolean button
+* @param {string} params.config.falseValue - label alongside the false boolean button
+*/
+
+const viewModel = function(params) {
+    params.configKeys = ['trueLabel', 'falseLabel', 'defaultValue'];
+        
     WidgetViewModel.apply(this, [params]);
     var self = this;
-    this.setValue = function (val) {
+    this.setValue = function(val) {
         if (ko.unwrap(self.disabled) === false) {
             if (val === self.value()) {
                 self.value(null);
@@ -19,16 +38,16 @@ const viewModel = function (params) {
         }
     };
 
-    this.displayValue = ko.computed(function () {
-        if (this.value() === true) {
+    this.displayValue = ko.computed(function() {
+        if (this.value()===true) {
             return this.node.config.trueLabel;
         }
-        else if (this.value() === false) {
+        else if (this.value()===false) {
             return this.node.config.falseLabel;
         }
     }, self);
 
-    this.setDefaultValue = function (val) {
+    this.setDefaultValue = function(val) {
         if (val === self.defaultValue()) {
             self.defaultValue(null);
         } else {

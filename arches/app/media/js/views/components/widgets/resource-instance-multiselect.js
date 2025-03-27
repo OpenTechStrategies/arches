@@ -3,7 +3,8 @@ import ResourceInstanceSelectViewModel from 'viewmodels/resource-instance-select
 import resourceInstanceSelectWidgetTemplate from 'templates/views/components/widgets/resource-instance-select.htm';
 import 'bindings/select2-query';
 
-const viewModel = function(params) {
+
+const viewModel =  function(params) {
     params.multiple = true;
     params.datatype = 'resource-instance-list';
     ResourceInstanceSelectViewModel.apply(this, [params]);

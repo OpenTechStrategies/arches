@@ -3,6 +3,7 @@ import DomainWidgetViewModel from 'viewmodels/domain-widget';
 import checkboxTemplate from 'templates/views/components/widgets/checkbox.htm';
 import 'bindings/key-events-click';
 
+
 /**
  * registers a select-widget component for use in forms
  * @function external:"ko.components".select-widget
@@ -13,9 +14,11 @@ import 'bindings/key-events-click';
  * @param {string} params.config.placeholder - default text to show in the select input
  * @param {string} params.config.options -
  */
+
 const viewModel = function(params) {
     params.configKeys = ['defaultValue'];
 
+        
     DomainWidgetViewModel.apply(this, [params]);
 
     this.multiple = true;

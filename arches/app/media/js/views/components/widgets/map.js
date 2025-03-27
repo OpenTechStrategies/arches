@@ -5,6 +5,7 @@ import arches from 'arches';
 import WidgetViewModel from 'viewmodels/widget';
 import MapEditorViewModel from 'viewmodels/map-editor';
 import mapWidgetTemplate from 'templates/views/components/widgets/map.htm';
+import mapWidgetEditorTemplate from 'templates/views/components/map-widget-editor.htm';
 import 'bindings/chosen';
 import 'bindings/codemirror';
 import 'select-woo';
@@ -13,8 +14,9 @@ import 'bindings/mapbox-gl';
 import 'bindings/color-picker';
 import 'bindings/key-events-click';
 
-var viewModel = function (params) {
 
+var viewModel = function(params) {
+        
     this.context = params.type;
 
     this.summaryDetails = [];
@@ -50,14 +52,14 @@ var viewModel = function (params) {
     WidgetViewModel.apply(this, [params]);
 
     this.geometryTypeList = ko.computed({
-        read: function () {
+        read: function() {
             var geometryTypes = this.geometryTypes() || [];
-            return geometryTypes.map(function (type) {
+            return geometryTypes.map(function(type) {
                 return ko.unwrap(type.id);
             });
         },
-        write: function (value) {
-            this.geometryTypes(value.map(function (type) {
+        write: function(value) {
+            this.geometryTypes(value.map(function(type) {
                 return {
                     id: type,
                     text: type
@@ -67,7 +69,7 @@ var viewModel = function (params) {
         owner: this
     });
 
-    this.displayValue = ko.computed(function () {
+    this.displayValue = ko.computed(function() {
         var value = koMapping.toJS(this.value);
         if (!value || !value.features) {
             return 0;
@@ -100,7 +102,9 @@ var viewModel = function (params) {
     MapEditorViewModel.apply(this, [params]);
 };
 
-export default ko.components.register('map-widget', {
+ko.components.register('map-widget', {
     viewModel: viewModel,
     template: mapWidgetTemplate,
 });
+
+export default viewModel;

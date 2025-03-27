@@ -1,13 +1,15 @@
 import ListView from 'views/list';
 
-export default class FunctionList extends ListView {
+
+var FunctionList = ListView.extend({
     /**
     * A backbone view to manage a list of functions
     * @augments ListView
     * @constructor
     * @name FunctionList
     */
-    filterFunction = null;
+
+    filterFunction: null,
 
     /**
     * initializes the view with optional parameters
@@ -15,13 +17,13 @@ export default class FunctionList extends ListView {
     * @param {object} options
     * @param {object} options.functions - a list of {@link FunctionModel} models
     */
-    constructor(options) {
-        super(options);
+    initialize: function(options) {
         this.items = options.functions;
-        this.items.sort((left, right) => {
-            const leftName = left.name().toLowerCase();
-            const rightName = right.name().toLowerCase();
-            return leftName === rightName ? 0 : (leftName < rightName ? -1 : 1);
+        this.items.sort(function(left, right) {
+            return left.name().toLowerCase() == right.name().toLowerCase() ? 0 : (left.name().toLowerCase() < right.name().toLowerCase() ? -1 : 1);
         });
+        ListView.prototype.initialize.apply(this, arguments);
     }
-}
+
+});
+export default FunctionList;

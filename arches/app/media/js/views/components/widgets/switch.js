@@ -5,9 +5,27 @@ import WidgetViewModel from 'viewmodels/widget';
 import switchWidgetTemplate from 'templates/views/components/widgets/switch.htm';
 import 'bindings/key-events-click';
 
-var SwitchWidget = function (params) {
-    params.configKeys = ['subtitle', 'defaultValue'];
+/**
+* knockout components namespace used in arches
+* @external "ko.components"
+* @see http://knockoutjs.com/documentation/component-binding.html
+*/
 
+/**
+* registers a switch-widget component for use in forms
+* @function external:"ko.components".switch-widget
+* @param {object} params
+* @param {boolean} params.value - the value being managed
+* @param {object} params.config -
+* @param {string} params.config.label - label to use alongside the select input
+* @param {string} params.config.subtitle - subtitle to use alongside the select input
+* @param {string|true} [params.config.on=true] - the value to use for the "on" state of the switch
+* @param {string|false} [params.config.off=false] - the value to use for the "off" state of the switch
+*/
+
+var SwitchWidget = function(params) {
+    params.configKeys = ['subtitle', 'defaultValue'];
+        
     WidgetViewModel.apply(this, [params]);
     const originalConfig = this.config();
     this.on = this.config().on || true;
@@ -20,7 +38,7 @@ var SwitchWidget = function (params) {
     this.localizedSubtitle.subscribe((value) => {
         const val = this.subtitle();
 
-        if (value != "") {
+        if(value != ""){
             val[this.activeLanguage] = value;
             this.subtitle(val);
         } else {
@@ -31,19 +49,20 @@ var SwitchWidget = function (params) {
         params.card.get('widgets').valueHasMutated();
     });
 
-    this.setvalue = this.config().setvalue || function (self, evt) {
+
+    this.setvalue = this.config().setvalue || function(self, evt){
         if (ko.unwrap(self.disabled) === false) {
-            if (self.value() === self.on) {
+            if(self.value() === self.on){
                 self.value(self.null);
-            } else if (self.value() === self.null) {
+            }else if (self.value() === self.null) {
                 self.value(self.off);
-            } else if (self.value() === self.off) {
+            }else if (self.value() === self.off) {
                 self.value(self.on);
             }
         }
     };
 
-    this.getvalue = this.config().getvalue || ko.computed(function () {
+    this.getvalue = this.config().getvalue || ko.computed(function(){
         var result = null;
         if (this.value() === this.on) {
             result = true;
@@ -53,7 +72,7 @@ var SwitchWidget = function (params) {
         return result;
     }, this);
 
-    this.getariavalue = ko.computed(function () {
+    this.getariavalue = ko.computed(function(){
         var result = null;
         if (this.getvalue() === null) {
             result = "mixed";
@@ -63,17 +82,17 @@ var SwitchWidget = function (params) {
         return result;
     }, this);
 
-    this.setdefault = this.config().setdefault || function (self) {
-        if (self.defaultValue() === self.on) {
+    this.setdefault = this.config().setdefault || function(self){
+        if(self.defaultValue() === self.on){
             self.defaultValue(self.null);
-        } else if (self.defaultValue() === self.null) {
+        }else if(self.defaultValue() === self.null){
             self.defaultValue(self.off);
-        } else if (self.defaultValue() === self.off) {
+        }else if(self.defaultValue() === self.off){
             self.defaultValue(self.on);
         }
     };
 
-    this.getdefault = this.config().getdefault || ko.computed(function () {
+    this.getdefault = this.config().getdefault || ko.computed(function(){
         var result = null;
         if (this.defaultValue() === this.on) {
             result = true;
@@ -83,7 +102,7 @@ var SwitchWidget = function (params) {
         return result;
     }, this);
 
-    this.getariadefault = ko.computed(function () {
+    this.getariadefault = ko.computed(function(){
         var result = null;
         if (this.getdefault() === null) {
             result = "mixed";

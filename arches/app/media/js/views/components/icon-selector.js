@@ -17,18 +17,13 @@ import 'bindings/key-events-click';
 * @param {array} params.iconList
 * @param {string} params.label
 */
-class IconSelectorViewModel {
-    constructor(params) {
+export default ko.components.register('views/components/icon-selector', {
+    viewModel: function(params) {
+            
         this.selectedIcon = params.selectedIconObservable;
         this.iconFilter = params.iconFilter;
         this.iconList = params.iconList;
         this.label = params.label;
-    }
-}
-
-ko.components.register('views/components/icon-selector', {
-    viewModel: IconSelectorViewModel,
-    template: iconSelectorTemplate,
+    },
+    template: iconSelectorTemplate
 });
-
-export default IconSelectorViewModel;

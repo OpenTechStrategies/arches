@@ -12,9 +12,10 @@ import selectTemplate from 'templates/views/components/widgets/select.htm';
  * @param {string} params.config.placeholder - default text to show in the select input
  * @param {string} params.config.options -
  */
-const viewModel = function (params) {
-    params.configKeys = ['placeholder', 'defaultValue'];
 
+const viewModel = function(params) {
+    params.configKeys = ['placeholder', 'defaultValue'];
+        
     DomainWidgetViewModel.apply(this, [params]);
 
     this.multiple = true;

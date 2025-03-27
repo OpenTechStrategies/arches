@@ -2,6 +2,7 @@ import ko from 'knockout';
 import DomainWidgetViewModel from 'viewmodels/domain-widget';
 import selectTemplate from 'templates/views/components/widgets/select.htm';
 
+
 /**
  * registers a select-widget component for use in forms
  * @function external:"ko.components".select-widget
@@ -12,9 +13,10 @@ import selectTemplate from 'templates/views/components/widgets/select.htm';
  * @param {string} params.config.placeholder - default text to show in the select input
  * @param {string} params.config.options -
  */
-const viewModel = function (params) {
-    params.configKeys = ['placeholder', 'defaultValue'];
 
+const viewModel = function(params) {
+    params.configKeys = ['placeholder', 'defaultValue'];
+        
     DomainWidgetViewModel.apply(this, [params]);
 };
 

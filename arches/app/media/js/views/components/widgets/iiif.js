@@ -8,9 +8,11 @@ import geojsonExtent from 'geojson-extent';
 import iiifWidgetTemplate from 'templates/views/components/widgets/iiif.htm';
 import 'leaflet-fullscreen';
 
-const viewModel = function (params) {
-    const self = this;
 
+const viewModel = function(params) {
+    var self = this;
+
+        
     params.configKeys = ['defaultManifest'];
     WidgetViewModel.apply(this, [params]);
 
@@ -24,17 +26,17 @@ const viewModel = function (params) {
         var canvases = {};
         var value = koMapping.toJS(params.value);
         if (value && value.features) {
-            value.features.forEach(function (feature) {
+            value.features.forEach(function(feature) {
                 if (!canvases[feature.properties.canvas]) canvases[feature.properties.canvas] = [];
                 canvases[feature.properties.canvas].push(feature);
             });
         }
-        _.forEach(canvases, function (features, canvas) {
+        _.forEach(canvases, function(features, canvas) {
             self.canvasConfigs.push({
                 center: [0, 0],
                 crs: L.CRS.Simple,
-                zoom: 0,
-                afterRender: function (map) {
+                zoom:  0,
+                afterRender: function(map) {
                     L.tileLayer.iiif(canvas + '/info.json').addTo(map);
                     var featureCollection = {
                         type: 'FeatureCollection',
@@ -42,18 +44,18 @@ const viewModel = function (params) {
                     };
                     var extent = geojsonExtent(featureCollection);
                     map.addLayer(L.geoJson(featureCollection, {
-                        pointToLayer: function (feature, latlng) {
+                        pointToLayer: function(feature, latlng) {
                             return L.circleMarker(latlng, feature.properties);
                         },
-                        style: function (feature) {
+                        style: function(feature) {
                             return feature.properties;
                         }
                     }));
                     L.control.fullscreen().addTo(map);
-                    setTimeout(function () {
+                    setTimeout(function() {
                         map.fitBounds([
-                            [extent[1] - 1, extent[0] - 1],
-                            [extent[3] + 1, extent[2] + 1]
+                            [extent[1]-1, extent[0]-1],
+                            [extent[3]+1, extent[2]+1]
                         ]);
                     }, 250);
                 }
@@ -61,23 +63,23 @@ const viewModel = function (params) {
         });
     }
 
-    this.manifest.subscribe(function (manifest) {
+    this.manifest.subscribe(function(manifest) {
         if (manifest !== self.defaultManifest())
             self.defaultManifest(manifest);
     });
 
-    this.defaultManifest.subscribe(function (manifest) {
+    this.defaultManifest.subscribe(function(manifest) {
         if (manifest !== self.manifest())
             self.manifest(manifest);
     });
 
-    this.displayValue = ko.computed(function () {
+    this.displayValue = ko.computed(function() {
         var value = koMapping.toJS(this.value);
         if (!value || !value.features) {
             return 0;
         }
         return value.features.length;
-    }, this);
+    }, this);    
 };
 
 export default ko.components.register('iiif-widget', {

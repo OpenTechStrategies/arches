@@ -4,6 +4,7 @@ import BaseManager from 'views/base-manager';
 import data from 'views/graph/graph-base-data';
 import 'bindings/chosen';
 
+
 /**
 * A backbone view representing a page in the graph manager workflow.  It
 * adds some graph manager specfic values to the view model.
@@ -12,7 +13,7 @@ import 'bindings/chosen';
 * @constructor
 * @name GraphPageView
 */
-export default class GraphPageView extends BaseManager {
+var GraphPageView = BaseManager.extend({
     /**
     * Creates an instance of GraphPageView, optionally using a passed in
     * view model
@@ -23,14 +24,16 @@ export default class GraphPageView extends BaseManager {
     *                 bound to the page
     * @return {object} an instance of GraphPageView
     */
-    constructor(options) {
+    constructor: function(options) {
+        var self = this;
         options.viewModel.graphid = ko.observable(data.graphid);
-        super(options);
-        options.viewModel.graphid.subscribe((graphid) => {
+        BaseManager.apply(this, arguments);
+        options.viewModel.graphid.subscribe(function(graphid) {
             var re = /\b[a-f\d-]{36}\b/;
             var newPath = window.location.pathname.replace(re, graphid);
-            this.viewModel.navigate(newPath);
+            self.viewModel.navigate(newPath);
         });
         return this;
     }
-}
+});
+export default GraphPageView;

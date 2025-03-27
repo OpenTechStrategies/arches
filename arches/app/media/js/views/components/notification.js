@@ -4,50 +4,54 @@ import moment from 'moment';
 import arches from 'arches';
 import notificationTemplate from 'templates/views/components/notification.htm';
 
+
 /** 
  * A generic component for displaying notifications
  * @name NotificationViewModel
  **/
 
-class NotificationViewModel {
-    constructor(params) {
-        this.info = ko.observable();
+function NotificationViewModel(params) {
+    var self = this;
 
-        this.displaytime = moment(params.created).format('dddd, DD MMMM YYYY | hh:mm A');
-        this.id = params.id;
-        this.loadedResources = params.loaded_resources;
-        this.link = params.link;
-        this.message = params.message;
-        this.files = params.files;
-        this.translations = arches.translations;
-    }
+        
+    this.info = ko.observable();
 
-    dismiss(parent) {
+    this.displaytime = moment(params.created).format('dddd, DD MMMM YYYY | hh:mm A');
+    this.id = params.id;
+    this.loadedResources = params.loaded_resources;
+    this.link = params.link;
+    this.message = params.message;
+    this.files = params.files;
+    this.translations = arches.translations;
+
+    this.dismiss = function(parent) {
         $.ajax({
             type: 'POST',
             url: arches.urls.dismiss_notifications,
-            data: { "dismissals": JSON.stringify([this.id]) },
-        }).done(() => {
+            data: {"dismissals": JSON.stringify([self.id])},
+        }).done(function() {
             if (parent) {
-                const item = parent.items().find(item => item.id === this.id);
+                var item = parent.items().find(
+                    function(item) { return item.id === self.id; }
+                );
                 parent.items.remove(item);
             }
         });
-    }
+    };
 
-    getExportFile() {
+    this.getExportFile = function() {
         $.ajax({
             type: 'GET',
             url: arches.urls.get_export_file,
-            data: { "exportid": this.link }
-        }).done(data => {
+            data: {"exportid": self.link}
+        }).done(function(data) {
             if (data.url) {
                 window.open(data.url);
             } else {
-                this.info(data.message);
+                self.info(data.message);
             }
         });
-    }
+    };
 }
 
 ko.components.register('notification', {
