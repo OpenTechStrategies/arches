@@ -4,9 +4,10 @@ import koMapping from 'knockout-mapping';
 import ariaUtils from 'utils/aria';
 import pagingFilterTemplate from 'templates/views/components/search/paging-filter.htm';
 
+
 const componentName = 'paging-filter';
 const viewModel = BaseFilter.extend({
-    initialize: function (options) {
+    initialize: function(options) {
         options.name = 'Paging Filter';
         BaseFilter.prototype.initialize.call(this, options);
         this.page = ko.observable();
@@ -26,7 +27,7 @@ const viewModel = BaseFilter.extend({
         });
         this.shiftFocus = ariaUtils.shiftFocus;
 
-        this.query.subscribe(function () {
+        this.query.subscribe(function() {
             if (this.preventLoop === false && this.userRequestedNewPage === false && this.pageInitialized === true) {
                 this.preventLoop = true;
                 this.page(1);
@@ -36,11 +37,11 @@ const viewModel = BaseFilter.extend({
             }
         }, this, 'beforeChange');
 
-        this.page.subscribe(function (timestamp) {
+        this.page.subscribe(function(timestamp) {
             this.updateQuery();
         }, this);
 
-        this.searchResults.timestamp.subscribe(function (timestamp) {
+        this.searchResults.timestamp.subscribe(function(timestamp) {
             this.updateResults();
         }, this);
 
@@ -49,21 +50,21 @@ const viewModel = BaseFilter.extend({
         this.pageInitialized = true;
     },
 
-    updateQuery: function () {
+    updateQuery: function() {
         var queryObj = this.query();
         queryObj[componentName] = this.page();
         this.query(queryObj);
     },
 
-    newPage: function (page) {
-        if (page) {
+    newPage: function(page){
+        if(page){
             this.userRequestedNewPage = true;
             this.page(page);
             this.shiftFocus('#search-results-list-type');
         }
     },
 
-    restoreState: function () {
+    restoreState: function(){
         var currentPage = this.query()[componentName];
         if (!currentPage) {
             currentPage = 1;
@@ -72,8 +73,8 @@ const viewModel = BaseFilter.extend({
         this.updateResults();
     },
 
-    updateResults: function () {
-        if (!!this.searchResults[componentName] && !!this.searchResults[componentName]['paginator']) {
+    updateResults: function() {
+        if(!!this.searchResults[componentName] && !!this.searchResults[componentName]['paginator']) {
             koMapping.fromJS(this.searchResults[componentName]['paginator'], this.paginator);
         }
     }

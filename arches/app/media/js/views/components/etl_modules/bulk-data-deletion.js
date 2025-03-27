@@ -1,16 +1,18 @@
-import $ from 'jquery';
-import _ from 'underscore';
 import ko from 'knockout';
+import koMapping from 'knockout-mapping';
+import $ from 'jquery';
 import uuid from 'uuid';
 import arches from 'arches';
 import AlertViewModel from 'viewmodels/alert';
 import JsonErrorAlertViewModel from 'viewmodels/alert-json';
 import bulkDataDeletionTemplate from 'templates/views/components/etl_modules/bulk-data-deletion.htm';
+import 'views/components/simple-switch';
 import 'bindings/datatable';
 import 'bindings/dropzone';
 import 'bindings/resizable-sidepanel';
 
-const viewModel = function (params) {
+
+const viewModel = function(params) {
     const self = this;
 
     this.loadDetails = params.load_details;
@@ -53,52 +55,52 @@ const viewModel = function (params) {
             || (self.selectedNodegroup() && self.activeTab() === "TileDeletion");
     });
 
-    this.getGraphs = function () {
+    this.getGraphs = function() {
         self.loading(true);
-        self.submit('get_graphs').then(function (response) {
+        self.submit('get_graphs').then(function(response) {
             self.graphs(response.result);
             self.loading(false);
         });
     };
 
-    this.preview = function () {
+    this.preview = function() {
         self.previewing(true);
         self.showPreview(false);
-        self.addAllFormData();
-        self.submit('preview').then(function (response) {
+        this.addAllFormData();
+        self.submit('preview').then(function(response) {
             self.numberOfResources(response.result.resource);
             self.numberOfTiles(response.result.tile);
             self.previewValue(response.result.preview?.map((value) => JSON.stringify(value)));
             self.showPreview(true);
-        }).fail(function (err) {
+        }).fail(function(err) {
             self.alert(
                 new JsonErrorAlertViewModel(
                     'ep-alert-red',
                     err.responseJSON["data"],
                     null,
-                    function () { }
+                    function () {}
                 )
             );
-        }).always(function () {
+        }).always(function() {
             self.deleteAllFormData();
             self.previewing(false);
         });
     };
 
-    this.getGraphName = function (graphId) {
+    this.getGraphName = function(graphId) {
         let graph;
         if (self.graphs()) {
-            graph = self.graphs().find(function (graph) {
+            graph = self.graphs().find(function(graph) {
                 return graph.graphid == graphId;
             });
         }
         return graph?.name;
     };
 
-    this.getNodegroupName = function (nodegroupId) {
+    this.getNodegroupName = function(nodegroupId) {
         let nodegroup;
         if (self.nodegroups()) {
-            nodegroup = self.nodegroups().find(function (nodegroup) {
+            nodegroup = self.nodegroups().find(function(nodegroup) {
                 return nodegroup.nodegroupid == nodegroupId;
             });
         }
@@ -127,11 +129,11 @@ const viewModel = function (params) {
         self.formData.delete('resourceids');
     };
 
-    this.selectedGraph.subscribe(function (graph) {
+    this.selectedGraph.subscribe(function(graph) {
         if (graph) {
             self.loading(true);
             self.formData.append('graphid', graph);
-            self.submit('get_nodegroups').then(function (response) {
+            self.submit('get_nodegroups').then(function(response) {
                 const nodegroups = response.result;
                 self.selectedNodegroup(null);
                 self.nodegroups(nodegroups);
@@ -142,27 +144,28 @@ const viewModel = function (params) {
         }
     });
 
-    this.deleteAlert = function () {
+    this.deleteAlert = function() {
         self.alert(
             new AlertViewModel(
                 "ep-alert-blue",
                 arches.translations.confirmBulkDelete.title,
                 arches.translations.confirmBulkDelete.text,
-                function () { },
-                function () {
+                function() {},
+                function() {
                     self.addAllFormData();
                     params.activeTab("import");
+
+                    // perform the delete action if the user confirms
                     self.submit('delete');
-                }
-            )
+                })
         );
     };
 
-    this.bulkDelete = function () {
+    this.bulkDelete = function() {
         self.deleteAlert();
     };
 
-    this.submit = function (action) {
+    this.submit = function(action) {
         self.formData.append('action', action);
         self.formData.append('load_id', self.loadId);
         self.formData.append('module', self.moduleId);
@@ -173,28 +176,28 @@ const viewModel = function (params) {
             cache: false,
             processData: false,
             contentType: false,
-        }).fail(function (err) {
-            self.alert(
-                new JsonErrorAlertViewModel(
-                    'ep-alert-red',
-                    err.responseJSON["data"],
-                    null,
-                    function () { }
-                )
-            );
-        });
+        })
+            .fail(function(err) {
+                // show an error alert if the delete action fails
+                self.alert(
+                    new JsonErrorAlertViewModel(
+                        'ep-alert-red',
+                        err.responseJSON["data"],
+                        null,
+                        function () {}
+                    )
+                );
+            });
     };
 
-    this.init = function () {
-        self.getGraphs();
+    this.init = function() {
+        this.getGraphs();
     };
 
     this.init();
 };
-
 ko.components.register('bulk-data-deletion', {
     viewModel: viewModel,
     template: bulkDataDeletionTemplate,
 });
-
 export default viewModel;

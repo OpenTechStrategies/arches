@@ -1,24 +1,25 @@
 import ko from 'knockout';
 import urlDatatypeTemplate from 'templates/views/components/datatypes/url.htm';
 
-const name = 'url-datatype-config';
-const viewModel = function (params) {
-    const self = this;
 
+var name = 'url-datatype-config';
+const viewModel = function(params) {
+    var self = this;
+        
     this.search = params.search;
     if (this.search) {
-        const filter = params.filterValue();
+        var filter = params.filterValue();
         this.node = params.node;
         this.op = ko.observable(filter.op || '~');
         this.searchValue = ko.observable(filter.val || '');
-        this.filterValue = ko.computed(function () {
+        this.filterValue = ko.computed(function() {
             return {
                 op: self.op(),
                 val: self.searchValue()
             };
         }).extend({ throttle: 750 });
         params.filterValue(this.filterValue());
-        this.filterValue.subscribe(function (val) {
+        this.filterValue.subscribe(function(val) {
             params.filterValue(val);
         });
     }

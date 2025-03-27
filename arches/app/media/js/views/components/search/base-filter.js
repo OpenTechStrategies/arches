@@ -1,8 +1,10 @@
 import $ from 'jquery';
 import Backbone from 'backbone';
+import ko from 'knockout';
+
 
 export default Backbone.View.extend({
-    constructor: function () {
+    constructor: function() {
         this.name = 'Base Filter';
         // the various filters managed by this widget
         this.filter = {};
@@ -10,7 +12,7 @@ export default Backbone.View.extend({
         Backbone.View.apply(this, arguments);
     },
 
-    initialize: function (options) {
+    initialize: function(options) {
         $.extend(this, options);
     },
 });

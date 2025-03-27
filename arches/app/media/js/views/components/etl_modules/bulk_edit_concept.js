@@ -2,13 +2,13 @@ import ko from 'knockout';
 import $ from 'jquery';
 import uuid from 'uuid';
 import arches from 'arches';
-import AlertViewModel from 'viewmodels/alert';
 import JsonErrorAlertViewModel from 'viewmodels/alert-json';
 import baseStringEditorTemplate from 'templates/views/components/etl_modules/bulk_edit_concept.htm';
 import 'views/components/widgets/concept-select';
 import 'select-woo';
 
-const ViewModel = function (params) {
+
+const ViewModel = function(params) {
     const self = this;
     this.config = params.config;
     this.state = params.state;
@@ -31,46 +31,43 @@ const ViewModel = function (params) {
     this.rdmCollection = null;
     this.rdmCollectionLanguages = ko.observableArray();
     this.showPreview = ko.observable(false);
-    // paging
+    //paging
     this.currentPageIndex = ko.observable(0);
     this.tilesToRemove = ko.observableArray();
-    // length table
+    //length table
     this.numberOfTiles = ko.observable();
     this.numberOfResources = ko.observable();
     this.previewLimit = ko.observable();
-    // loading status
+    //loading status
     this.formatTime = params.formatTime;
     this.selectedLoadEvent = params.selectedLoadEvent || ko.observable();
     this.statusDetails = this.selectedLoadEvent()?.load_description?.split("|");
     this.timeDifference = params.timeDifference;
     this.alert = params.alert || ko.observable();
-
+    
     this.addAllFormData = () => {
-        if (self.searchUrl()) {
-            self.formData.append('search_url', self.searchUrl());
-        }
-        if (self.selectedNode()) {
-            self.formData.append('selectedNode', JSON.stringify(self.selectedNode()));
-        }
-        if (self.selectedGraph()) {
-            self.formData.append('graph_id', self.selectedGraph());
-            self.formData.append('graph_name', self.getGraphName(self.selectedGraph()));
-        }
-        if (self.rdmCollection) {
-            self.formData.append('rdmCollection', self.rdmCollection);
-        }
+        self.formData = new window.FormData();
+        self.formData.append('load_id', self.loadId);
+        self.formData.append('module', self.moduleId);
+        if (self.selectedGraph()) { self.formData.append('selectedGraph', self.selectedGraph()); }
+        if (self.conceptOld()) { self.formData.append('conceptOld', self.conceptOld()); }
+        if (self.conceptNew()) { self.formData.append('conceptNew', self.conceptNew()); }
+        if (self.selectedNode()) { self.formData.append('selectedNode', JSON.stringify(self.selectedNode())); }
+        if (self.searchUrl()) { self.formData.append('search_url', self.searchUrl()); }
+        if (self.rdmCollection) { self.formData.append('rdmCollection', self.rdmCollection); }
         self.formData.append('currentPageIndex', self.currentPageIndex());
         self.formData.append('tilesToRemove', self.tilesToRemove());
     };
 
-    // paging
-    self.previousPage = function () {
+    //paging
+    // Function to navigate to the previous page
+    self.previousPage = function() {
         if (self.currentPageIndex() > 0) {
             self.currentPageIndex(self.currentPageIndex() - 1);
         }
     };
-
-    self.nextPage = function () {
+    // Function to navigate to the next page
+    self.nextPage = function() {
         if (self.currentPageIndex() < self.maxPageIndex()) {
             self.currentPageIndex(self.currentPageIndex() + 1);
         }
@@ -79,30 +76,35 @@ const ViewModel = function (params) {
     self.currentPageIndex.subscribe((pageIndex) => {
         self.getPreviewData();
     });
-
-    self.maxPageIndex = ko.computed(function () {
+    // Computed observable to calculate the maximum page index
+    self.maxPageIndex = ko.computed(function() {
         return Math.ceil(self.numberOfTiles() / 5) - 1;
     });
 
+    // Computed observable to paginate rows
     self.paginatedRows = ko.observableArray();
 
-    self.constructReportUrl = function (dataItem) {
+    //make url
+    self.constructReportUrl = function(dataItem) {
         return arches.urls.reports + dataItem.resourceid;
     };
 
     this.ready = ko.computed(() => {
-        self.showPreview(false);
-        self.numberOfResources(null);
-        self.numberOfTiles(null);
-        return (self.searchUrl() && self.activeTab() === "DeletionBySearchUrl")
-            || (self.selectedGraph() && self.activeTab() === "DeletionByGraph")
-            || (self.selectedNode() && self.activeTab() === "TileDeletion");
+        const ready = !!self.selectedGraph() &&
+            !!self.selectedNode() &&
+            !self.previewing() &&
+            self.conceptNew() !== self.conceptOld() &&
+            !!self.conceptNew() &&
+            !!self.conceptOld();
+        return ready;
     });
 
     this.clearResults = ko.computed(() => {
+        // if any of these values change then clear the preview results
         self.showPreview(false);
         self.tilesToRemove.removeAll();
         self.currentPageIndex(0);
+        // we don't actually care about the results of the following
         let clearResults = '';
         [
             self.selectedGraph(),
@@ -111,7 +113,7 @@ const ViewModel = function (params) {
             self.conceptNewLang(),
             self.conceptOld(),
             self.conceptNew()
-        ].forEach(function (item) {
+        ].forEach(function(item){
             clearResults += item?.toString();
         });
         return clearResults;
@@ -128,71 +130,140 @@ const ViewModel = function (params) {
         return !!tile;
     };
 
-    this.addToList = function (tileid) {
+    //delete Row in table
+    this.addToList = function(tileid) {
         const list = new Set([...self.tilesToRemove(), tileid]);
         self.tilesToRemove(list);
     };
 
-    this.getPreviewData = function () {
+    //call python code to display the change
+    this.getPreviewData = function() {
         self.showPreview(true);
         self.submit('preview').then(data => {
             self.numberOfResources(data.result.number_of_resources);
             self.numberOfTiles(data.result.number_of_tiles);
             self.previewLimit(data.result.preview_limit);
             self.paginatedRows(data.result.values);
-        }).fail(function (err) {
+        }).fail(function(err) {
             self.alert(
                 new JsonErrorAlertViewModel(
                     'ep-alert-red',
                     err.responseJSON["data"],
                     null,
-                    function () { }
+                    function(){}
                 )
             );
-        }).always(function () {
-            self.deleteAllFormData();
+        }).always(function() {
+            self.previewing(false);
         });
     };
 
-    this.selectedGraph.subscribe(function (graph) {
-        if (graph) {
-            self.loading(true);
-            self.formData.append('graphid', graph);
-            self.submit('get_nodegroups').then(function (response) {
-                const nodegroups = response.result;
-                self.selectedNode(null);
-                self.nodegroups(nodegroups);
-                self.loading(false);
+    this.selectedNode.subscribe((node) => {
+        self.conceptNew(undefined);
+        self.conceptOld(undefined);
+        self.rdmCollectionLanguages.removeAll();
+        
+        if(!!node){
+            self.rdmCollection = node.rdmCollection;
+
+            self.submit('get_collection_languages').then(data => {
+                self.rdmCollectionLanguages(data.result);
+                if(data.result.length > 0) {
+                    window.setTimeout(() =>{
+                        self.conceptOldLang(data.result[0].id);
+                        self.conceptNewLang(data.result[0].id);
+                    }, 500);
+                }
+            }).fail(function(err) {
+                self.alert(
+                    new JsonErrorAlertViewModel(
+                        'ep-alert-red',
+                        err.responseJSON["data"],
+                        null,
+                        function(){}
+                    )
+                );
+            }).always(function() {
+                //self.previewing(false);
             });
-        } else {
-            self.nodegroups(null);
         }
     });
 
-    this.deleteAlert = function () {
-        self.alert(
-            new AlertViewModel(
-                "ep-alert-blue",
-                arches.translations.confirmBulkDelete.title,
-                arches.translations.confirmBulkDelete.text,
-                function () { },
-                function () {
-                    self.addAllFormData();
-                    params.activeTab("import");
-                    self.submit('delete');
-                }
-            )
-        );
+    //select nodes and take the specific value
+    this.selectedGraph.subscribe((graphid) => {
+        self.dropdownnodes.removeAll();
+        self.conceptNew(undefined);
+        self.conceptOld(undefined);
+        self.selectedNode(undefined);
+        self.submit('get_graphs_node').then(data => {
+            const nodes = data.result.map(node => (
+                {   node: node.nodeid,
+                    label: `${JSON.parse(node.card_name)[arches.activeLanguage]} - ${JSON.parse(node.widget_label)[arches.activeLanguage]}`,
+                    rdmCollection: JSON.parse(node.config).rdmCollection
+                }));
+            self.dropdownnodes(nodes);
+            
+        }).fail(function(err) {
+            self.alert(
+                new JsonErrorAlertViewModel(
+                    'ep-alert-red',
+                    err.responseJSON["data"],
+                    null,
+                    function(){}
+                )
+            );
+        }).always(function() {
+            self.previewing(false);
+        });
+
+    });
+
+    //take the graphs 
+    this.allgraph = function() {
+        self.dropdowngraph.removeAll();
+        self.dropdownnodes.removeAll();
+        self.showPreview(false);
+
+        self.submit('get_graphs').then(data => {
+            data.result.forEach(graph => {
+                self.dropdowngraph.push({"graphName": graph.name, "graphid": graph.graphid});
+            });
+        }).fail(function(err) {
+            self.alert(
+                new JsonErrorAlertViewModel(
+                    'ep-alert-red',
+                    err.responseJSON["data"],
+                    null,
+                    function(){}
+                )
+            );
+        }).always(function() {
+            self.previewing(false);
+        });
+    };
+    
+    this.write = function() {
+        if (!self.allowEditOperation()) {
+            return;
+        }
+        self.showPreview(false);
+        params.activeTab("import");
+        self.submit('write').then(data => {
+        }).fail( function(err) {
+            self.alert(
+                new JsonErrorAlertViewModel(
+                    'ep-alert-red',
+                    err.responseJSON["data"],
+                    null,
+                    function(){}
+                )
+            );
+        });
     };
 
-    this.bulkDelete = function () {
-        self.deleteAlert();
-    };
-
-    this.submit = function (action) {
+    this.submit = function(action, data) {
+        self.addAllFormData();
         self.formData.append('action', action);
-        self.formData.append('load_id', self.loadId);
-        self.formData.append('module', self.moduleId);
         return $.ajax({
             type: "POST",
             url: arches.urls.etl_manager,
@@ -200,28 +271,18 @@ const ViewModel = function (params) {
             cache: false,
             processData: false,
             contentType: false,
-        }).fail(function (err) {
-            self.alert(
-                new JsonErrorAlertViewModel(
-                    'ep-alert-red',
-                    err.responseJSON["data"],
-                    null,
-                    function () { }
-                )
-            );
         });
     };
-
-    this.init = function () {
-        this.getGraphs();
-    };
-
-    this.init();
+    
+    this.allgraph();
 };
 
+// Register the 'bulk_edit_concept' component
 ko.components.register('bulk_edit_concept', {
     viewModel: ViewModel,
     template: baseStringEditorTemplate,
 });
 
+// Apply bindings after registering the component
+//ko.applyBindings(new ViewModel()); // This makes Knockout get to work
 export default ViewModel;

@@ -8,6 +8,7 @@ import timeFilterTemplate from 'templates/views/components/search/time-filter.ht
 import 'bindings/datepicker';
 import 'bindings/time-wheel';
 
+
 var componentName = 'time-filter';
 const viewModel = BaseFilter.extend({
     initialize: function(options) {

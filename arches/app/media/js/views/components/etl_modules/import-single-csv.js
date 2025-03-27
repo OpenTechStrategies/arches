@@ -1,18 +1,19 @@
-import $ from 'jquery';
-import ko from 'knockout';
-import koMapping from 'knockout-mapping';
-import dropzone from 'dropzone';
-import stringUtils from 'utils/strings';
-import uuid from 'uuid';
-import arches from 'arches';
-import JsonErrorAlertViewModel from 'viewmodels/alert-json';
-import importSingleCSVTemplate from 'templates/views/components/etl_modules/import-single-csv.htm';
-import 'views/components/simple-switch';
-import 'bindings/datatable';
-import 'bindings/dropzone';
-import 'bindings/resizable-sidepanel';
+import ko from "knockout";
+import koMapping from "knockout-mapping";
+import $ from "jquery";
+import dropzone from "dropzone";
+import stringUtils from "utils/strings";
+import uuid from "uuid";
+import arches from "arches";
+import JsonErrorAlertViewModel from "viewmodels/alert-json";
+import importSingleCSVTemplate from "templates/views/components/etl_modules/import-single-csv.htm";
+import "views/components/simple-switch";
+import "bindings/datatable";
+import "bindings/dropzone";
+import "bindings/resizable-sidepanel";
 
-const viewModel = function (params) {
+
+const viewModel = function(params) {
     const self = this;
     this.loadDetails = params.load_details || ko.observable();
     this.state = params.state;
@@ -22,7 +23,7 @@ const viewModel = function (params) {
     this.graphs = ko.observable();
     this.selectedGraph = ko.observable();
     this.nodes = ko.observable();
-    this.fileInfo = ko.observable({ name: "", size: "" });
+    this.fileInfo = ko.observable({name:"", size:""});
     this.hasHeaders = ko.observable(true);
     this.csvArray = ko.observable();
     this.headers = ko.observable();
@@ -41,7 +42,7 @@ const viewModel = function (params) {
     this.formData = new window.FormData();
     this.loadId = params.loadId || uuid.generate();
     this.uniqueId = uuid.generate();
-    this.uniqueidClass = ko.computed(function () {
+    this.uniqueidClass = ko.computed(function() {
         return "unique_id_" + self.uniqueId;
     });
 
@@ -56,19 +57,19 @@ const viewModel = function (params) {
     this.ready = ko.computed(() => {
         return self.selectedGraph() && self.fieldMapping().find((mapping) => mapping.node());
     });
-    this.suggestField = function (i) {
+    this.suggestField = function(i) {
         let bestMatch = null;
         let highestScore = 0;
         if (!!self.headers()) {
             const header = stringUtils.normalizeText(self.headers()[i]);
             if (header == 'resourceid')
                 return null;
-
-            self.nodes().forEach(function (node) {
+    
+            self.nodes().forEach(function(node) {
                 if (node.name) {
                     const nameNorm = stringUtils.normalizeText(node.name);
                     const aliasNorm = node.alias ? stringUtils.normalizeText(node.alias) : '';
-
+    
                     // Compute similarity scores
                     const scoreWithName = stringUtils.compareTwoStrings(header, nameNorm);
                     const scoreWithAlias = stringUtils.compareTwoStrings(header, aliasNorm);
@@ -79,15 +80,15 @@ const viewModel = function (params) {
                     }
                 }
             });
-
-            // Return the alias of the best match if the highest score is above a certain threshold (e.g., 0.5)
+    
+            // Return the alias of the best match if the highest score is above a certain threshold (e.g., 0.8)
             if (bestMatch && highestScore > 0.5) {
                 return bestMatch.alias;
             }
         }
         return null;
-    };
-    this.guessAllMappings = function () {
+    }
+    this.guessAllMappings = function() {
         if (self.headers()) {
             self.headers().forEach((header, i) => {
                 const bestMatchNode = self.suggestField(i);
@@ -98,7 +99,7 @@ const viewModel = function (params) {
         }
     };
 
-    this.createTableConfig = function (col) {
+    this.createTableConfig = function(col) {
         return {
             paging: false,
             searching: false,
@@ -112,21 +113,21 @@ const viewModel = function (params) {
         };
     };
 
-    this.hasHeaders.subscribe(function (val) {
+    this.hasHeaders.subscribe(function(val){
         self.headers(null);
         if (val) {
             self.headers(self.csvArray()[0]);
             self.csvBody(self.csvArray().slice(1));
         } else {
-            self.headers(Array.apply(0, Array(self.csvArray()[0].length)).map(function (_, b) { return b + 1; }));
+            self.headers(Array.apply(0, Array(self.csvArray()[0].length)).map(function(_,b) { return b + 1; }));
             self.csvBody(self.csvArray());
         }
     });
 
-    this.headers.subscribe(function (headers) {
+    this.headers.subscribe(function(headers){
         if (headers) {
             self.fieldMapping(
-                headers.map(function (header) {
+                headers.map(function(header){
                     return {
                         field: header,
                         node: ko.observable(),
@@ -139,9 +140,9 @@ const viewModel = function (params) {
         }
     });
 
-    this.formatSize = function (size) {
+    this.formatSize = function(size) {
         var bytes = size;
-        if (bytes == 0) return '0 Byte';
+        if(bytes == 0) return '0 Byte';
         var k = 1024;
         var dm = 2;
         var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
@@ -149,7 +150,7 @@ const viewModel = function (params) {
         return '<strong>' + parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + '</strong> ' + sizes[i];
     };
 
-    this.csvArray.subscribe(function (val) {
+    this.csvArray.subscribe(function(val){
         self.numberOfCol(val[0].length);
         if (self.hasHeaders()) {
             self.headers(val[0]);
@@ -161,7 +162,7 @@ const viewModel = function (params) {
     });
 
     this.selectedGraph.subscribe(graph => {
-        if (!graph) { self.nodes(null); }
+        if (!graph) {self.nodes(null);}
     });
 
     this.csvBody.subscribe(val => {
@@ -169,29 +170,29 @@ const viewModel = function (params) {
         self.csvExample(val.slice(0, 5));
     });
 
-    this.getGraphs = function () {
+    this.getGraphs = function(){
         self.loading(true);
-        self.submit('get_graphs').then(function (response) {
+        self.submit('get_graphs').then(function(response){
             self.graphs(response.result);
             self.loading(false);
         });
     };
 
-    this.getGraphName = function (graphId) {
+    this.getGraphName = function(graphId){
         let graph;
         if (self.graphs()) {
-            graph = self.graphs().find(function (graph) {
+            graph = self.graphs().find(function(graph){
                 return graph.graphid == graphId;
             });
         }
         return graph?.name;
     };
 
-    this.selectedGraph.subscribe(function (graph) {
-        if (graph) {
+    this.selectedGraph.subscribe(function(graph){
+        if (graph){
             self.loading(true);
             self.formData.append('graphid', graph);
-            self.submit('get_nodes').then(function (response) {
+            self.submit('get_nodes').then(function(response){
                 const nodes = response.result.map(node => ({ ...node, label: node.alias }));
                 self.stringNodes = nodes.reduce((acc, node) => {
                     if (node.datatype === 'string') {
@@ -209,11 +210,11 @@ const viewModel = function (params) {
         }
     });
 
-    this.addFile = function (file) {
+    this.addFile = function(file){
         self.loading(true);
-        self.fileInfo({ name: file.name, size: file.size });
+        self.fileInfo({name: file.name, size: file.size});
         self.formData.append('file', file, file.name);
-        self.submit('read').then(function (response) {
+        self.submit('read').then(function(response){
             self.csvArray(response.result.csv);
             self.csvFileName(response.result.csv_file);
             if (response.result.config) {
@@ -223,16 +224,16 @@ const viewModel = function (params) {
             self.formData.delete('file');
             self.fileAdded(true);
             self.loading(false);
-        }).fail(function (err) {
+        }).fail(function(err) {
             console.log(err);
-            self.alert(new JsonErrorAlertViewModel('ep-alert-red', err.responseJSON, null, function () { }));
+            self.alert(new JsonErrorAlertViewModel('ep-alert-red', err.responseJSON, null, function(){}));
             self.loading(false);
         });
     };
 
-    this.write = function () {
+    this.write = function(){
         if (!self.ready()) { return; }
-        const fieldnames = koMapping.toJS(self.fieldMapping).map(fieldname => { return fieldname.node; });
+        const fieldnames = koMapping.toJS(self.fieldMapping).map(fieldname => {return fieldname.node;});
         const fieldMapping = koMapping.toJS(self.fieldMapping);
         self.formData.append('fieldnames', fieldnames);
         self.formData.append('fieldMapping', JSON.stringify(fieldMapping));
@@ -245,14 +246,14 @@ const viewModel = function (params) {
             self.formData.append('async', true);
             self.submit('write').then(data => {
                 console.log(data.result);
-            }).fail(function (err) {
+            }).fail( function(err) {
                 console.log(err);
                 self.alert(
                     new JsonErrorAlertViewModel(
                         'ep-alert-red',
                         err.responseJSON["data"],
                         null,
-                        function () { }
+                        function(){}
                     )
                 );
             }).always(() => {
@@ -261,7 +262,7 @@ const viewModel = function (params) {
         }).fail(error => console.log(error.responseJSON.data));
     };
 
-    this.validate = function () {
+    this.validate =function(){
         self.validated(false);
         const fieldnames = koMapping.toJS(self.fieldMapping).map(fieldname => fieldname.node);
         const fieldMapping = koMapping.toJS(self.fieldMapping);
@@ -275,7 +276,7 @@ const viewModel = function (params) {
         }).fail(error => console.log(error));
     };
 
-    this.submit = function (action) {
+    this.submit = function(action) {
         self.formData.append('action', action);
         self.formData.append('load_id', self.loadId);
         self.formData.append('module', self.moduleId);
@@ -298,24 +299,22 @@ const viewModel = function (params) {
         autoQueue: false,
         clickable: ".fileinput-button." + this.uniqueidClass(),
         previewsContainer: '#hidden-dz-previews',
-        init: function () {
+        init: function() {
             self.dropzone = this;
             this.on("addedfile", self.addFile);
-            this.on("error", function (file, error) {
+            this.on("error", function(file, error) {
                 file.error = error;
             });
         }
     };
-    this.init = function () {
+    this.init = function(){
         this.getGraphs();
     };
 
     this.init();
 };
-
 ko.components.register('import-single-csv', {
     viewModel: viewModel,
     template: importSingleCSVTemplate,
 });
-
 export default viewModel;

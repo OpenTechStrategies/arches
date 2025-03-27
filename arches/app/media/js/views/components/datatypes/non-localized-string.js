@@ -1,13 +1,14 @@
 import ko from 'knockout';
 import nonLocalizedStringDatatypeTemplate from 'templates/views/components/datatypes/non-localized-string.htm';
 
+
 const name = 'non-localized-string-datatype-config';
 
 const viewModel = function (params) {
     const self = this;
     this.search = params.search;
     if (this.search) {
-        const filter = params.filterValue();
+        var filter = params.filterValue();
         this.node = params.node;
         this.op = ko.observable(filter.op || '~');
         this.searchValue = ko.observable(filter.val || '');
@@ -15,7 +16,7 @@ const viewModel = function (params) {
             return {
                 op: self.op(),
                 val: self.searchValue()
-            };
+            }
         }).extend({ throttle: 750 });
         params.filterValue(this.filterValue());
         this.filterValue.subscribe(function (val) {
@@ -25,7 +26,7 @@ const viewModel = function (params) {
 };
 
 ko.components.register(name, {
-    viewModel,
+    viewModel: viewModel,
     template: nonLocalizedStringDatatypeTemplate
 });
 

@@ -1,13 +1,15 @@
 import ko from 'knockout';
+import koMapping from 'knockout-mapping';
 import _ from 'underscore';
 import BaseFilter from 'views/components/search/base-filter';
 import arches from 'arches';
 import termFilterTemplate from 'templates/views/components/search/term-filter.htm';
 import 'bindings/term-search';
 
+
 var componentName = 'term-filter';
 const viewModel = BaseFilter.extend({
-    initialize: function (options) {
+    initialize: function(options) {
         options.name = 'Term Filter';
         BaseFilter.prototype.initialize.call(this, options);
 
@@ -17,30 +19,30 @@ const viewModel = BaseFilter.extend({
         this.language = ko.observable("*");
         this.languages = ko.observableArray();
         const languages = arches.languages.slice();
-        languages.unshift({ "code": "*", "name": "All" });
+        languages.unshift({"code": "*", "name": "All"});
         this.languages(languages);
 
-        var updatedTerms = ko.computed(function () {
+        var updatedTerms = ko.computed(function() {
             return ko.toJS(this.filter.terms);
         }, this);
 
-        updatedTerms.subscribe(function () {
+        updatedTerms.subscribe(function() {
             this.updateQuery();
         }, this);
 
-        this.language.subscribe(function () {
+        this.language.subscribe(function() {
             this.updateQuery();
         }, this);
 
-        this.filter.tags.subscribe(function (tags) {
-            _.each(tags, function (tag) {
-                if (tag.status === 'deleted') {
-                    var found = _.find(this.filter.tags, function (currentTag) {
+        this.filter.tags.subscribe(function(tags){
+            _.each(tags, function(tag){
+                if(tag.status === 'deleted'){
+                    var found = _.find(this.filter.tags, function(currentTag){
                         return tag.value.type === currentTag.type;
                     }, this);
-                    if (!found) {
-                        _.each(this.searchFilterVms, function (filter) {
-                            if (!!filter() && filter().name === tag.value.type) {
+                    if(!found){
+                        _.each(this.searchFilterVms, function(filter){
+                            if(!!filter() && filter().name === tag.value.type){
                                 filter().clear();
                             }
                         }, this);
@@ -53,13 +55,13 @@ const viewModel = BaseFilter.extend({
         this.restoreState();
     },
 
-    updateQuery: function () {
-        var terms = _.filter(this.filter.terms(), function (term) {
+    updateQuery: function() {
+        var terms = _.filter(this.filter.terms(), function(term){
             return term.type === 'string' || term.type === 'concept' || term.type === 'term';
         }, this);
-
+        
         var queryObj = this.query();
-        if (terms.length > 0) {
+        if (terms.length > 0){
             queryObj[componentName] = ko.toJSON(terms);
             queryObj['language'] = this.language();
         } else {
@@ -68,12 +70,12 @@ const viewModel = BaseFilter.extend({
         this.query(queryObj);
     },
 
-    restoreState: function () {
+    restoreState: function() {
         var query = this.query();
         if (componentName in query) {
             var termQuery = JSON.parse(query[componentName]);
             if (termQuery.length > 0) {
-                termQuery.forEach(function (term) {
+                termQuery.forEach(function(term){
                     term.inverted = ko.observable(term.inverted);
                 });
                 this.filter.terms(termQuery);
@@ -81,8 +83,8 @@ const viewModel = BaseFilter.extend({
         }
     },
 
-    addTag: function (term, type, inverted) {
-        if (!this.hasTag(term)) {
+    addTag: function(term, type, inverted){
+        if(!this.hasTag(term)){
             this.filter.tags.unshift({
                 inverted: inverted,
                 type: type,
@@ -95,15 +97,15 @@ const viewModel = BaseFilter.extend({
         }
     },
 
-    removeTag: function (term) {
-        this.filter.tags.remove(function (term_item) {
+    removeTag: function(term){
+        this.filter.tags.remove(function(term_item){
             return term_item.id == term && term_item.text == term && term_item.value == term;
         });
     },
 
-    hasTag: function (tag_text) {
+    hasTag: function(tag_text){
         var has_tag = false;
-        this.filter.tags().forEach(function (term_item) {
+        this.filter.tags().forEach(function(term_item){
             if (term_item.text == tag_text) {
                 has_tag = true;
             }
@@ -111,7 +113,7 @@ const viewModel = BaseFilter.extend({
         return has_tag;
     },
 
-    clear: function () {
+    clear: function() {
         this.filter.terms.removeAll();
         this.filter.tags.removeAll();
     }

@@ -1,6 +1,7 @@
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import $ from 'jquery';
+import Dropzone from 'dropzone';
 import uuid from 'uuid';
 import arches from 'arches';
 import JsonErrorAlertViewModel from 'viewmodels/alert-json';
@@ -8,10 +9,11 @@ import IIIFViewerViewmodel from 'views/components/iiif-viewer';
 import manifestManagerTemplate from 'templates/views/components/plugins/manifest-manager.htm';
 import 'bindings/dropzone';
 
-export default ko.components.register('manifest-manager', {
-    viewModel: function (params) {
-        var self = this;
 
+export default ko.components.register('manifest-manager', {
+    viewModel: function(params) {
+        var self = this;
+            
         this.transactionId = params.transactionId || uuid.generate();
         this.canvasesForDeletion = ko.observableArray([]);
         this.metadataLabel = ko.observable('');
@@ -21,59 +23,58 @@ export default ko.components.register('manifest-manager', {
         // params.shouldShowEditService is deprecated, but retained for backward compatibility for other projects that may have used it.  Use params.shouldShowSelectService instead.
         this.shouldShowSelectService = params.shouldShowSelectService || params.shouldShowEditService || ko.observable(true);
         this.selectService = ko.observable(false);
-
+        
         this.shouldShowCreateService = params.shouldShowCreateService || ko.observable(true);
         this.createService = ko.observable(true);
 
         this.remoteManifest = ko.observable(true);
-        this.alert = params.alert || ko.observable();
-        this.addCanvas = function (canvas) { //the function name needs to be better
+        this.alert = params.alert || ko.observable(); 
+        this.addCanvas = function(canvas) { //the function name needs to be better
             self.canvasesForDeletion.push(canvas);
             self.canvas(canvas.images[0].resource.service['@id']);
         };
 
-        this.removeCanvas = function (canvas) { //the function name needs to be better
+        this.removeCanvas = function(canvas) { //the function name needs to be better
             self.canvasesForDeletion.remove(canvas);
             self.canvas(canvas.images[0].resource.service['@id']);
         };
 
-        IIIFViewerViewmodel.apply(this, [{ ...params, renderContext: params?.renderContext ? params.renderContext : 'manifestManager' }]);
+        IIIFViewerViewmodel.apply(this, [{...params, renderContext: params?.renderContext ? params.renderContext: 'manifestManager'}]);
         this.showTabs(false);
-        this.mainMenu.subscribe(function (val) {
+        this.mainMenu.subscribe(function(val){
             val || self.showTabs(true);
         });
 
-        if (this.renderContext() == "manifest-workflow") {
+        if(this.renderContext() == "manifest-workflow"){
             this.showModeSelector(false);
         }
-        this.isManifestDirty = ko.computed(function () {
+        this.isManifestDirty = ko.computed(function() {
             return ((ko.unwrap(self.manifestName) !== self.origManifestName) ||
-                (ko.unwrap(self.manifestDescription) !== self.origManifestDescription) ||
-                (ko.unwrap(self.manifestAttribution) !== self.origManifestAttribution) ||
-                (ko.unwrap(self.manifestLogo) !== self.origManifestLogo) ||
-                (ko.unwrap(self.metadataLabel)) ||
-                (ko.unwrap(self.metadataValues)) ||
-                (koMapping.toJSON(self.manifestMetadata) !== self.origManifestMetadata)
-            );
-        });
+                    (ko.unwrap(self.manifestDescription) !== self.origManifestDescription) ||
+                    (ko.unwrap(self.manifestAttribution) !== self.origManifestAttribution) ||
+                    (ko.unwrap(self.manifestLogo) !== self.origManifestLogo) ||
+                    (ko.unwrap(self.metadataLabel)) ||
+                    (ko.unwrap(self.metadataValues)) ||
+                    (koMapping.toJSON(self.manifestMetadata) !== self.origManifestMetadata)
+            );});
 
-        this.isCanvasDirty = ko.computed(function () {
+        this.isCanvasDirty = ko.computed(function() {
             return !self.compareMode() && (self.canvasLabel() !== self.origCanvasLabel());
         });
 
         this.uniqueId = uuid.generate();
-        this.uniqueidClass = ko.computed(function () {
+        this.uniqueidClass = ko.computed(function() {
             return "unique_id_" + self.uniqueId;
         });
 
         this.formData = new window.FormData();
 
-        this.stagedMetadata = ko.computed(function () {
-            var res = { label: self.metadataLabel(), value: self.metadataValues() };
+        this.stagedMetadata = ko.computed(function(){
+            var res = {label: self.metadataLabel(), value: self.metadataValues()};
             return res;
         });
 
-        this.updateMetadata = function () {
+        this.updateMetadata = function(){
             if (!!self.metadataLabel() || !!self.metadataValues()) {
                 this.manifestMetadata.unshift(koMapping.fromJS(this.stagedMetadata()));
             }
@@ -81,23 +82,24 @@ export default ko.components.register('manifest-manager', {
             self.metadataValues(null);
         };
 
-        this.removeMetadata = function (val) {
+        this.removeMetadata = function(val) {
             this.manifestMetadata.remove(val);
         };
 
-        this.addAllCanvases = function () {
-            self.canvases().forEach(function (canvas) {
+        this.addAllCanvases = function() {
+            self.canvases().forEach(function(canvas){
                 if (self.canvasesForDeletion().indexOf(canvas) < 0) {
                     self.canvasesForDeletion.push(canvas);
                 }
             });
         };
 
-        this.clearCanvasSelection = function () {
+        this.clearCanvasSelection = function() {
             self.canvasesForDeletion([]);
         };
 
-        this.reset = function () {
+
+        this.reset = function() {
             self.formData.delete("files");
             self.formData = new window.FormData();
             self.clearCanvasSelection();
@@ -110,7 +112,7 @@ export default ko.components.register('manifest-manager', {
             self.canvasLabel(self.origCanvasLabel());
             if (self.origManifestMetadata) {
                 self.manifestMetadata.removeAll();
-                JSON.parse(self.origManifestMetadata).forEach(function (entry) {
+                JSON.parse(self.origManifestMetadata).forEach(function(entry){
                     self.manifestMetadata.push(koMapping.fromJS(entry));
                 });
             }
@@ -119,7 +121,7 @@ export default ko.components.register('manifest-manager', {
             }
         };
 
-        this.submitToManifest = function (onSuccess, onError) {
+        this.submitToManifest = function(onSuccess, onError){
             if (params.manifestManagerFormData) {
                 params.manifestManagerFormData(self.formData);
             }
@@ -130,7 +132,7 @@ export default ko.components.register('manifest-manager', {
                 cache: false,
                 processData: false,
                 contentType: false,
-                success: function (response) {
+                success: function(response) {
                     self.reset();
                     self.manifest(response.url);
                     self.getManifestData();
@@ -138,7 +140,7 @@ export default ko.components.register('manifest-manager', {
                         onSuccess();
                     }
                 },
-                error: function (response) {
+                error: function(response) {
                     self.reset();
                     // eslint-disable-next-line no-console
                     console.log("Failed to save manifest");
@@ -150,22 +152,22 @@ export default ko.components.register('manifest-manager', {
             });
         };
 
-        this.deleteCanvases = function () {
+        this.deleteCanvases = function() {
             self.formData.append("manifest", ko.unwrap(self.manifest));
             self.formData.append("selected_canvases", JSON.stringify(ko.unwrap(self.canvasesForDeletion)));
             self.submitToManifest();
         };
 
-        this.deleteManifest = function () {
+        this.deleteManifest = function(){
             self.formData.append("manifest", ko.unwrap(self.manifest));
             $.ajax({
                 type: "DELETE",
                 url: arches.urls.manifest_manager,
-                data: JSON.stringify({ "manifest": ko.unwrap(self.manifest) }),
+                data: JSON.stringify({"manifest": ko.unwrap(self.manifest)}),
                 cache: false,
                 processData: false,
                 contentType: false,
-                success: function () {
+                success: function() {
                     self.reset();
                     self.toggleManifestEditor();
                     self.manifestData(null);
@@ -178,7 +180,7 @@ export default ko.components.register('manifest-manager', {
                     self.mainMenu(true);
                     self.activeTab(undefined);
                 },
-                error: function (response) {
+                error: function(response) {
                     self.reset();
                     // eslint-disable-next-line no-console
                     console.log("Failed to delete manifest");
@@ -187,33 +189,33 @@ export default ko.components.register('manifest-manager', {
             });
         };
 
-        this.createManifest = function (fileList) {
-            Array.from(fileList).forEach(function (file) {
+        this.createManifest = function(fileList){
+            Array.from(fileList).forEach(function(file) {
                 self.formData.append("files", file, file.name);
             });
             self.formData.append("manifest_title", ko.unwrap(self.manifestName));
             self.formData.append("manifest_description", ko.unwrap(self.manifestDescription));
             self.formData.append("operation", "create");
             self.formData.append("transaction_id", self.transactionId);
-            var onSuccess = function () {
+            var onSuccess = function() {
                 self.activeTab('manifest');
                 self.mainMenu(false);
             };
-            var onError = function () {
+            var onError = function() {
                 self.mainMenu(true);
                 self.activeTab(undefined);
             };
             self.submitToManifest(onSuccess, onError);
         };
 
-        this.addFiles = function (fileList) {
-            Array.from(fileList).forEach(function (file) {
+        this.addFiles = function(fileList) {
+            Array.from(fileList).forEach(function(file) {
                 self.formData.append("files", file, file.name);
             });
             self.updateManifest();
         };
 
-        this.updateManifest = function () {
+        this.updateManifest = function() {
             self.updateMetadata();
             self.formData.append("manifest_title", ko.unwrap(self.manifestName));
             self.formData.append("manifest_description", ko.unwrap(self.manifestDescription));
@@ -227,12 +229,12 @@ export default ko.components.register('manifest-manager', {
             self.submitToManifest();
         };
 
-        this.manifest.subscribe(function (val) {
+        this.manifest.subscribe(function(val){
             self.getManifestData(val);
             self.mainMenu(false);
         });
 
-        this.manifestData.subscribe(function (manifestData) {
+        this.manifestData.subscribe(function(manifestData) {
             if (manifestData) {
                 self.selectCanvas(manifestData.sequences[0].canvases[0]);
             }
@@ -241,7 +243,7 @@ export default ko.components.register('manifest-manager', {
             }
         });
 
-        this.manifest.subscribe(function () {
+        this.manifest.subscribe(function(){
             if (self.manifest() && self.manifest().charAt(0) == '/') {
                 self.remoteManifest(false);
             }
@@ -249,8 +251,8 @@ export default ko.components.register('manifest-manager', {
                 self.remoteManifest(true);
             }
             self.hideSidePanel();
-        });
-
+        }); 
+        
         this.dropzoneOptions4create = {
             url: "arches.urls.root",
             dictDefaultMessage: '',
@@ -260,12 +262,12 @@ export default ko.components.register('manifest-manager', {
             autoQueue: false,
             clickable: ".fileinput-create-button." + this.uniqueidClass(),
             previewsContainer: '#hidden-dz-create-previews',
-            init: function () {
+            init: function() {
                 self.dropzone = this;
-                this.on("addedfiles", self.createManifest);
-                this.on("error", function (file, error) {
+                this.on("addedfiles", self.createManifest); 
+                this.on("error", function(file, error) {
                     file.error = error;
-                });
+                });    
             }
         };
 
@@ -277,12 +279,12 @@ export default ko.components.register('manifest-manager', {
             autoQueue: false,
             clickable: ".fileinput-button." + this.uniqueidClass(),
             previewsContainer: '#hidden-dz-previews',
-            init: function () {
+            init: function() {
                 self.dropzone = this;
                 this.on("addedfiles", self.addFiles);
-                this.on("error", function (file, error) {
+                this.on("error", function(file, error) {
                     file.error = error;
-                });
+                });    
             }
         };
     },

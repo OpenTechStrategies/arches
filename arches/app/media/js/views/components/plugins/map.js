@@ -2,7 +2,8 @@ import ko from 'knockout';
 import mapPluginTemplate from 'templates/views/components/plugins/map.htm';
 import 'views/components/widgets/map';
 
-const viewModel = function () {
+
+const viewModel = function() {
     this.configJSON = {
         "zoom": 0,
         "pitch": 0,

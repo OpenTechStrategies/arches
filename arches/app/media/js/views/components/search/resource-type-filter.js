@@ -3,6 +3,7 @@ import arches from 'arches';
 import BaseFilter from 'views/components/search/base-filter';
 import resourceTypeFilterTemplate from 'templates/views/components/search/resource-type-filter.htm';
 
+
 var componentName = 'resource-type-filter';
 const viewModel = BaseFilter.extend({
     initialize: async function(options) {

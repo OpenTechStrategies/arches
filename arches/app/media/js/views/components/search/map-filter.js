@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import ko from 'knockout';
 import arches from 'arches';
@@ -5,36 +6,36 @@ import mapFilterTemplate from 'templates/views/components/search/map-filter.htm'
 import BaseFilter from 'views/components/search/base-filter';
 import MapComponentViewModel from 'views/components/map';
 import binFeatureCollection from 'views/components/widgets/map/bin-feature-collection';
+import mapStyles from 'views/components/widgets/map/map-styles';
 import turf from 'turf';
 import geohash from 'geohash';
 import geojsonExtent from 'geojson-extent';
 import uuid from 'uuid';
 import geojsonhint from 'geojsonhint';
+import mapbox from 'mapbox-gl';
+import mbdraw from 'mapbox-gl-draw';
+
 
 var componentName = 'map-filter';
 const viewModel = BaseFilter.extend({
-    initialize: function (options) {
+    initialize: function(options) {
         var self = this;
-
+            
         this.dependenciesLoaded = ko.observable(false);
         this.resultsAutoZoomEnabled = ko.observable(arches.mapFilterAutoZoom);
-        this.mapFitBounds = function (bounds, options, force) {
+        this.mapFitBounds = function(bounds, options, force){
             this.lastResultsBounds = bounds;
-            if (this.resultsAutoZoomEnabled() || force) {
+            if(this.resultsAutoZoomEnabled() || force){
                 this.map().fitBounds(bounds, options);
             }
         }
 
-        Promise.all([import('mapbox-gl'), import('mapbox-gl-draw')]).then(function (modules) {
-            var mapbox = modules[0].default || modules[0];
-            var mbdraw = modules[1].default || modules[1];
-            self.mapboxgl = mapbox;
-            self.MapboxDraw = mbdraw;
-            self.dependenciesLoaded(true);
-            if (self.map()) {
-                self.map.valueHasMutated();
-            }
-        });
+        self.mapboxgl = mapbox;
+        self.MapboxDraw = mbdraw;
+        self.dependenciesLoaded(true);
+        if(self.map()){
+            self.map.valueHasMutated();
+        }
 
         options.name = "Map Filter";
         BaseFilter.prototype.initialize.call(this, options);
@@ -104,7 +105,7 @@ const viewModel = BaseFilter.extend({
 
         MapComponentViewModel.apply(this, [options]);
 
-        this.updateLayers = function (layers) {
+        this.updateLayers = function(layers) {
             var map = self.map();
             var style = map.getStyle();
             style.layers = self.draw ? layers.concat(self.draw.options.styles) : layers;
@@ -128,24 +129,24 @@ const viewModel = BaseFilter.extend({
         this.bufferUnits = [{
             name: 'meters',
             val: 'm'
-        }, {
+        },{
             name: 'feet',
             val: 'ft'
         }];
 
-        this.mapLinkData.subscribe(function (data) {
+        this.mapLinkData.subscribe(function(data) {
             this.zoomToGeoJSON(data);
-        }, this);
+        },this);
 
         var bins = binFeatureCollection(this.searchAggregations);
 
-        this.geoJSONString.subscribe(function (geoJSONString) {
+        this.geoJSONString.subscribe(function(geoJSONString) {
             this.geoJSONErrors(this.getGeoJSONErrors(geoJSONString));
-            if (this.geoJSONErrors().length === 0) {
+            if(this.geoJSONErrors().length === 0){
                 var geoJSON = JSON.parse(geoJSONString);
                 // remove any extra geometries as only one geometry is allowed for search
                 geoJSON.features = geoJSON.features.slice(0, 1);
-                if (geoJSON.features.length > 0) {
+                if(geoJSON.features.length > 0){
                     var extent = geojsonExtent(geoJSON);
                     var bounds = new this.mapboxgl.LngLatBounds(extent);
                     this.mapFitBounds(bounds, {
@@ -157,12 +158,12 @@ const viewModel = BaseFilter.extend({
             }
         }, this);
 
-        this.getGeoJSONErrors = function (geoJSONString) {
+        this.getGeoJSONErrors = function(geoJSONString) {
             var hint = geojsonhint.hint(geoJSONString);
             var errors = [];
-            try {
+            try{
                 var geoJSON = JSON.parse(geoJSONString);
-                if (geoJSON.features.length > 1) {
+                if (geoJSON.features.length > 1){
                     hint.push({
                         "level": 'warning',
                         "message": 'Only one feature is allowed for search filtering.  Ignorning all all but the first feature.'
@@ -170,11 +171,11 @@ const viewModel = BaseFilter.extend({
                 }
                 var feature = geoJSON.features[0];
                 let bufferWidth;
-                if (!!feature.properties && !!feature.properties.buffer) {
+                if (!!feature.properties && !!feature.properties.buffer){
                     var buffer = feature.properties.buffer;
-                    try {
+                    try{
                         bufferWidth = parseInt(buffer.width, 10);
-                        if (bufferWidth < 0 || bufferWidth > this.maxBuffer) {
+                        if(bufferWidth < 0 || bufferWidth > this.maxBuffer){
                             throw new Error('Whoops!');
                         }
                     }
@@ -185,9 +186,9 @@ const viewModel = BaseFilter.extend({
                         });
                     }
 
-                    try {
+                    try{
                         var bufferUnit = buffer.unit;
-                        if (bufferUnit !== 'ft' && bufferUnit !== 'm') {
+                        if(bufferUnit !== 'ft' && bufferUnit !== 'm'){
                             throw new Error('Whoops!');
                         }
                     }
@@ -199,11 +200,11 @@ const viewModel = BaseFilter.extend({
                     }
                 }
 
-                if (!!feature.properties && !!feature.properties.inverted) {
+                if (!!feature.properties && !!feature.properties.inverted){
                     var inverted = feature.properties.inverted;
-                    try {
+                    try{
                         bufferWidth = parseInt(buffer.width, 10);
-                        if (inverted !== true && inverted !== false) {
+                        if(inverted !== true && inverted !== false){
                             throw new Error('Whoops!');
                         }
                     }
@@ -214,8 +215,8 @@ const viewModel = BaseFilter.extend({
                         });
                     }
                 }
-            } finally {
-                hint.forEach(function (item) {
+            }finally{
+                hint.forEach(function(item) {
                     if (item.level !== 'message') {
                         errors.push(item);
                     }
@@ -256,9 +257,9 @@ const viewModel = BaseFilter.extend({
 
         this.drawModes = _.pluck(this.spatialFilterTypes, 'drawMode');
 
-        this.selectedTool.subscribe(function (selectedDrawTool) {
-            if (!!selectedDrawTool) {
-                if (selectedDrawTool === 'extent') {
+        this.selectedTool.subscribe(function(selectedDrawTool){
+            if(!!selectedDrawTool){
+                if(selectedDrawTool === 'extent'){
                     this.searchByExtent();
                 } else {
                     this.draw.changeMode(selectedDrawTool);
@@ -267,13 +268,13 @@ const viewModel = BaseFilter.extend({
             }
         }, this);
 
-        this.searchResults.timestamp.subscribe(function (timestamp) {
-            if (this.pageLoaded) {
+        this.searchResults.timestamp.subscribe(function(timestamp) {
+            if(this.pageLoaded) {
                 this.updateResults();
             }
         }, this);
 
-        this.filterByFeatureGeom = function (feature) {
+        this.filterByFeatureGeom = function(feature) {
             if (feature.geometry.type == 'Point' && this.buffer() == 0) { this.buffer(25); }
             self.searchGeometries.removeAll();
             this.draw.deleteAll();
@@ -285,15 +286,15 @@ const viewModel = BaseFilter.extend({
             self.updateFilter();
         };
 
-        var updateSearchResultPointLayer = function () {
+        var updateSearchResultPointLayer = function() {
             var pointSource = self.map().getSource('search-results-points');
             var agg = ko.unwrap(self.searchAggregations);
             var features = [];
             var mouseoverInstanceId = self.mouseoverInstanceId();
 
             if (agg) {
-                _.each(agg.results, function (result) {
-                    _.each(result._source.points, function (point) {
+                _.each(agg.results, function(result) {
+                    _.each(result._source.points, function(point) {
                         var feature = turf.point([point.point.lon, point.point.lat], _.extend(result._source, {
                             resourceinstanceid: result._id,
                             highlight: result._id === mouseoverInstanceId
@@ -307,7 +308,7 @@ const viewModel = BaseFilter.extend({
             pointSource.setData(pointsFC);
         };
 
-        this.updateSearchResultsLayers = function () {
+        this.updateSearchResultsLayers = function() {
             if (self.filter.feature_collection() && self.filter.feature_collection()['features'].length > 0) {
                 var geojsonFC = self.filter.feature_collection();
                 var extent = geojsonExtent(geojsonFC);
@@ -320,7 +321,7 @@ const viewModel = BaseFilter.extend({
             }
             var features = [];
             var agg = ko.unwrap(self.searchAggregations);
-            _.each(agg.geo_aggs.grid.buckets, function (cell) {
+            _.each(agg.geo_aggs.grid.buckets, function(cell) {
                 var pt = geohash.decode(cell.key);
                 var feature = turf.point([pt.lon, pt.lat], {
                     doc_count: cell.doc_count
@@ -330,8 +331,8 @@ const viewModel = BaseFilter.extend({
             var pointsFC = turf.featureCollection(features);
 
             var aggregated = turf.collect(ko.unwrap(bins), pointsFC, 'doc_count', 'doc_count');
-            _.each(aggregated.features, function (feature) {
-                feature.properties.doc_count = _.reduce(feature.properties.doc_count, function (i, ii) {
+            _.each(aggregated.features, function(feature) {
+                feature.properties.doc_count = _.reduce(feature.properties.doc_count, function(i, ii) {
                     return i + ii;
                 }, 0);
             });
@@ -349,22 +350,22 @@ const viewModel = BaseFilter.extend({
         };
 
         this.searchFilterVms[componentName](this);
-        this.map.subscribe(function () {
+        this.map.subscribe(function(){
             this.setupDraw();
             this.restoreState();
 
-            var filterUpdated = ko.computed(function () {
+            var filterUpdated = ko.computed(function() {
                 return JSON.stringify(ko.toJS(this.filter.feature_collection())) + this.filter.inverted();
             }, this);
-            filterUpdated.subscribe(function () {
+            filterUpdated.subscribe(function() {
                 this.updateQuery();
             }, this);
 
-            this.buffer.subscribe(function (val) {
+            this.buffer.subscribe(function(val) {
                 this.updateFilter();
             }, this);
 
-            this.bufferUnit.subscribe(function (val) {
+            this.bufferUnit.subscribe(function(val) {
                 this.updateFilter();
             }, this);
 
@@ -379,14 +380,14 @@ const viewModel = BaseFilter.extend({
         }, this);
     },
 
-    setupDraw: function () {
-        if (!this.map() || !this.dependenciesLoaded()) {
+    setupDraw: function() {
+        if(!this.map() || !this.dependenciesLoaded()){
             return;
         }
         var self = this;
         var modes = this.MapboxDraw.modes;
         modes.static = {
-            toDisplayFeatures: function (state, geojson, display) {
+            toDisplayFeatures: function(state, geojson, display) {
                 display(geojson);
             }
         };
@@ -395,9 +396,9 @@ const viewModel = BaseFilter.extend({
             modes: modes
         });
         this.map().addControl(this.draw);
-        this.map().on('draw.create', function (e) {
-            self.draw.getAll().features.forEach(function (feature) {
-                if (feature.id !== e.features[0].id) {
+        this.map().on('draw.create', function(e) {
+            self.draw.getAll().features.forEach(function(feature){
+                if(feature.id !== e.features[0].id){
                     self.draw.delete(feature.id);
                 }
             });
@@ -405,16 +406,16 @@ const viewModel = BaseFilter.extend({
             self.updateFilter();
             self.selectedTool(undefined);
         });
-        this.map().on('draw.update', function (e) {
+        this.map().on('draw.update', function(e) {
             self.searchGeometries(e.features);
             self.updateFilter();
         });
-        this.map().on("draw.modechange", function (e) {
+        this.map().on("draw.modechange", function(e) {
             self.map().draw_mode = e.mode;
         });
     },
 
-    searchByExtent: function () {
+    searchByExtent: function() {
         if (_.contains(this.drawModes, this.selectedTool())) {
             this.draw.deleteAll();
         }
@@ -442,7 +443,7 @@ const viewModel = BaseFilter.extend({
         this.selectedTool(undefined);
     },
 
-    useMaxBuffer: function (unit, buffer, maxBuffer) {
+    useMaxBuffer: function(unit, buffer, maxBuffer) {
         let res = false;
         if (unit === 'ft') {
             res = (buffer * 0.3048) > maxBuffer;
@@ -452,7 +453,7 @@ const viewModel = BaseFilter.extend({
         return res;
     },
 
-    updateFilter: function () {
+    updateFilter: function(){
         if (this.buffer() < 0) {
             this.buffer(0);
         }
@@ -463,8 +464,8 @@ const viewModel = BaseFilter.extend({
             this.buffer(max);
         }
 
-        this.searchGeometries().forEach(function (feature) {
-            if (!feature.properties) {
+        this.searchGeometries().forEach(function(feature){
+            if(!feature.properties){
                 feature.properties = {};
             }
             feature.properties.buffer = {
@@ -479,23 +480,23 @@ const viewModel = BaseFilter.extend({
         });
     },
 
-    editGeoJSON: function (feature) {
+    editGeoJSON: function(feature) {
         var geoJSON = feature();
         var geoJSONString = JSON.stringify(geoJSON, null, 4);
         this.geoJSONString(geoJSONString);
     },
 
-    updateGeoJSON: function () {
+    updateGeoJSON: function() {
         if (this.geoJSONErrors().length === 0) {
             var geoJSON = JSON.parse(this.geoJSONString());
             this.draw.set(geoJSON);
             this.searchGeometries(geoJSON.features);
-            geoJSON.features.forEach(function (feature) {
-                if (!!feature.properties && !!feature.properties.buffer) {
+            geoJSON.features.forEach(function(feature){
+                if(!!feature.properties && !!feature.properties.buffer){
                     this.buffer(parseInt(feature.properties.buffer.width, 10));
                     this.bufferUnit(feature.properties.buffer.unit);
                 }
-                if (!!feature.properties && Object.prototype.hasOwnProperty.call(feature.properties, 'inverted')) {
+                if(!!feature.properties && Object.prototype.hasOwnProperty.call(feature.properties, 'inverted')){
                     this.filter.inverted(feature.properties.inverted);
                 }
             }, this);
@@ -504,8 +505,8 @@ const viewModel = BaseFilter.extend({
         }
     },
 
-    zoomToGeoJSON: function (data) {
-        var mapData = data.properties.geometries.reduce(function (fc1, fc2) {
+    zoomToGeoJSON: function(data) {
+        var mapData = data.properties.geometries.reduce(function(fc1, fc2) {
             fc1.geom.features = fc1.geom.features.concat(fc2.geom.features);
             return fc1;
         }, {
@@ -521,7 +522,7 @@ const viewModel = BaseFilter.extend({
         }, true);
     },
 
-    updateQuery: function () {
+    updateQuery: function() {
         var self = this;
         var queryObj = this.query();
         if (this.filter.feature_collection().features.length > 0) {
@@ -536,7 +537,7 @@ const viewModel = BaseFilter.extend({
         this.query(queryObj);
     },
 
-    restoreState: function () {
+    restoreState: function() {
         var query = this.query();
         var buffer = 10;
         var bufferUnit = 'm';
@@ -569,21 +570,21 @@ const viewModel = BaseFilter.extend({
         this.pageLoaded = true;
     },
 
-    updateResults: function () {
-        if (!!this.searchResults.results) {
+    updateResults: function() {
+        if (!!this.searchResults.results){
             this.searchAggregations({
                 results: this.searchResults.results.hits.hits,
                 geo_aggs: this.searchResults.results.aggregations.geo_aggs.inner.buckets[0]
             });
             this.fitToAggregationBounds();
         }
-        if (!!this.searchResults[componentName]) {
+        if(!!this.searchResults[componentName]) {
             var buffer = this.searchResults[componentName].search_buffer;
             this.map().getSource('geojson-search-buffer-data').setData(buffer);
         }
     },
 
-    clear: function (reset_features) {
+    clear: function(reset_features) {
         this.filter.feature_collection({
             "type": "FeatureCollection",
             "features": []
@@ -597,11 +598,11 @@ const viewModel = BaseFilter.extend({
         this.searchGeometries([]);
     },
 
-    zoomToAllFeaturesHandler: function () {
+    zoomToAllFeaturesHandler: function(){
         this.fitToAggregationBounds(true);
     },
 
-    fitToAggregationBounds: function (forceFitBounds) {
+    fitToAggregationBounds: function(forceFitBounds) {
         var agg = this.searchAggregations();
         var aggBounds;
         if (agg && agg.geo_aggs.bounds.bounds && this.map()) {
@@ -624,7 +625,7 @@ const viewModel = BaseFilter.extend({
                 maxZoom: maxZoom
             }, forceFitBounds);
         }
-    },
+    },  
 });
 
 export default ko.components.register(componentName, {

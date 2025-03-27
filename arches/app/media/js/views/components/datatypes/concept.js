@@ -6,17 +6,18 @@ import ConceptSelectViewModel from 'viewmodels/concept-select';
 import conceptDatatypeTemplate from 'templates/views/components/datatypes/concept.htm';
 import 'bindings/key-events-click';
 
-const name = 'concept-datatype-config';
-const viewModel = function (params) {
+
+var name = 'concept-datatype-config';
+const viewModel = function(params) {
     const self = this;
     this.search = params.search;
     if (this.search) {
-        const filter = params.filterValue();
+        var filter = params.filterValue();
         params.config = ko.observable({
-            options: [],
+            options:[],
             placeholder: arches.translations.selectAnOption
         });
-
+            
         this.op = ko.observable(filter.op || 'eq');
         this.multiple = ko.observable(false);
         this.searchValue = ko.observable(filter.val || '');
@@ -26,14 +27,14 @@ const viewModel = function (params) {
         }
         params.value = this.searchValue;
         ConceptSelectViewModel.apply(this, [params]);
-        this.filterValue = ko.computed(function () {
+        this.filterValue = ko.computed(function() {
             return {
                 op: self.op(),
                 val: self.searchValue()
             };
         });
         params.filterValue(this.filterValue());
-        this.filterValue.subscribe(function (val) {
+        this.filterValue.subscribe(function(val) {
             params.filterValue(val);
         });
     } else {
@@ -44,24 +45,24 @@ const viewModel = function (params) {
             $.ajax({
                 url: arches.urls.get_concept_collections,
                 type: 'json'
-            }).done(function (data) {
+            }).done(function(data){
                 arches.conceptCollections = data;
                 self.conceptCollections(data);
                 self.conceptCollections.unshift({
-                    label: null,
-                    id: null
+                    'label': null,
+                    'id': null
                 });
                 self.topConcept(self.initialTopConcept);
-                params._node(JSON.stringify(params));  // prevents dirty state trigger on Graph Designer concept node load
-            }).fail(function (error) {
+                params._node(JSON.stringify(params))  // prevents dirty state trigger on Graph Designer concept node load
+            }).fail(function(error){
                 console.log(error);
             });
         } else {
             this.conceptCollections(arches.conceptCollections);
             if (this.conceptCollections()[0].label != null) {
                 this.conceptCollections.unshift({
-                    label: null,
-                    id: null
+                    'label': null,
+                    'id': null
                 });
             }
         }
@@ -69,7 +70,7 @@ const viewModel = function (params) {
 };
 
 ko.components.register(name, {
-    viewModel,
+    viewModel: viewModel,
     template: conceptDatatypeTemplate,
 });
 

@@ -9,6 +9,7 @@ import 'dropzone';
 import 'bindings/select2-query';
 import 'bindings/dropzone';
 
+
 export default ko.components.register('tile-excel-importer', {
     viewModel: ExcelFileImportViewModel,
     template: tileExcelImporterTemplate,

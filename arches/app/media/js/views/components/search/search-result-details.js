@@ -1,3 +1,4 @@
+import $ from 'jquery';
 import _ from 'underscore';
 import ko from 'knockout';
 import cardComponents from 'card-components';
@@ -9,9 +10,10 @@ import CardViewModel from 'viewmodels/card';
 import 'views/components/resource-report-abstract';
 import 'bindings/chosen';
 
+
 var componentName = 'search-result-details';
 const viewModel = BaseFilter.extend({
-    initialize: function (options) {
+    initialize: function(options) {
         var self = this;
         options.name = 'Search Result Details';
         BaseFilter.prototype.initialize.call(this, options);
@@ -21,10 +23,10 @@ const viewModel = BaseFilter.extend({
         this.report = ko.observable();
         this.loading = ko.observable(false);
         this.reportExpanded = ko.observable();
-        this.searchFilterVms[componentName](this);
+        this.searchFilterVms[componentName](this);  
 
-        var setSearchResults = function () {
-            self.searchResultsVm().details = self;
+        var setSearchResults = function(){
+            self.searchResultsVm().details = self;         
         };
 
         this.searchResultsVm = this.getFilterByType('search-results-type', false);
@@ -42,7 +44,7 @@ const viewModel = BaseFilter.extend({
         query['tiles'] = true;
         this.query(query);
 
-        this.setupReport = function (source, bulkResourceReportCache, bulkDisambiguatedResourceInstanceCache) {
+        this.setupReport = function(source, bulkResourceReportCache, bulkDisambiguatedResourceInstanceCache) {    
             self.loading(true);
 
             var sourceData = {
@@ -60,16 +62,16 @@ const viewModel = BaseFilter.extend({
             }
         };
 
-        this.createReport = function (sourceData, bulkResourceReportCacheData, bulkDisambiguatedResourceInstanceCacheData) {
+        this.createReport = function(sourceData, bulkResourceReportCacheData, bulkDisambiguatedResourceInstanceCacheData) {
             var data = { ...sourceData };
 
             if (bulkResourceReportCacheData.graph) {
-                data.cards = _.filter(bulkResourceReportCacheData.cards, function (card) {
-                    var nodegroup = _.find(bulkResourceReportCacheData.graph.nodegroups, function (group) {
+                data.cards = _.filter(bulkResourceReportCacheData.cards, function(card) {
+                    var nodegroup = _.find(bulkResourceReportCacheData.graph.nodegroups, function(group) {
                         return group.nodegroupid === card.nodegroup_id;
                     });
                     return !nodegroup || !nodegroup.parentnodegroup_id;
-                }).map(function (card) {
+                }).map(function(card) {
                     return new CardViewModel({
                         card: card,
                         graphModel: bulkResourceReportCacheData.graphModel,
@@ -99,6 +101,7 @@ const viewModel = BaseFilter.extend({
                     templateId: ko.observable(bulkResourceReportCacheData.template_id),
                     report_json: bulkDisambiguatedResourceInstanceCacheData,
                 });
+
             }
         };
     }
