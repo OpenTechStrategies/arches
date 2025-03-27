@@ -8,7 +8,7 @@ import BaseManagerView from 'views/base-manager';
 import NodeModel from 'models/node';
 import AlertViewModel from 'viewmodels/alert';
 import binFeatureCollection from 'views/components/widgets/map/bin-feature-collection';
-import data from 'view-data';
+import data from 'views/map-layer-manager-data';
 import 'bindings/mapbox-gl';
 import 'bindings/codemirror';
 import 'codemirror/mode/javascript/javascript';
