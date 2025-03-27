@@ -9373,7 +9373,14 @@ a.search-query-link-captions:focus {
 }
 
 .sort-btn {
+    padding-top: 6px;
     padding-right: 5px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    background: none;
 }
 
 .search-title {
