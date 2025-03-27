@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.test import TestCase, RequestFactory
 from django.core import management
-from arches.app.models import models
 from arches.app.models.graph import Graph
 from arches.app.models.resource import Resource
 from arches.app.models.tile import Tile
@@ -27,8 +26,6 @@ class SearchSortTests(TestCase):
             "Search Sort Test Model.json",
         )
 
-        management.call_command("es", operation="index_concepts")
-
         management.call_command(
             "packages",
             operation="import_graphs",
@@ -37,55 +34,26 @@ class SearchSortTests(TestCase):
         )
 
         test_graph = Graph.objects.get(pk="cfc0d27d-b1f4-4939-a870-07d580be2b60")
-        test_graph.publish(user=cls.user)
 
         Resource.objects.create(
             graph=test_graph,
-            name="B Resource",
+            name="B Resource (first created)",
             resourceinstanceid="8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
         )
 
         Resource.objects.create(
             graph=test_graph,
-            name="C Resource",
+            name="C Resource (second created)",
             resourceinstanceid="a94c81c5-2047-4b53-8341-495f12bfad95",
         )
 
         Resource.objects.create(
             graph=test_graph,
-            name="A Resource",
+            name="A Resource (third created)",
             resourceinstanceid="09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
         )
 
         name_node_id = "322b3b82-0a39-11f0-a841-c3a65b371351"
-
-        resource_a_name_tile = Tile.objects.create(
-            **{
-                "resourceinstance_id": "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
-                "nodegroup_id": name_node_id,
-            }
-        )
-
-        resource_a_name_tile.data = {
-            "322b3b82-0a39-11f0-a841-c3a65b371351": {
-                "en": {"value": "Resource A", "direction": "ltr"}
-            }
-        }
-        resource_a_name_tile.save()
-
-        resource_b_name_tile = Tile.objects.create(
-            **{
-                "resourceinstance_id": "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-                "nodegroup_id": name_node_id,
-            }
-        )
-
-        resource_b_name_tile.data = {
-            "322b3b82-0a39-11f0-a841-c3a65b371351": {
-                "en": {"value": "Resource B", "direction": "ltr"}
-            }
-        }
-        resource_b_name_tile.save()
 
         resource_c_name_tile = Tile.objects.create(
             **{
@@ -96,10 +64,38 @@ class SearchSortTests(TestCase):
 
         resource_c_name_tile.data = {
             "322b3b82-0a39-11f0-a841-c3a65b371351": {
-                "en": {"value": "Resource C", "direction": "ltr"}
+                "en": {"value": "Resource C (first updated)", "direction": "ltr"}
             }
         }
         resource_c_name_tile.save()
+
+        resource_b_name_tile = Tile.objects.create(
+            **{
+                "resourceinstance_id": "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
+                "nodegroup_id": name_node_id,
+            }
+        )
+
+        resource_b_name_tile.data = {
+            "322b3b82-0a39-11f0-a841-c3a65b371351": {
+                "en": {"value": "Resource B (second updated)", "direction": "ltr"}
+            }
+        }
+        resource_b_name_tile.save()
+
+        resource_a_name_tile = Tile.objects.create(
+            **{
+                "resourceinstance_id": "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
+                "nodegroup_id": name_node_id,
+            }
+        )
+
+        resource_a_name_tile.data = {
+            "322b3b82-0a39-11f0-a841-c3a65b371351": {
+                "en": {"value": "Resource A (third updated)", "direction": "ltr"}
+            }
+        }
+        resource_a_name_tile.save()
 
         # add delay to allow for indexes to be updated
         time.sleep(1)
@@ -118,85 +114,85 @@ class SearchSortTests(TestCase):
     def test_sort_by_names_asc(self):
         hit_ids = self.search_request("&sort-by=resource_name&sort-order=asc")
         ids_ordered_by_name = [
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_name,
-            "The hits are not ordered by name as expected.",
+            "The results are not ordered by name as expected.",
         )
 
     def test_sort_by_names_desc(self):
         hit_ids = self.search_request("&sort-by=resource_name&sort-order=desc")
         ids_ordered_by_name = [
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_name,
-            "The hits are not ordered by name as expected.",
+            "The results are not ordered by name as expected.",
         )
 
     def test_sort_by_date_created_asc(self):
         hit_ids = self.search_request("&sort-by=date_created&sort-order=asc")
         ids_ordered_by_date_created = [
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (1st created)
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (2nd created)
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd created)
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_date_created,
-            "The hits are not ordered by date created",
+            "The results are not ordered by date created",
         )
 
     def test_sort_by_date_created_desc(self):
         hit_ids = self.search_request("&sort-by=date_created&sort-order=desc")
         ids_ordered_by_date_created = [
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd created)
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (2nd created)
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (1st created)
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_date_created,
-            "The hits are not ordered by date created",
+            "The results are not ordered by date created",
         )
 
     def test_sort_by_date_edited_asc(self):
         hit_ids = self.search_request("&sort-by=date_edited&sort-order=asc")
         ids_ordered_by_date_edited = [
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (2nd updated)
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd updated)
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_date_edited,
-            "The hits are not ordered by date edited",
+            "The results are not ordered by date edited",
         )
 
     def test_sort_by_date_edited_desc(self):
         hit_ids = self.search_request("&sort-by=date_edited&sort-order=desc")
         ids_ordered_by_date_edited = [
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd updated)
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (2nd updated)
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_date_edited,
-            "The hits are not ordered by date edited",
+            "The results are not ordered by date edited",
         )
 
     def test_sort_order_does_not_change_unsorted_data(self):
@@ -210,13 +206,13 @@ class SearchSortTests(TestCase):
     def test_sort_by_asc_if_order_not_specified(self):
         hit_ids = self.search_request("&sort-by=date_edited")
         ids_ordered_by_date_edited = [
-            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",
-            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",
-            "a94c81c5-2047-4b53-8341-495f12bfad95",
+            "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
+            "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (2nd updated)
+            "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd updated)
         ]
 
         self.assertListEqual(
             hit_ids,
             ids_ordered_by_date_edited,
-            "The hits are not ordered by date edited ascending",
+            "The results are not ordered by date edited ascending",
         )
