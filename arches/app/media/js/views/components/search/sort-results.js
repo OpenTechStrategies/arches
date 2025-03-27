@@ -12,7 +12,7 @@ define([
             BaseFilter.prototype.initialize.call(this, options);
 
             this.sortBy = ko.observable('');
-            this.sortOrder = ko.observable('');
+            this.sortOrder = ko.observable('asc');
             
             this.sortSymbol=ko.computed(function() {
                 return this.sortOrder() === "asc" ? 
@@ -25,7 +25,7 @@ define([
             this.sortBy.subscribe(function(){
                 this.updateQuery();
             }, this);
-
+            
             this.sortOrder.subscribe(function(){
                 this.updateQuery();
             }, this);
