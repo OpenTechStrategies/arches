@@ -499,20 +499,26 @@ class Resource(models.ResourceInstance):
         document["displayname"] = []
         document["displaydescription"] = []
         document["map_popup"] = []
-        document["date_created"] = (
-            models.EditLog.objects.filter(
-                resourceinstanceid=str(self.resourceinstanceid)
+        try:
+            document["date_created"] = (
+                models.EditLog.objects.filter(
+                    resourceinstanceid=str(self.resourceinstanceid)
+                )
+                .earliest("timestamp")
+                .timestamp
             )
-            .earliest("timestamp")
-            .timestamp
-        )
-        document["date_edited"] = (
-            models.EditLog.objects.filter(
-                resourceinstanceid=str(self.resourceinstanceid)
+        except:
+            document["date_created"] = None
+        try:
+            document["date_edited"] = (
+                models.EditLog.objects.filter(
+                    resourceinstanceid=str(self.resourceinstanceid)
+                )
+                .latest("timestamp")
+                .timestamp
             )
-            .latest("timestamp")
-            .timestamp
-        )
+        except:
+            document["date_edited"] = None
         for lang in settings.LANGUAGES:
             if context is None:
                 context = {}
