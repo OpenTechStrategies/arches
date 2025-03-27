@@ -5,6 +5,7 @@ import koMapping from 'knockout-mapping';
 import arches from 'arches';
 import 'viewmodels/card';
 import 'utils/set-csrf-token';
+import CardViewModel from 'viewmodels/card';
 
 
 /**
@@ -61,7 +62,6 @@ var getDatatypeLookup = function(params){
 };
 
 var TileViewModel = function(params) {
-    var CardViewModel = require('viewmodels/card');
     var self = this;
     var selection = params.selection || ko.observable();
     var scrollTo = params.scrollTo || ko.observable();

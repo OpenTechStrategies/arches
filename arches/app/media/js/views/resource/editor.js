@@ -11,6 +11,8 @@ import ReportModel from 'models/report';
 import CardViewModel from 'viewmodels/card';
 import ProvisionalTileViewModel from 'viewmodels/provisional-tile';
 import data from 'views/resource/resource-editor-data';
+import 'views/resource/permissions-manager'
+import 'views/resource/related-resources-manager'
 import 'bindings/resizable-sidepanel';
 import 'bindings/sortable';
 import 'moment';
@@ -27,15 +29,15 @@ var selection = ko.observable('root');
 var scrollTo = ko.observable();
 let parsedDisplayName = undefined;
 try {
-    if(typeof data.displayname == 'string') {
+    if (typeof data.displayname == 'string') {
         parsedDisplayName = JSON.parse(data.displayname);
     }
-} catch(e){  // eslint-disable-line  @typescript-eslint/no-unused-vars
+} catch (e) {  // eslint-disable-line  @typescript-eslint/no-unused-vars
     // empty
 }
 
 let displayNameValue = undefined;
-if(parsedDisplayName){
+if (parsedDisplayName) {
     const defaultLanguageValue = parsedDisplayName?.[arches.activeLanguage]?.value;
     displayNameValue = defaultLanguageValue ? defaultLanguageValue : "(" + parsedDisplayName[Object.keys(parsedDisplayName).filter(languageKey => languageKey != arches.activeLanguage)?.[0]]?.value + ")";
 } else {
@@ -48,7 +50,7 @@ var primaryDescriptorFunction = ko.observable(data['primaryDescriptorFunction'])
 var graphHasUnpublishedChanges = ko.observable(data['graph_has_unpublished_changes'] === "True" ? true : false);
 var userIsCreator = data['useriscreator'];
 var creator = data['creator'];
-var selectedTile = ko.computed(function() {
+var selectedTile = ko.computed(function () {
     var item = selection();
     if (item && typeof item !== 'string') {
         if (item.tileid) {
@@ -58,10 +60,10 @@ var selectedTile = ko.computed(function() {
     }
 });
 
-var provisionalTileViewModel = new ProvisionalTileViewModel({tile: selectedTile, reviewer: data.user_is_reviewer});
+var provisionalTileViewModel = new ProvisionalTileViewModel({ tile: selectedTile, reviewer: data.user_is_reviewer });
 
-var flattenTree = function(parents, flatList) {
-    _.each(ko.unwrap(parents), function(parent) {
+var flattenTree = function (parents, flatList) {
+    _.each(ko.unwrap(parents), function (parent) {
         flatList.push(parent);
         var childrenKey = parent.tiles ? 'tiles' : 'cards';
         flattenTree(
@@ -72,9 +74,9 @@ var flattenTree = function(parents, flatList) {
     return flatList;
 };
 
-var toggleAll = function(state) {
+var toggleAll = function (state) {
     var nodes = flattenTree(vm.topCards, []);
-    _.each(nodes, function(node) {
+    _.each(nodes, function (node) {
         node.expanded(state);
     });
     if (state) {
@@ -82,32 +84,32 @@ var toggleAll = function(state) {
     }
 };
 
-var createLookup = function(list, idKey) {
-    return _.reduce(list, function(lookup, item) {
+var createLookup = function (list, idKey) {
+    return _.reduce(list, function (lookup, item) {
         lookup[item[idKey]] = item;
         return lookup;
     }, {});
 };
 
 var graphModel = new GraphModel({
-    data: {nodes: data.nodes, nodegroups: data.nodegroups, edges: [], name: data.graph.name, slug: data.graph.slug},
+    data: { nodes: data.nodes, nodegroups: data.nodegroups, edges: [], name: data.graph.name, slug: data.graph.slug },
     datatypes: data.datatypes,
 });
 
-var topCards = _.filter(data.cards, function(card) {
-    var nodegroup = _.find(data.nodegroups, function(group) {
+var topCards = _.filter(data.cards, function (card) {
+    var nodegroup = _.find(data.nodegroups, function (group) {
         return group.nodegroupid === card.nodegroup_id;
     });
     return nodegroup && !nodegroup.parentnodegroup_id;
 }).sort((firstEl, secondEl) => {
-    if(firstEl.sortorder < secondEl.sortorder) {
+    if (firstEl.sortorder < secondEl.sortorder) {
         return -1;
     }
-    if(firstEl.sortorder === secondEl.sortorder) {
+    if (firstEl.sortorder === secondEl.sortorder) {
         return 0;
     }
     return 1;
-}).map(function(card) {
+}).map(function (card) {
     return new CardViewModel({
         card: card,
         graphModel: graphModel,
@@ -129,16 +131,16 @@ var topCards = _.filter(data.cards, function(card) {
     });
 });
 
-topCards.forEach(function(topCard) {
+topCards.forEach(function (topCard) {
     topCard.topCards = topCards;
 });
 
 var vm = {
     loading: loading,
     scrollTo: scrollTo,
-    filterEnterKeyHandler: function(context, e) {
+    filterEnterKeyHandler: function (context, e) {
         if (e.keyCode === 13) {
-            var highlightedItems = _.filter(flattenTree(vm.topCards, []), function(item) {
+            var highlightedItems = _.filter(flattenTree(vm.topCards, []), function (item) {
                 return item.highlight && item.highlight();
             });
             var previousItem = scrollTo();
@@ -146,7 +148,7 @@ var vm = {
             if (highlightedItems.length > 0) {
                 var scrollIndex = 0;
                 var previousIndex = highlightedItems.indexOf(previousItem);
-                if (previousItem && highlightedItems[previousIndex+1]) {
+                if (previousItem && highlightedItems[previousIndex + 1]) {
                     scrollIndex = previousIndex + 1;
                 }
                 scrollTo(highlightedItems[scrollIndex]);
@@ -178,10 +180,10 @@ var vm = {
         ontologyclass: data.ontologyclass
     },
     displayname: displayname,
-    expandAll: function() {
+    expandAll: function () {
         toggleAll(true);
     },
-    collapseAll: function() {
+    collapseAll: function () {
         toggleAll(false);
     },
     toggleGrid: () => {
@@ -192,7 +194,7 @@ var vm = {
     topCards: topCards,
     selection: selection,
     selectedTile: selectedTile,
-    selectedCard: ko.computed(function() {
+    selectedCard: ko.computed(function () {
         var item = selection();
         if (item && typeof item !== 'string') {
             if (item.tileid) {
@@ -201,29 +203,29 @@ var vm = {
             return item;
         }
     }),
-    addableCards: ko.computed(function() {
+    addableCards: ko.computed(function () {
         var tile = selectedTile();
-        return _.filter(tile ? tile.cards : [], function(card) {
+        return _.filter(tile ? tile.cards : [], function (card) {
             return card.canAdd();
         });
     }),
     provisionalTileViewModel: provisionalTileViewModel,
     filter: filter,
-    on: function(eventName, handler) {
+    on: function (eventName, handler) {
         if (handlers[eventName]) {
             handlers[eventName].push(handler);
         }
     },
     resourceId: resourceId,
     reportLookup: reportLookup,
-    copyResource: function() {
+    copyResource: function () {
         if (data.graph && !data.graph.is_active) {
             vm.alert(new AlertViewModel(
-                'ep-alert-red', 
-                arches.translations.resourceIsNotActive.title, 
-                arches.translations.resourceIsNotActive.text, 
-                null, 
-                function(){}
+                'ep-alert-red',
+                arches.translations.resourceIsNotActive.title,
+                arches.translations.resourceIsNotActive.text,
+                null,
+                function () { }
             ));
         }
         else if (resourceId()) {
@@ -232,19 +234,19 @@ var vm = {
             $.ajax({
                 type: "GET",
                 url: arches.urls.resource_copy.replace('//', '/' + resourceId() + '/'),
-                success: function(data) {
+                success: function (data) {
                     vm.alert(new AlertViewModel(
                         'ep-alert-blue',
                         arches.translations.resourceCopySuccess.title,
                         "<a style='color: #fff; font-weight: 700;' target='_blank' href=" + arches.urls.resource_editor + data.resourceid + ">" + arches.translations.resourceCopySuccess.text + "</a>",
                         null,
-                        function(){}
+                        function () { }
                     ));
                 },
-                error: function() {
-                    vm.alert(new AlertViewModel('ep-alert-red', arches.translations.resourceCopyFailed.title, arches.translations.resourceCopyFailed.text, null, function(){}));
+                error: function () {
+                    vm.alert(new AlertViewModel('ep-alert-red', arches.translations.resourceCopyFailed.title, arches.translations.resourceCopyFailed.text, null, function () { }));
                 },
-                complete: function() {
+                complete: function () {
                     loading(false);
                 },
             });
@@ -255,28 +257,28 @@ var vm = {
                 arches.translations.resourceCopyFailed.title,
                 arches.translations.resourceCopyFailed.text,
                 null,
-                function(){}
+                function () { }
             ));
         }
     },
-    deleteResource: function() {
+    deleteResource: function () {
         if (resourceId()) {
             vm.menuActive(false);
             vm.alert(new AlertViewModel('ep-alert-red',
                 arches.translations.confirmResourceDelete.title,
                 arches.translations.confirmResourceDelete.text,
-                function() {
+                function () {
                     return;
                 },
-                function(){
+                function () {
                     loading(true);
                     $.ajax({
                         type: "DELETE",
                         url: arches.urls.resource_editor + resourceId(),
-                        error: function(err) {
+                        error: function (err) {
                             vm.alert(new JsonErrorAlertViewModel('ep-alert-red', err.responseJSON));
                         },
-                        complete: function(request, status) {
+                        complete: function (request, status) {
                             loading(false);
                             if (status === 'success') {
                                 vm.navigate(arches.urls.resource);
@@ -287,40 +289,40 @@ var vm = {
             ));
         }
     },
-    updateResourceInstanceLifecycleState: function(data) {
+    updateResourceInstanceLifecycleState: function (data) {
         $.ajax({
             type: "POST",
             url: arches.urls.api_resource_instance_lifecycle_state(resourceId()),
             data: JSON.stringify(data['id']),
-            error: function(err) {
+            error: function (err) {
                 vm.alert(new JsonErrorAlertViewModel('ep-alert-red', err.responseJSON));
             },
-            success: function() {
+            success: function () {
                 window.location.reload();  // reload is important here, for enforcing a report redirect on an unpermissioned user 
             }
         });
     },
-    onSaveSuccess: function() {
+    onSaveSuccess: function () {
         if (!vm.resourceInstanceLifecycleState()) {
             $.ajax({
                 type: "GET",
                 url: arches.urls.api_resource_instance_lifecycle_state(resourceId()),
-                error: function(err) {
+                error: function (err) {
                     vm.alert(new JsonErrorAlertViewModel('ep-alert-red', err.responseJSON));
                 },
-                success: function(data) {
+                success: function (data) {
                     vm.resourceInstanceLifecycleState(data);
                 }
             });
         }
     },
-    viewEditHistory: function() {
+    viewEditHistory: function () {
         if (resourceId()) {
             vm.menuActive(false);
             vm.navigate(arches.urls.get_resource_edit_log(resourceId()));
         }
     },
-    viewReport: function(print) {
+    viewReport: function (print) {
         if (resourceId()) {
             var url = arches.urls.resource_report + resourceId();
             if (print) {
@@ -332,58 +334,54 @@ var vm = {
     }
 };
 
-vm.selectedTile.subscribe(function() {
+vm.selectedTile.subscribe(function () {
     $('.main-panel')[0].scrollTop = 0;
 });
 
 vm.report = null;
-vm.report = new ReportModel(_.extend(data, {graphModel: graphModel, cards: vm.topCards}));
+vm.report = new ReportModel(_.extend(data, { graphModel: graphModel, cards: vm.topCards }));
 
-vm.resourceId.subscribe(function(){
+vm.resourceId.subscribe(function () {
     //switches the url from 'create-resource' once the resource id is available
     history.pushState({}, '', arches.urls.resource_editor + resourceId());
 });
 
-vm.showRelatedResourcesManager = function(){
-    require(['views/resource/related-resources-manager'], () => {  // eslint-disable-line  @typescript-eslint/no-require-imports
-        if (vm.graph.domain_connections == undefined) {
+vm.showRelatedResourcesManager = function () {
+    if (vm.graph.domain_connections == undefined) {
+        $.ajax({
+            url: arches.urls.relatable_resources,
+            data: { graphid: vm.graphid }
+        }).done(function (relatable) {
+            vm.graph.relatable_resources = relatable;
             $.ajax({
-                url: arches.urls.relatable_resources,
-                data: {graphid: vm.graphid}
-            }).done(function(relatable){
-                vm.graph.relatable_resources = relatable;
-                $.ajax({
-                    url: arches.urls.get_domain_connections(vm.graphid),
-                    data: {"ontology_class": vm.graph.ontologyclass}
-                }).done(function(data){
-                    vm.graph.domain_connections = data;
-                    vm.relatedResourcesManagerObj = {
-                        searchResultsVm: undefined,
-                        resourceEditorContext: true,
-                        editing_instance_id: vm.resourceId(),
-                        relationship_types: vm.relationship_types,
-                        graph: vm.graph,
-                        loading: vm.loading
-                    };
-                    vm.selection('related-resources');
-                });
+                url: arches.urls.get_domain_connections(vm.graphid),
+                data: { "ontology_class": vm.graph.ontologyclass }
+            }).done(function (data) {
+                vm.graph.domain_connections = data;
+                vm.relatedResourcesManagerObj = {
+                    searchResultsVm: undefined,
+                    resourceEditorContext: true,
+                    editing_instance_id: vm.resourceId(),
+                    relationship_types: vm.relationship_types,
+                    graph: vm.graph,
+                    loading: vm.loading
+                };
+                vm.selection('related-resources');
             });
+        });
 
-        } else {
-            vm.selection('related-resources');
-        }
-    });
+    } else {
+        vm.selection('related-resources');
+    }
 };
 
-vm.showInstancePermissionsManager = function(){
-    require(['views/resource/permissions-manager'], () => {  // eslint-disable-line  @typescript-eslint/no-require-imports
-        if (vm.userIsCreator === true || vm.userIsCreator === null) {
-            vm.selection('permissions-manager');
-        }
-    });
+vm.showInstancePermissionsManager = function () {
+    if (vm.userIsCreator === true || vm.userIsCreator === null) {
+        vm.selection('permissions-manager');
+    }
 };
 
-vm.selectionBreadcrumbs = ko.computed(function() {
+vm.selectionBreadcrumbs = ko.computed(function () {
     var item = vm.selectedTile();
     var crumbs = [];
     if (item) {
@@ -397,15 +395,15 @@ vm.selectionBreadcrumbs = ko.computed(function() {
 
 if (graphHasUnpublishedChanges()) {
     // need setTimeout 0 here to push logic to bottom of call stack to wait for the viewModel to have the alert observable
-    setTimeout(function() {
+    setTimeout(function () {
         vm.alert(new AlertViewModel(
-            'ep-alert-red', 
-            arches.translations.resourceGraphHasUnpublishedChanges.title, 
-            arches.translations.resourceGraphHasUnpublishedChanges.text, 
+            'ep-alert-red',
+            arches.translations.resourceGraphHasUnpublishedChanges.title,
+            arches.translations.resourceGraphHasUnpublishedChanges.text,
             null,
-            function(){}
+            function () { }
         ));
-    }, 0); 
+    }, 0);
 }
 
 export default new BaseManagerView({

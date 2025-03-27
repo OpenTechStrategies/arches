@@ -7,12 +7,11 @@ import ReportModel from 'models/report';
 import GraphModel from 'models/graph';
 import AlertViewmodel from 'viewmodels/alert';
 import resourceReportAbstractTemplate from 'templates/views/components/resource-report-abstract.htm';
-import 'viewmodels/card';
+import CardViewModel from 'viewmodels/card';
 
 
 var ResourceReportAbstract = function(params) {
     var self = this;  // eslint-disable-line @typescript-eslint/no-this-alias
-    var CardViewModel = require('viewmodels/card');  // eslint-disable-line  @typescript-eslint/no-require-imports
         
     this.loading = ko.observable(true);
 

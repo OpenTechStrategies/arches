@@ -1,5 +1,6 @@
 import ko from 'knockout';
 import arches from 'arches';
+import mapbox from 'mapbox-gl';
 
 
 /**
@@ -15,9 +16,7 @@ var BaseGeocoderViewModel = function(params) {
     var self = this;
     let mapboxgl;
 
-    require(['mapbox-gl'], (mapbox) => {
-        mapboxgl = mapbox;
-    });
+    mapboxgl = mapbox;
     
     this.placeholder = params.placeholder || ko.observable('Locate a Place or Address');
     this.anchorLayerId = params.anchorLayerId;
