@@ -3,13 +3,21 @@ import uuid from 'uuid';
 import arches from 'arches';
 import Cookies from 'js-cookie';
 
-const ImportModuleViewModel = function (params) {
+/**
+* A base viewmodel for import modules
+*
+* @constructor
+* @name ImportModuleViewModel
+*
+* @param  {string} params
+*/
+const ImportModuleViewModel = function(params) {
     const self = this;
     this.alert = params.alert;
     this.fileAdded = ko.observable(false);
-    this.fileInfo = ko.observable({ name: "", size: "" });
+    this.fileInfo = ko.observable({name:"", size:""});
     this.formData = new window.FormData();
-    this.uniqueidClass = ko.computed(function () {
+    this.uniqueidClass = ko.computed(function() {
         return "unique_id_" + uuid.generate();
     });
     this.formatTime = params.formatTime;
@@ -17,7 +25,7 @@ const ImportModuleViewModel = function (params) {
     this.response = ko.observable();
     this.validationError = ko.observable();
 
-    this.submit = async function (action, formData) {
+    this.submit = async function(action, formData) {
         let payload = formData || self.formData;
         payload.append('action', action);
         if (['start', 'read'].includes(action)) {
@@ -45,14 +53,14 @@ const ImportModuleViewModel = function (params) {
         autoQueue: false,
         clickable: ".fileinput-button." + this.uniqueidClass(),
         previewsContainer: '#hidden-dz-previews',
-        init: function () {
+        init: function() {
             self.dropzone = this;
-            this.on("addedfile", self.addFile);
-            this.on("error", function (file, error) {
+            this.on("addedfile", self.addFile); 
+            this.on("error", function(file, error) {
                 file.error = error;
-            });
+            });    
         }
     };
 };
-
 export default ImportModuleViewModel;
+

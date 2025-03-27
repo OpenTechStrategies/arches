@@ -1,15 +1,15 @@
-import _ from 'underscore';
 import ko from 'knockout';
 import ImporterViewModel from 'viewmodels/base-import-view-model';
 import arches from 'arches';
 import AlertViewModel from 'viewmodels/alert';
 import 'dropzone';
 import 'bindings/select2-query';
-import 'bindings/dropzone';
+import 'bindings/dropzone'; 
 
-var ExcelFileImportViewModel = function (params) {
+
+var ExcelFileImportViewModel = function(params) {
     const self = this;
-
+    
     this.loadDetails = params.load_details || ko.observable();
     this.state = params.state;
     this.loading = params.loading || ko.observable();
@@ -26,7 +26,7 @@ var ExcelFileImportViewModel = function (params) {
     this.getErrorReport = params.getErrorReport;
     this.getNodeError = params.getNodeError;
     this.templates = ko.observableArray(
-        arches.resources.map(resource => ({ text: resource.name, id: resource.graphid }))
+        arches.resources.map(resource => ({text: resource.name, id: resource.graphid}))
     );
 
     this.toggleDownloadMode = () => {
@@ -40,21 +40,21 @@ var ExcelFileImportViewModel = function (params) {
         const xsrfCookies = document.cookie.split(';')
             .map(c => c.trim())
             .filter(c => c.startsWith(name + '='));
-
+        
         if (xsrfCookies.length === 0) {
             return null;
         }
         return decodeURIComponent(xsrfCookies[0].split('=')[1]);
     }
 
-    this.downloadTemplate = async () => {
+    this.downloadTemplate = async() => {
         const url = arches.urls.etl_manager;
         const formData = new window.FormData();
         formData.append("id", ko.unwrap(this.selectedTemplate));
         formData.append("format", "xls");
         formData.append("module", ko.unwrap(self.moduleId));
         formData.append("action", "download");
-
+        
         const response = await window.fetch(url, {
             method: 'POST',
             body: formData,
@@ -70,7 +70,7 @@ var ExcelFileImportViewModel = function (params) {
         const a = window.document.createElement('a');
         window.document.body.appendChild(a);
         a.href = urlObject;
-        a.download = `${this.templates().find(x => x.id == this.selectedTemplate()).text}.xlsx`;
+        a.download = `${this.templates().filter(x => x.id == this.selectedTemplate())[0].text}.xlsx`;
         a.click();
 
         setTimeout(() => {
@@ -86,13 +86,13 @@ var ExcelFileImportViewModel = function (params) {
             data["data"]["title"],
             data["data"]["message"],
             null,
-            function () { }
+            function(){}
         ));
     };
 
-    this.addFile = async function (file) {
+    this.addFile = async function(file){
         self.loading(true);
-        self.fileInfo({ name: file.name, size: file.size });
+        self.fileInfo({name: file.name, size: file.size});
         const formData = new window.FormData();
         formData.append('file', file, file.name);
         const response = await self.submit('read', formData);
@@ -108,19 +108,19 @@ var ExcelFileImportViewModel = function (params) {
         }
     };
 
-    this.start = async function () {
+    this.start = async function(){
         self.loading(true);
         const response = await self.submit('start');
         self.loading(false);
         params.activeTab("import");
         if (response.ok) {
             const data = await response.json();
-            self.response(data);
+            self.response(data); 
             self.write();
         }
     };
 
-    this.write = async function () {
+    this.write = async function(){
         self.loading(true);
         const formData = new window.FormData();
         formData.append('load_details', JSON.stringify(self.loadDetails()));
@@ -128,7 +128,7 @@ var ExcelFileImportViewModel = function (params) {
         self.loading(false);
         if (response.ok) {
             const data = await response.json();
-            self.response(data);
+            self.response(data); 
         }
         else {
             const data = await response.json();
@@ -136,5 +136,4 @@ var ExcelFileImportViewModel = function (params) {
         }
     };
 };
-
 export default ExcelFileImportViewModel;

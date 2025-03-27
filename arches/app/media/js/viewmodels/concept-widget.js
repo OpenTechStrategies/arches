@@ -1,6 +1,7 @@
 import arches from 'arches';
 import RemoteDomainWidgetViewModel from 'viewmodels/remote-domain-widget';
 
+
 /**
 * A viewmodel used for concept widgets
 *
@@ -9,11 +10,12 @@ import RemoteDomainWidgetViewModel from 'viewmodels/remote-domain-widget';
 *
 * @param  {string} params - a configuration object
 */
-var ConceptWidgetViewModel = function (params) {
+
+var ConceptWidgetViewModel = function(params) {
     var self = this;
 
-    params.prepData = function (data) {
-        data.forEach(function (record) {
+    params.prepData = function(data) {
+        data.forEach(function(record) {
             if (record.collector) {
                 record.id = undefined;
             }
@@ -23,7 +25,7 @@ var ConceptWidgetViewModel = function (params) {
 
     RemoteDomainWidgetViewModel.apply(this, [params]);
 
-    var setUrl = function (id) {
+    var setUrl = function(id) {
         if (id) {
             self.url(arches.urls.dropdown + '?conceptid=' + id);
         }
@@ -34,3 +36,4 @@ var ConceptWidgetViewModel = function (params) {
 };
 
 export default ConceptWidgetViewModel;
+

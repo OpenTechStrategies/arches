@@ -4,17 +4,18 @@ import koMapping from 'knockout-mapping';
 import ReportViewModel from 'viewmodels/report';
 import 'reports/map-header';
 
-export default function (params) {
+
+export default function(params) {
     var self = this;
     params.configKeys = ['zoom', 'centerX', 'centerY', 'geocoder', 'basemap', 'geometryTypes', 'pitch', 'bearing', 'geocodePlaceholder'];
 
     ReportViewModel.apply(this, [params]);
 
     this.featureCollection = ko.computed({
-        read: function () {
+        read: function() {
             var features = [];
-            ko.unwrap(self.tiles).forEach(function (tile) {
-                _.each(tile.data, function (val) {
+            ko.unwrap(self.tiles).forEach(function(tile) {
+                _.each(tile.data, function(val) {
                     if (val?.features) {
                         features = features.concat(koMapping.toJS(val.features));
                     }
@@ -25,15 +26,15 @@ export default function (params) {
                 features: features
             };
         },
-        write: function () {
+        write: function() {
             return;
         }
     });
 
-    this.featureCount = ko.computed(function () {
+    this.featureCount = ko.computed(function() {
         var count = 0;
-        ko.unwrap(self.tiles).forEach(function (tile) {
-            _.each(tile.data, function (val) {
+        ko.unwrap(self.tiles).forEach(function(tile) {
+            _.each(tile.data, function(val) {
                 if (val?.features) {
                     count += 1;
                 }

@@ -1,19 +1,21 @@
-import ko from 'knockout';
-import _ from 'underscore';
-import arches from 'arches';
-import Dropzone from 'dropzone';
-import uuid from 'uuid';
-import CardComponentViewModel from 'viewmodels/card-component';
-import WorkbenchComponentViewModel from 'views/components/workbench';
-import PhotoGallery from 'viewmodels/photo-gallery';
-import photoGalleryCardTemplate from 'templates/views/components/cards/photo-gallery-card.htm';
-import AlertViewModel from 'viewmodels/alert';
-import 'bindings/slide';
-import 'bindings/fadeVisible';
-import 'bindings/dropzone';
-import 'bindings/gallery';
+import ko from "knockout";
+import koMapping from "knockout-mapping";
+import _ from "underscore";
+import arches from "arches";
+import Dropzone from "dropzone";
+import uuid from "uuid";
+import CardComponentViewModel from "viewmodels/card-component";
+import WorkbenchComponentViewModel from "views/components/workbench";
+import PhotoGallery from "viewmodels/photo-gallery";
+import photoGalleryCardTemplate from "templates/views/components/cards/photo-gallery-card.htm";
+import AlertViewModel from "viewmodels/alert";
+import "bindings/slide";
+import "bindings/fadeVisible";
+import "bindings/dropzone";
+import "bindings/gallery";
 
-const viewModel = function (params) {
+
+const viewModel = function(params) {
 
     params.configKeys = ['acceptedFiles', 'maxFilesize'];
     var self = this;
@@ -26,17 +28,17 @@ const viewModel = function (params) {
     this.photoGallery = new PhotoGallery();
     this.lastSelected = 0;
     this.selected = ko.observable();
-    self.activeTab.subscribe(function (val) { self.card.activeTab = val; });
-    self.card.tiles.subscribe(function (val) {
+    self.activeTab.subscribe(function(val){self.card.activeTab = val;});
+    self.card.tiles.subscribe(function(val){
         if (val.length === 0) {
             self.activeTab(null);
         }
     });
 
-    var getfileListNode = function () {
+    var getfileListNode = function(){
         var fileListNodeId;
         var fileListNodes = params.card.model.nodes().filter(
-            function (val) {
+            function(val){
                 if (val.datatype() === 'file-list' && self.card.nodegroupid == val.nodeGroupId())
                     return val;
             });
@@ -48,9 +50,9 @@ const viewModel = function (params) {
 
     this.fileListNodeId = getfileListNode();
 
-    this.maxFilesize = ko.computed(function () {
+    this.maxFilesize = ko.computed(function(){
         var mfs = "Missing maxFilesize";
-        self.card.widgets().forEach(function (widget) {
+        self.card.widgets().forEach(function(widget){
             if (widget.node_id() === self.fileListNodeId) {
                 mfs = widget.config.maxFilesize() || "--";
             }
@@ -58,17 +60,17 @@ const viewModel = function (params) {
         return mfs;
     });
 
-    this.acceptedFiles = ko.computed(function () {
-        return self.card.widgets().find(widget => widget.node_id() === self.fileListNodeId)?.config.acceptedFiles() || arches.translations.allFormatsAccepted;
+    this.acceptedFiles = ko.computed(function(){
+        return self.card.widgets().find(widget=>widget.node_id() === self.fileListNodeId)?.config.acceptedFiles() || arches.translations.allFormatsAccepted;
     });
 
-    this.cleanUrl = function (url) {
+    this.cleanUrl = function(url) {
         const httpRegex = /^https?:\/\//;
         return !url || httpRegex.test(url) || url.startsWith(arches.urls.url_subpath) ? url :
             (arches.urls.url_subpath + url).replace('//', '/');
     };
 
-    this.getUrl = function (tile) {
+    this.getUrl = function(tile){
         var url = '';
         var name = '';
         var val = ko.unwrap(tile.data[this.fileListNodeId]);
@@ -78,21 +80,21 @@ const viewModel = function (params) {
                 name = ko.unwrap(val[0].name);
             }
         }
-        return { url: url, name: name };
+        return {url: url, name: name};
     };
 
     this.uniqueId = uuid.generate();
-    this.uniqueidClass = ko.computed(function () {
+    this.uniqueidClass = ko.computed(function() {
         return "unique_id_" + self.uniqueId;
     });
 
     this.showThumbnails = ko.observable(false);
 
-    this.selectDefault = function () {
+    this.selectDefault = function(){
         var self = this;
-        return function () {
+        return function() {
             var selectedIndex = self.card.tiles.indexOf(self.selected());
-            if (self.card.tiles().length > 0 && selectedIndex === -1) {
+            if(self.card.tiles().length > 0 && selectedIndex === -1) {
                 selectedIndex = 0;
             }
             self.card.tiles()[selectedIndex];
@@ -101,10 +103,10 @@ const viewModel = function (params) {
     };
     this.defaultSelector = this.selectDefault();
 
-    this.displayContent = ko.pureComputed(function () {
+    this.displayContent = ko.pureComputed(function(){
         var photo;
         var selected = this.card.tiles().find(
-            function (tile) {
+            function(tile){
                 return tile.selected() === true;
             });
         if (selected) {
@@ -128,7 +130,11 @@ const viewModel = function (params) {
         }
     }
 
-    this.removeTile = function (val) {
+    this.removeTile = function(val){
+        //TODO: Upon deletion select the tile to the left of the deleted tile
+        //If the deleted tile is the first tile, then select the tile to the right
+        // var tileCount = this.parent.tiles().length;
+        // var index = this.parent.tiles.indexOf(val);
         val.deleteTile();
         setTimeout(self.defaultSelector, 150);
     };
@@ -142,26 +148,26 @@ const viewModel = function (params) {
     function sleep(milliseconds) {
         var start = new Date().getTime();
         for (var i = 0; i < 1e7; i++) {
-            if ((new Date().getTime() - start) > milliseconds) {
+            if ((new Date().getTime() - start) > milliseconds){
                 break;
             }
         }
     }
 
-    this.addTile = function (file) {
+    this.addTile = function(file){
         var acceptedFileFormats;
         var loadFile;
-        acceptedFileFormats = ((ko.unwrap(self.acceptedFiles)).split(',').map(item => item.trim())).map(format => format.replace('.', ''));
-        if (ko.unwrap(self.acceptedFiles) != arches.translations.allFormatsAccepted && acceptedFileFormats !== undefined && acceptedFileFormats.length > 0) {
+        acceptedFileFormats = ((ko.unwrap(self.acceptedFiles)).split(',').map(item=>item.trim())).map(format => format.replace('.', ''));
+        if(ko.unwrap(self.acceptedFiles) != arches.translations.allFormatsAccepted && acceptedFileFormats !== undefined && acceptedFileFormats.length > 0){
             var fileType = file.name.split('.').pop().toLowerCase();
-            if (acceptedFileFormats.includes(fileType)) {
+            if(acceptedFileFormats.includes(fileType)){
                 loadFile = true;
             }
-            else {
+            else{
                 loadFile = false;
             }
         }
-        else {
+        else{
             loadFile = true;
         }
 
@@ -192,13 +198,13 @@ const viewModel = function (params) {
             newtile.save();
             self.card.newTile = undefined;
         }
-        else {
+        else{
             params.pageVm.alert(new AlertViewModel(
                 'ep-alert-red',
                 arches.translations.incorrectFileFormat,
                 arches.translations.fileFormatNotAccepted(ko.unwrap(self.acceptedFiles)),
                 null,
-                function () { }
+                function(){}
             ));
         }
     };
@@ -211,10 +217,10 @@ const viewModel = function (params) {
         autoQueue: false,
         clickable: ".fileinput-button." + this.uniqueidClass(),
         previewsContainer: '#hidden-dz-previews',
-        init: function () {
+        init: function() {
             self.dropzone = this;
             this.on("addedfile", self.addTile, self);
-            this.on("error", function (file, error) {
+            this.on("error", function(file, error) {
                 file.error = error;
             });
         }

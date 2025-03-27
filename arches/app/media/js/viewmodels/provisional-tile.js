@@ -7,7 +7,16 @@ import arches from 'arches';
 import 'utils/set-csrf-token';
 import 'views/components/simple-switch';
 
-const ProvisionalTileViewModel = function (params) {
+
+/**
+* A viewmodel for managing provisional edits
+*
+* @constructor
+* @name ProvisionalTileViewModel
+*
+* @param  {string} params - a configuration object
+*/
+var ProvisionalTileViewModel = function(params) {
     var self = this;
     self.edits = ko.observableArray();
     self.users = [];
@@ -16,7 +25,19 @@ const ProvisionalTileViewModel = function (params) {
     self.declineUnacceptedEdits = ko.observable(true);
     self.selectedProvisionalEdit = ko.observable();
 
-    self.getUserNames = function (edits, users) {
+    // function csrfSafeMethod(method) {
+    //     // these HTTP methods do not require CSRF protection
+    //     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    // }
+    // $.ajaxSetup({
+    //     beforeSend: function(xhr, settings) {
+    //         console.log("DSIDS()DS()")
+    //         if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+    //             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+    //         }
+    //     }
+    // });
+    self.getUserNames = function(edits, users){
         $.ajax({
             url: arches.urls.get_user_names,
             context: this,
@@ -24,20 +45,22 @@ const ProvisionalTileViewModel = function (params) {
             data: { userids: JSON.stringify(users) },
             dataType: 'json'
         })
-            .done(function (data) {
-                _.each(this.provisionaledits(), function (edit) {
+            .done(function(data) {
+                _.each(this.provisionaledits(), function(edit) {
                     edit.username(data[edit.user]);
                 });
             })
-            .fail(function () { });
+            .fail(function() {
+                // console.log('User name request failed', data)
+            });
     };
 
-    self.updateProvisionalEdits = function (tile) {
+    self.updateProvisionalEdits = function(tile) {
         var isfullyprovisional;
         if (tile && tile.data) {
             var users = [];
             var data = koMapping.toJS(tile.data);
-            var provisionaleditlist = _.map(ko.unwrap(tile.provisionaledits), function (edit, key) {
+            var provisionaleditlist = _.map(ko.unwrap(tile.provisionaledits), function(edit, key){
                 users.push(key);
                 edit['username'] = ko.observable('');
                 edit['displaytimestamp'] = moment(edit.timestamp).format("hh:mm");
@@ -48,13 +71,13 @@ const ProvisionalTileViewModel = function (params) {
                 }
                 return edit;
             }, this);
-            this.provisionaledits(_.sortBy(provisionaleditlist, function (pe) { return moment(pe.timestamp); }));
+            this.provisionaledits(_.sortBy(provisionaleditlist, function(pe){return moment(pe.timestamp);}));
             if (this.provisionaledits().length > 0) {
                 if (ko.unwrap(this.provisionaledits()[0].isfullyprovisional) === true) {
                     isfullyprovisional = true;
                 }
             }
-            if ((data && _.keys(data).length === 0 && ko.unwrap(tile.provisionaledits)) || isfullyprovisional) {
+            if ((data && _.keys(data).length === 0 && ko.unwrap(tile.provisionaledits)) ||  isfullyprovisional) {
                 self.selectedProvisionalEdit(undefined);
                 if (this.provisionaledits().length > 0) {
                     this.provisionaledits()[0].isfullyprovisional(true);
@@ -70,22 +93,22 @@ const ProvisionalTileViewModel = function (params) {
         }
     };
 
-    self.removeSelectedProvisionalEdit = function () {
+    self.removeSelectedProvisionalEdit = function() {
         this.provisionaledits.remove(this.selectedProvisionalEdit());
         this.selectedProvisionalEdit(undefined);
     };
 
-    self.selectProvisionalEdit = function (val) {
+    self.selectProvisionalEdit = function(val){
         if (self.selectedProvisionalEdit() != val) {
             self.selectedProvisionalEdit(val);
             koMapping.fromJS(val['value'], self.selectedTile().data);
             self.selectedTile().parent.params.handlers['tile-reset'].forEach(handler => handler(self.selectedTile()));
             self.selectedTile().parent.widgets().forEach(
-                function (w) {
+                function(w){
                     var defaultconfig = w.widgetLookup[w.widget_id()].defaultconfig;
                     if (defaultconfig.rerender === true && self.selectedTile().parent.allowProvisionalEditRerender() === true) {
                         w.label.valueHasMutated();
-                    }
+                    } 
                 });
             if (self.selectedTile().parent.triggerUpdate) {
                 self.selectedTile().parent.triggerUpdate();
@@ -93,27 +116,27 @@ const ProvisionalTileViewModel = function (params) {
         }
     };
 
-    self.resetAuthoritative = function () {
+    self.resetAuthoritative = function(){
         self.selectedProvisionalEdit(undefined);
         self.selectedTile().reset();
     };
 
-    self.tileIsFullyProvisional = ko.computed(function () {
+    self.tileIsFullyProvisional = ko.computed(function() {
         return self.selectedProvisionalEdit() && ko.unwrap(self.selectedProvisionalEdit().isfullyprovisional) === true;
     });
 
     self.updateProvisionalEdits(self.selectedTile);
     self.selectedTile.subscribe(self.updateProvisionalEdits, this);
 
-    self.deleteProvisionalEdit = function (val) {
+    self.deleteProvisionalEdit = function(val){
         $.ajax({
             url: arches.urls.delete_provisional_tile,
             context: this,
             method: 'POST',
             dataType: 'json',
-            data: { 'user': koMapping.toJS(val).user, 'tileid': this.selectedTile().tileid }
+            data: {'user': koMapping.toJS(val).user, 'tileid': this.selectedTile().tileid }
         })
-            .done(function (data) {
+            .done(function(data) {
                 if (data.result === 'delete') {
                     this.selectedTile().deleteTile();
                 } else {
@@ -132,21 +155,21 @@ const ProvisionalTileViewModel = function (params) {
                 }
                 self.selectedTile()._tileData.valueHasMutated();
             })
-            .fail(function (data) {
+            .fail(function(data) {
                 console.log('request failed', data);
             });
     };
 
-    self.deleteAllProvisionalEdits = function () {
-        var users = _.map(self.provisionaledits(), function (edit) { return edit.user; });
+    self.deleteAllProvisionalEdits = function() {
+        var users = _.map(self.provisionaledits(), function(edit){return edit.user;});
         $.ajax({
             url: arches.urls.delete_provisional_tile,
             context: this,
             method: 'POST',
             dataType: 'json',
-            data: { 'users': JSON.stringify(users), 'tileid': this.selectedTile().tileid }
+            data: {'users': JSON.stringify(users), 'tileid': this.selectedTile().tileid }
         })
-            .done(function (data) {
+            .done(function(data) {
                 if (data.result === 'delete') {
                     this.selectedTile().deleteTile();
                 } else {
@@ -156,12 +179,13 @@ const ProvisionalTileViewModel = function (params) {
                     this.selectedTile().provisionaledits(null);
                 }
             })
-            .fail(function (data) {
+            .fail(function(data) {
                 console.log('request failed', data);
             });
     };
 
-    self.acceptProvisionalEdit = function () {
+
+    self.acceptProvisionalEdit = function(){
         var provisionaledits = this.selectedTile().provisionaledits();
         var user = this.selectedProvisionalEdit().user;
         if (provisionaledits) {
@@ -174,9 +198,10 @@ const ProvisionalTileViewModel = function (params) {
         }
     };
 
-    self.rejectProvisionalEdit = function (val) {
+    self.rejectProvisionalEdit = function(val){
         self.deleteProvisionalEdit(val);
     };
+
 };
 
 export default ProvisionalTileViewModel;

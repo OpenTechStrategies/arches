@@ -10,9 +10,10 @@ import selectFeatureLayersFactory from 'views/components/cards/select-related-fe
 import relatedResourcesMapTemplate from 'templates/views/components/cards/related-resources-map.htm';
 import relatedResourcesMapPopupTemplate from 'templates/views/components/cards/related-resources-map-popup.htm';
 
-var viewModel = function (params) {
-    var self = this;
 
+var viewModel = function(params) {
+    var self = this;
+        
 
     this.widgets = [];
     params.configKeys = [
@@ -48,7 +49,7 @@ var viewModel = function (params) {
     selectLayerConfig.strokelinewidth = Number(this.strokelinewidth());
     selectLayerConfig.strokepointradius = Number(this.strokepointradius());
     selectLayerConfig.strokepointopacity = Number(this.strokepointopacity());
-    if (self.form && self.tile) self.card.widgets().forEach(function (widget) {
+    if (self.form && self.tile) self.card.widgets().forEach(function(widget) {
         var id = widget.node_id();
         var type = ko.unwrap(self.form.nodeLookup[id].datatype);
 
@@ -57,7 +58,7 @@ var viewModel = function (params) {
         }
     });
 
-    var getNodeIds = function () {
+    var getNodeIds = function(){
         var nodeids = [];
         if (self.selectRelatedSource()) {
             var sourceUrl = new window.URL(arches.mapSources[self.selectRelatedSource()].data, window.location.origin);
@@ -97,37 +98,37 @@ var viewModel = function (params) {
         }
     }
 
-    this.basemap.subscribe(function (map) {
+    this.basemap.subscribe(function(map) {
         for (var widget of self.widgets) {
             if (widget.config.basemap) {
                 widget.config.basemap(map);
             }
         }
     });
-    this.overlayConfigs.subscribe(function (configs) {
+    this.overlayConfigs.subscribe(function(configs) {
         for (var widget of self.widgets) {
             if (widget.config.overlayConfigs) {
                 widget.config.overlayConfigs(configs);
             }
         }
     });
-    this.centerX.subscribe(function (x) {
+    this.centerX.subscribe(function(x) {
         for (var widget of self.widgets) {
             if (widget.config.centerX) {
                 widget.config.centerX(x);
             }
         }
     });
-    this.centerY.subscribe(function (y) {
+    this.centerY.subscribe(function(y) {
         for (var widget of self.widgets) {
             if (widget.config.centerY) {
                 widget.config.centerY(y);
             }
         }
     });
-
+    
     this.zoom = ko.observable(this.overviewzoom());
-    this.zoom.subscribe(function (zoom) {
+    this.zoom.subscribe(function(zoom) {
         self.config.overviewzoom(zoom);
 
         for (var widget of self.widgets) {
@@ -137,18 +138,18 @@ var viewModel = function (params) {
         }
     });
 
-    /* end local set/get */
-
+    /* end local set/get */ 
+    
     params.basemap = this.basemap;
     params.overlayConfigs = this.overlayConfigs;
     params.x = this.centerX;
     params.y = this.centerY;
     params.zoom = this.zoom;
-
+    
     this.hoverId = ko.observable();
     this.nodeids = getNodeIds();
     this.nodeDetails = ko.observableArray();
-    this.nodeids.forEach(function (nodeid) {
+    this.nodeids.forEach(function(nodeid) {
         fetch(arches.urls.api_nodes(nodeid))
             .then(response => response.json())
             .then(data => {
@@ -162,30 +163,30 @@ var viewModel = function (params) {
     var firstNode = parsedNodeIds.length > 0 ? [parsedNodeIds[0]] : [];
     this.filterNodeIds = ko.observableArray(firstNode);
     this.relatedResourceDetails = {};
-    this.relatedResourceWidgets = this.widgets.filter(function (widget) { return widget.datatype.datatype === 'resource-instance' || widget.datatype.datatype === 'resource-instance-list'; });
-    this.relatedResources = ko.pureComputed(function () {
+    this.relatedResourceWidgets = this.widgets.filter(function(widget){return widget.datatype.datatype === 'resource-instance' || widget.datatype.datatype === 'resource-instance-list';});
+    this.relatedResources = ko.pureComputed(function() {
         var tileResourceIds = [];
-        self.relatedResourceWidgets.forEach(function (widget) {
+        self.relatedResourceWidgets.forEach(function(widget) {
             var nodeid = ko.unwrap(widget.node_id);
             var related = self.tile.data[nodeid]();
             if (related) {
-                self.tile.data[nodeid]().forEach(function (rr) {
+                self.tile.data[nodeid]().forEach(function(rr) {
                     var resourceinstanceid = ko.unwrap(rr.resourceId);
                     if (resourceinstanceid) {
                         tileResourceIds.push(resourceinstanceid);
                         if (!self.relatedResourceDetails[resourceinstanceid]) {
                             window.fetch(arches.urls.search_results + "?id=" + resourceinstanceid)
-                                .then(function (response) {
+                                .then(function(response) {
                                     if (response.ok) {
                                         return response.json();
                                     }
                                 })
-                                .then(function (json) {
+                                .then(function(json) {
                                     var details = json.results.hits.hits[0]._source;
 
                                     self.relatedResourceDetails[resourceinstanceid] = {
-                                        graphid: details.graph_id,
-                                        resourceinstanceid: resourceinstanceid,
+                                        graphid: details.graph_id, 
+                                        resourceinstanceid: resourceinstanceid, 
                                         displayname: details.displayname,
                                         geometries: details.geometries,
                                     };
@@ -197,19 +198,19 @@ var viewModel = function (params) {
             }
         });
         return tileResourceIds
-            .map(function (resourceid) { return self.relatedResourceDetails[resourceid]; })
-            .filter(function (val) { return val !== undefined; });
+            .map(function(resourceid){return self.relatedResourceDetails[resourceid];})
+            .filter(function(val){return val !== undefined;});
     });
 
     this.showRelatedQuery = ko.observable(false);
     var resourceBounds = ko.observable();
     var selectRelatedSource = this.selectRelatedSource();
     var selectRelatedSourceLayer = this.selectRelatedSourceLayer();
-    var selectedResourceIds = ko.computed(function () {
+    var selectedResourceIds = ko.computed(function() {
         var ids = [];
-        self.relatedResourceWidgets.forEach(function (widget) {
+        self.relatedResourceWidgets.forEach(function(widget) {
             var id = widget.node_id();
-            var value = ko.unwrap(self.tile.data[id]) ? koMapping.toJS(self.tile.data[id]().map(function (item) { return item.resourceId; })) : null;
+            var value = ko.unwrap(self.tile.data[id]) ? koMapping.toJS(self.tile.data[id]().map(function(item){return item.resourceId;})) : null;
             if (value) {
                 ids = ids.concat(value);
             }
@@ -217,14 +218,14 @@ var viewModel = function (params) {
         return ids;
     });
 
-    var updateResourceBounds = function (ids) {
+    var updateResourceBounds = function(ids) {
         if (ids.length > 0) {
             $.getJSON({
                 url: arches.urls.geojson,
                 data: {
                     resourceid: ids.join(',')
                 }
-            }, function (geojson) {
+            }, function(geojson) {
                 if (geojson.features.length > 0) resourceBounds(geojsonExtent(geojson));
             });
         }
@@ -233,7 +234,7 @@ var viewModel = function (params) {
     selectedResourceIds.subscribe(updateResourceBounds);
 
     var zoomToData = true;
-    resourceBounds.subscribe(function (bounds) {
+    resourceBounds.subscribe(function(bounds) {
         var map = self.map();
         if (map && map.getStyle() && zoomToData) {
             map.fitBounds(bounds);
@@ -247,7 +248,7 @@ var viewModel = function (params) {
             sources.push(sourceName);
         }
     }
-    var updateResourceSelectLayers = function () {
+    var updateResourceSelectLayers = function() {
         var source = self.selectRelatedSource();
         var sourceLayer = self.selectRelatedSourceLayer();
         selectFeatureLayers = sources.indexOf(source) > 0 ?
@@ -279,7 +280,7 @@ var viewModel = function (params) {
     params.fitBounds = resourceBounds;
     MapEditorViewModel.apply(this, [params]);
 
-    this.relateResource = function (resourceData, widget) {
+    this.relateResource = function(resourceData, widget) {
         var id = widget.node_id();
         var resourceinstanceid = ko.unwrap(resourceData.resourceinstanceid);
         var type = ko.unwrap(self.form.nodeLookup[id].datatype);
@@ -289,7 +290,7 @@ var viewModel = function (params) {
             resourceinstanceid: ko.unwrap(resourceData.resourceinstanceid)
         };
         zoomToData = false;
-        var graphconfig = widget.node.config.graphs().find(function (graph) { return graph.graphid === ko.unwrap(resourceData.graphid); });
+        var graphconfig = widget.node.config.graphs().find(function(graph){return graph.graphid === ko.unwrap(resourceData.graphid);});
         var val = [{
             ontologyProperty: ko.observable(graphconfig?.ontologyProperty || ''),
             inverseOntologyProperty: ko.observable(graphconfig?.ontologyProperty || ''),
@@ -302,7 +303,7 @@ var viewModel = function (params) {
             var value = koMapping.toJS(self.tile.data[id]);
             if (!value) {
                 self.tile.data[id](val);
-            } else if (value.map(function (rr) { return rr.resourceId; }).indexOf(resourceinstanceid) < 0) {
+            } else if (value.map(function(rr){return rr.resourceId;}).indexOf(resourceinstanceid) < 0) {
                 var values = value.concat(val);
                 self.tile.data[id](values);
             }
@@ -310,20 +311,20 @@ var viewModel = function (params) {
     };
 
 
-    this.unrelateResource = function (resourceData, widget) {
+    this.unrelateResource = function(resourceData, widget) {
         var id = widget.node_id();
         var resourceinstanceid = ko.unwrap(resourceData.resourceinstanceid);
         var related = resourceData.mapCard.tile.data[id]();
-        for (var i = 0; i < related.length; i++) {
-            if (ko.unwrap(related[i].resourceId) === resourceinstanceid) {
-                related.splice(i, 1);
+        for( var i = 0; i < related.length; i++){ 
+            if ( ko.unwrap(related[i].resourceId) === resourceinstanceid) { 
+                related.splice(i, 1); 
             }
         }
         resourceData.mapCard.tile.data[id](related);
     };
 
-    this.isSelectable = function (feature) {
-        var selectLayerIds = selectFeatureLayers.map(function (layer) {
+    this.isSelectable = function(feature) {
+        var selectLayerIds = selectFeatureLayers.map(function(layer) {
             return layer.id;
         });
         return selectLayerIds.indexOf(feature.layer.id) >= 0;
@@ -334,40 +335,38 @@ var viewModel = function (params) {
         searchContext: self.showRelatedQuery
     });
 
-    this.updateHoverId = function (val) {
+    this.updateHoverId = function(val){
         self.hoverId() === val.resourceinstanceid ? self.hoverId(null) : self.hoverId(val.resourceinstanceid);
     };
-    this.mapFilter.filter.feature_collection.subscribe(function (val) {
+    this.mapFilter.filter.feature_collection.subscribe(function(val){
         if (self.widget && self.widget.node.config.graphs().length && val.features && val.features.length > 0) {
-            var graphs = self.widget.node.config.graphs().map(function (v) { if (v.graphid) { return v.graphid; } });
+            var graphs = self.widget.node.config.graphs().map(function(v){if (v.graphid){return v.graphid;}});
             var payload = {
                 "map-filter": JSON.stringify(val),
                 "precision": 6,
                 "pages": 5,
-                "resource-type-filter": JSON.stringify(graphs.map(function (graph) {
+                "resource-type-filter": JSON.stringify(graphs.map(function(graph) {
                     return {
                         "graphid": graph,
-                        "inverted": false
+                        "inverted":false
                     };
-                }))
-            };
+                }))};
             $.ajax({
                 url: arches.urls.search_results,
                 data: payload,
                 method: 'GET'
-            }).done(function (data) {
-                self.relatedResourceWidgets.forEach(function (widget) {
+            }).done(function(data){
+                self.relatedResourceWidgets.forEach(function(widget) {
                     if (ko.unwrap(self.tile.data[widget.node.nodeid])) {
                         self.tile.data[widget.node.nodeid]([]);
                     }
                 });
-                data.results.hits.hits.forEach(function (hit) {
+                data.results.hits.hits.forEach(function(hit) {
                     var resourceInstance = hit._source;
                     if (graphs.indexOf(resourceInstance.graph_id) > -1) {
                         self.relateResource(
-                            { resourceinstanceid: resourceInstance.resourceinstanceid, graphid: resourceInstance.graph_id, displayname: resourceInstance.displayname },
-                            self.widget
-                        );
+                            {resourceinstanceid: resourceInstance.resourceinstanceid, graphid: resourceInstance.graph_id, displayname: resourceInstance.displayname},
+                            self.widget);
                     }
                 });
                 var buffer = data['map-filter'].search_buffer;
@@ -376,8 +375,8 @@ var viewModel = function (params) {
         }
     });
 
-    this.appendBufferToTileFeatures = function (val) {
-        var bufferFeature = { geometry: self.map().getSource('geojson-search-buffer-data').serialize().data };
+    this.appendBufferToTileFeatures = function(val){
+        var bufferFeature = {geometry: self.map().getSource('geojson-search-buffer-data').serialize().data};
         bufferFeature.type = 'Feature';
         bufferFeature.properties = {};
         var bufferFeatureId = self.draw.add(bufferFeature)[0];
@@ -385,7 +384,7 @@ var viewModel = function (params) {
         self.updateTiles();
     };
 
-    this.drawAvailable.subscribe(function (val) {
+    this.drawAvailable.subscribe(function(val){
         if (!params.draw) {
             params.draw = self.draw;
         }
@@ -394,14 +393,14 @@ var viewModel = function (params) {
         }
 
         var bufferSrcId = 'geojson-search-buffer-data';
-        self.widget = self.widgets.find(function (widget) {
+        self.widget = self.widgets.find(function(widget){
             return widget.datatype.datatype === 'resource-instance' || widget.datatype.datatype === 'resource-instance-list';
         });
         if (val) {
             self.mapFilter.draw = self.draw;
             self.mapFilter.setupDraw();
             self.map().addSource(bufferSrcId, self.mapFilter.sources[bufferSrcId]);
-            self.mapFilter.layers().forEach(function (layer) {
+            self.mapFilter.layers().forEach(function(layer){
                 self.map().addLayer(layer);
                 extendedLayers.push(layer);
             });
@@ -410,7 +409,7 @@ var viewModel = function (params) {
                 var feature;
                 if (features.length && features[0].properties.resourceinstanceid) {
                     feature = features[0].properties.resourceinstanceid;
-                    if (self.relatedResources().filter(function (val) { return val.resourceinstanceid === feature; }).length) {
+                    if (self.relatedResources().filter(function(val){return val.resourceinstanceid === feature;}).length) {
                         self.hoverId(feature);
                     }
                 } else {
@@ -425,5 +424,4 @@ ko.components.register('related-resources-map-card', {
     viewModel: viewModel,
     template: relatedResourcesMapTemplate,
 });
-
 export default viewModel;

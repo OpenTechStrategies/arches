@@ -1,5 +1,6 @@
 import data from 'views/graph/graph-base-data';
 
+
 /**
 * A base viewmodel for functions
 *
@@ -8,10 +9,9 @@ import data from 'views/graph/graph-base-data';
 *
 * @param  {string} params - a configuration object
 */
-var FunctionViewModel = function (params) {
+var FunctionViewModel = function(params) {
     this.graphid = data.graphid;
     this.graph = data.graph;
     this.config = params.config;
 };
-
 export default FunctionViewModel;

@@ -1,6 +1,6 @@
 import $ from 'jquery';
 import _ from 'underscore';
-import arches from 'arches';
+import arches from 'arches'; 
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import mapPopupProvider from 'utils/map-popup-provider';
@@ -8,10 +8,12 @@ import mapConfigurator from 'utils/map-configurator';
 import ariaUtils from 'utils/aria';
 import 'templates/views/components/map-popup.htm';
 
-const viewModel = function (params) {
+
+const viewModel = function(params) {
     var self = this;
 
-    var geojsonSourceFactory = function () {
+
+    var geojsonSourceFactory = function() {
         return {
             "type": "geojson",
             "generateId": true,
@@ -29,15 +31,15 @@ const viewModel = function (params) {
     var boundingOptions = {
         padding: {
             top: 40,
-            left: 40 + (self.activeTab() ? 200 : 0),
+            left: 40 + (self.activeTab() ? 200: 0),
             bottom: 40,
-            right: 40 + (self.activeTab() ? 200 : 0)
+            right: 40 + (self.activeTab() ? 200: 0)
         },
         animate: false
     };
 
     this.map = ko.isObservable(params.map) ? params.map : ko.observable();
-    this.map.subscribe(function (map) {
+    this.map.subscribe(function(map) {
         self.setupMap(map);
 
         if (ko.unwrap(params.x) && ko.unwrap(params.y)) {
@@ -63,18 +65,18 @@ const viewModel = function (params) {
     });
 
     this.bounds = ko.observable(ko.unwrap(params.bounds) || arches.hexBinBounds);
-    this.bounds.subscribe(function (bounds) {
+    this.bounds.subscribe(function(bounds) {
         if (bounds && self.map()) {
             self.map().fitBounds(bounds, boundingOptions);
         }
 
-        if (ko.isObservable(params.fitBounds) && params.fitBounds() !== bounds) {
+        if (ko.isObservable(params.fitBounds) && params.fitBounds() !== bounds){
             params.fitBounds(bounds);
         }
     });
 
     this.centerX = ko.observable(ko.unwrap(params.x) || arches.mapDefaultX);
-    this.centerX.subscribe(function (lng) {
+    this.centerX.subscribe(function(lng) {
         if (lng && self.map()) {
             var center = self.map().getCenter();
             center.lng = lng;
@@ -87,7 +89,7 @@ const viewModel = function (params) {
     });
 
     this.centerY = ko.observable(ko.unwrap(params.y) || arches.mapDefaultY);
-    this.centerY.subscribe(function (lat) {
+    this.centerY.subscribe(function(lat) {
         if (lat && self.map()) {
             var center = self.map().getCenter();
             center.lat = lat;
@@ -100,7 +102,7 @@ const viewModel = function (params) {
     });
 
     this.zoom = ko.observable(ko.unwrap(params.zoom) || arches.mapDefaultZoom);
-    this.zoom.subscribe(function (level) {
+    this.zoom.subscribe(function(level) {
         if (level && self.map()) { self.map().setZoom(level); }
 
         if (ko.isObservable(params.zoom) && params.zoom() !== level) {
@@ -109,14 +111,14 @@ const viewModel = function (params) {
     });
 
     this.overlayConfigs = ko.observableArray(ko.unwrap(params.overlayConfigs));
-    this.overlayConfigs.subscribe(function (overlayConfigs) {
+    this.overlayConfigs.subscribe(function(overlayConfigs) {
         if (ko.isObservable(params.overlayConfigs)) {
             params.overlayConfigs(overlayConfigs);
         }
     });
 
     this.activeBasemap = ko.observable();  // params.basemap is a string, activeBasemap is a map. Cannot initialize from params.
-    this.activeBasemap.subscribe(function (basemap) {
+    this.activeBasemap.subscribe(function(basemap) {
         if (ko.isObservable(params.basemap) && params.basemap() !== basemap.name) {
             params.basemap(basemap.name);
         }
@@ -133,7 +135,7 @@ const viewModel = function (params) {
     this.overlays = params.overlaysObservable || ko.observableArray();
 
     var mapLayers = params.mapLayers || arches.mapLayers;
-    mapLayers.forEach(function (layer) {
+    mapLayers.forEach(function(layer) {
         if (!layer.isoverlay) {
             if (!params.basemaps) self.basemaps.push(layer);
         }
@@ -141,13 +143,13 @@ const viewModel = function (params) {
             if (layer.searchonly && !params.search) return;
             layer.opacity = ko.observable(layer.addtomap ? 100 : 0);
             layer.onMap = ko.pureComputed({
-                read: function () { return layer.opacity() > 0; },
-                write: function (value) {
+                read: function() { return layer.opacity() > 0; },
+                write: function(value) {
                     layer.opacity(value ? 100 : 0);
                 }
             });
 
-            layer.updateParent = function (parent) {
+            layer.updateParent = function(parent) {
                 if (self.overlayConfigs.indexOf(layer.maplayerid) === -1) {
                     self.overlayConfigs.push(layer.maplayerid);
                     layer.opacity(100);
@@ -162,7 +164,7 @@ const viewModel = function (params) {
                     if (params.inWidget) {
                         try {
                             parent.overlays.valueHasMutated();
-                        } catch (e) {
+                        } catch(e) {
                             console.log(e);
                         }
                     }
@@ -174,18 +176,18 @@ const viewModel = function (params) {
     });
 
     if (!self.activeBasemap()) {
-        var basemap = ko.unwrap(self.basemaps).find(function (basemap) {
+        var basemap = ko.unwrap(self.basemaps).find(function(basemap) {
             return ko.unwrap(params.basemap) === basemap.name;
         });
 
         if (!basemap && params.config) {
-            basemap = ko.unwrap(self.basemaps).find(function (basemap) {
+            basemap = ko.unwrap(self.basemaps).find(function(basemap) {
                 return params.config().basemap === basemap.name;
             });
         }
 
         if (!basemap) {
-            basemap = ko.unwrap(self.basemaps).find(function (basemap) {
+            basemap = ko.unwrap(self.basemaps).find(function(basemap) {
                 return basemap.addtomap;
             });
         }
@@ -204,9 +206,9 @@ const viewModel = function (params) {
         }
     }
 
-    _.each(sources, function (sourceConfig) {
+    _.each(sources, function(sourceConfig) {
         if (sourceConfig.tiles) {
-            sourceConfig.tiles.forEach(function (url, i) {
+            sourceConfig.tiles.forEach(function(url, i) {
                 if (url.startsWith('/')) {
                     sourceConfig.tiles[i] = window.location.origin + url;
                 }
@@ -217,8 +219,8 @@ const viewModel = function (params) {
         }
     });
 
-    var multiplyStopValues = function (stops, multiplier) {
-        _.each(stops, function (stop) {
+    var multiplyStopValues = function(stops, multiplier) {
+        _.each(stops, function(stop) {
             if (Array.isArray(stop[1])) {
                 multiplyStopValues(stop[1], multiplier);
             } else {
@@ -227,7 +229,7 @@ const viewModel = function (params) {
         });
     };
 
-    var updateOpacity = function (layer, val) {
+    var updateOpacity = function(layer, val) {
         var opacityVal = Number(val) / 100.0;
         layer = JSON.parse(JSON.stringify(layer));
         if (layer.paint === undefined) {
@@ -243,7 +245,7 @@ const viewModel = function (params) {
             'circle',
             'fill-extrusion',
             'heatmap'
-        ], function (opacityType) {
+        ], function(opacityType) {
             var startVal = layer.paint ? layer.paint[opacityType + '-opacity'] : null;
 
             if (startVal) {
@@ -259,7 +261,7 @@ const viewModel = function (params) {
                     }
                 }
             } else if (layer.type === opacityType ||
-                (layer.type === 'symbol' && (opacityType === 'text' || opacityType === 'icon'))) {
+                    (layer.type === 'symbol' && (opacityType === 'text' || opacityType === 'icon'))) {
                 layer.paint[opacityType + '-opacity'] = opacityVal;
             }
         }, self);
@@ -267,12 +269,12 @@ const viewModel = function (params) {
     };
 
     this.additionalLayers = params.layers;
-    this.layers = ko.pureComputed(function () {
+    this.layers = ko.pureComputed(function() {
         var layers = [];
-        self.overlays().forEach(function (layer) {
+        self.overlays().forEach(function(layer) {
             if (layer.onMap()) {
                 var opacity = layer.opacity();
-                layers = layer.layer_definitions.map(function (layer) {
+                layers = layer.layer_definitions.map(function(layer) {
                     return updateOpacity(layer, opacity);
                 }).concat(layers);
             }
@@ -307,14 +309,14 @@ const viewModel = function (params) {
         this.mapOptions.fitBoundsOptions = params.fitBoundsOptions;
     }
 
-    this.hideSidePanel = function (focusElement) {
+    this.hideSidePanel = function(focusElement) {
         self.activeTab(undefined);
-        if (focusElement) {
+        if(focusElement){
             ariaUtils.shiftFocus(focusElement);
         }
     };
 
-    this.toggleTab = function (tabName) {
+    this.toggleTab = function(tabName) {
         if (self.activeTab() === tabName) {
             self.activeTab(null);
         } else {
@@ -323,7 +325,7 @@ const viewModel = function (params) {
         }
     };
 
-    this.updateLayers = function (layers) {
+    this.updateLayers = function(layers) {
         var style = self.map().getStyle();
 
         if (style) {
@@ -332,12 +334,12 @@ const viewModel = function (params) {
         }
     };
 
-    this.expandSidePanel = function () {
+    this.expandSidePanel = function() {
         return false;
     };
 
     this.resourceLookup = {};
-    this.getPopupData = function (features) {
+    this.getPopupData = function(features) {
         const popupFeatures = features.map(feature => {
             var data = feature.properties;
             var id = data.resourceinstanceid;
@@ -346,15 +348,16 @@ const viewModel = function (params) {
             data.sendFeatureToMapFilter = mapPopupProvider.sendFeatureToMapFilter.bind(mapPopupProvider);
             data.showFilterByFeature = mapPopupProvider.showFilterByFeature.bind(mapPopupProvider);
             const descriptionProperties = ['displayname', 'graph_name', 'map_popup', 'geometries'];
-            const setEditButtonVisibility = function (data) {
+            const setEditButtonVisibility = function(data)
+            {
                 const isFeatureEditable = self.canEdit &&
-                    ko.unwrap(data.permissions)?.users_without_edit_perm?.includes(userid) === false ||
-                    ko.unwrap(data.permissions)?.principal_user?.includes(userid) ||
-                    ko.unwrap(data.permissions)?.users_edit?.includes(userid);
+                ko.unwrap(data.permissions)?.users_without_edit_perm?.includes(userid) === false ||
+                ko.unwrap(data.permissions)?.principal_user?.includes(userid) ||
+                ko.unwrap(data.permissions)?.users_edit?.includes(userid);
                 data.showEditButton(isFeatureEditable);
             }
             if (id) {
-                if (!self.resourceLookup[id]) {
+                if (!self.resourceLookup[id]){
                     data = _.defaults(data, {
                         'loading': true,
                         'displayname': '',
@@ -377,7 +380,7 @@ const viewModel = function (params) {
                     data.reportURL = arches.urls.resource_report;
                     data.editURL = arches.urls.resource_editor;
                     self.resourceLookup[id] = data;
-                    $.get(arches.urls.resource_descriptors + id, function (data) {
+                    $.get(arches.urls.resource_descriptors + id, function(data) {
                         data.loading = false;
                         descriptionProperties.forEach(prop => self.resourceLookup[id][prop](data[prop]));
                         self.resourceLookup[id].permissions = data["permissions"];
@@ -410,12 +413,12 @@ const viewModel = function (params) {
             popupFeatures: uniquePopupFeatures,
             loading: ko.observable(false),
             activeFeature: uniquePopupFeatures[0],
-            advanceFeature: function (direction) {
+            advanceFeature: function(direction) {
                 const map = self.map();
                 const activeFeatureIndex = uniquePopupFeatures.findIndex(feature => feature.active());
                 let activeFeature;
                 uniquePopupFeatures[activeFeatureIndex].active(false);
-                if (direction === 'right') {
+                if (direction==='right') {
                     if (activeFeatureIndex + 1 >= uniquePopupFeatures.length) {
                         activeFeature = uniquePopupFeatures[0];
                     } else {
@@ -430,7 +433,7 @@ const viewModel = function (params) {
                 }
                 activeFeature.active(true);
                 if (map.getStyle()) {
-                    uniquePopupFeatures.forEach(feature => {
+                    uniquePopupFeatures.forEach(feature=>{
                         const featureId = feature.feature.id;
                         if (featureId) {
                             if (featureId === activeFeature.feature.id) {
@@ -445,7 +448,7 @@ const viewModel = function (params) {
         };
     };
 
-    this.onFeatureClick = function (features, lngLat, MapboxGl) {
+    this.onFeatureClick = function(features, lngLat, MapboxGl) {
         const popupTemplate = this.popupTemplate ? this.popupTemplate : mapPopupProvider.getPopupTemplate(features);
         const map = self.map();
         const mapStyle = map.getStyle();
@@ -460,14 +463,14 @@ const viewModel = function (params) {
             },
             self.popup._content
         );
-        features.forEach(feature => {
+        features.forEach(feature=>{
             if (mapStyle && feature.id) map.setFeatureState(feature, { selected: true });
-            self.popup.on('close', function () {
+            self.popup.on('close', function() {
                 if (mapStyle && feature.id) {
                     try {
                         map.setFeatureState(feature, { selected: false });
                         map.setFeatureState(feature, { hover: false });
-                    } catch (e) {
+                    } catch(e){
                         // catch TypeError which occurs when map is destroyed while popup open.
                     }
                 }
@@ -476,9 +479,9 @@ const viewModel = function (params) {
         });
     };
 
-    this.setupMap = function (map) {
-        map.on('load', function () {
-            require(['mapbox-gl', 'mapbox-gl-geocoder'], function (MapboxGl, MapboxGeocoder) {
+    this.setupMap = function(map) {
+        map.on('load', function() {
+            require(['mapbox-gl', 'mapbox-gl-geocoder'], function(MapboxGl, MapboxGeocoder) {
                 mapConfigurator.preConfig(map);
                 map.addControl(new MapboxGl.NavigationControl(), 'top-left');
                 map.addControl(new MapboxGl.FullscreenControl({
@@ -495,7 +498,7 @@ const viewModel = function (params) {
 
                 var hoverFeature;
 
-                map.on('mousemove', function (e) {
+                map.on('mousemove', function(e) {
                     var style = map.getStyle();
                     if (hoverFeature && hoverFeature.id && style) map.setFeatureState(hoverFeature, { hover: false });
                     hoverFeature = _.find(
@@ -518,7 +521,7 @@ const viewModel = function (params) {
                 map.draw_mode = null;
 
 
-                map.on('click', function (e) {
+                map.on('click', function(e) {
                     const popupFeatures = _.filter(
                         map.queryRenderedFeatures(e.point),
                         feature => mapPopupProvider.isFeatureClickable(feature, self)
@@ -529,13 +532,13 @@ const viewModel = function (params) {
                 });
 
 
-                map.on('zoomend', function () {
+                map.on('zoomend', function() {
                     self.zoom(
                         parseFloat(map.getZoom())
                     );
                 });
 
-                map.on('dragend', function () {
+                map.on('dragend', function() {
                     var center = map.getCenter();
 
                     self.centerX(parseFloat(center.lng));
@@ -548,5 +551,4 @@ const viewModel = function (params) {
         });
     };
 };
-
 export default viewModel;

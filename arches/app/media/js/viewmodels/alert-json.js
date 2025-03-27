@@ -1,7 +1,6 @@
 import ko from 'knockout';
 import arches from 'arches';
 
-
 /**
 * A viewmodel used for alert messages from JSON responses
 *

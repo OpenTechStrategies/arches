@@ -1,6 +1,7 @@
 import _ from 'underscore';
 import ko from 'knockout';
 
+
 /**
  * A viewmodel used for a generic geocoder
  *
@@ -8,7 +9,7 @@ import ko from 'knockout';
  * @name MapControlsViewModel
  *
  */
-var MapControlsViewModel = function (params) {
+var MapControlsViewModel = function(params) {
     var self = this;
     this.mapControlsHidden = params.mapControlsHidden || ko.observable(false);
     this.overlaySelectorClosed = params.overlaySelectorClosed || ko.observable(false);
@@ -27,9 +28,9 @@ var MapControlsViewModel = function (params) {
      * toggles between the panels: legend, basemaps, etc
      * @return {null}
      */
-    this.toggleMapControlPanels = function (data) {
+    this.toggleMapControlPanels = function(data) {
         var panel = data;
-        _.each(self.mapControlPanels, function (panelValue, panelName) {
+        _.each(self.mapControlPanels, function(panelValue, panelName) {
             panelName === panel ? panelValue(false) : panelValue(true);
             panel === 'overlays' || self.overlaySelectorClosed(true);
         });
@@ -39,7 +40,7 @@ var MapControlsViewModel = function (params) {
      * toggles the open or closed state of the of the map controls
      * @return {null}
      */
-    this.toggleMapTools = function () {
+    this.toggleMapTools = function() {
         self.mapControlsExpanded(!self.mapControlsExpanded());
     };
 
@@ -47,7 +48,7 @@ var MapControlsViewModel = function (params) {
      * toggles the visibility of the of the map controls and the availability of map controls in a report-template
      * @return {null}
      */
-    this.toggleMapControlsVisibility = function () {
+    this.toggleMapControlsVisibility = function() {
         if (self.mapControlsHidden() === true) {
             self.mapControlsHidden(false);
         } else {
@@ -55,7 +56,7 @@ var MapControlsViewModel = function (params) {
         }
     };
 
-    this.moveOverlay = function (overlay, direction) {
+    this.moveOverlay = function(overlay, direction) {
         var overlays = ko.utils.unwrapObservable(self.overlays);
         var source = ko.utils.arrayIndexOf(overlays, overlay);
         var target = (direction === 'up') ? source - 1 : source + 1;
@@ -70,5 +71,4 @@ var MapControlsViewModel = function (params) {
         }
     };
 };
-
 export default MapControlsViewModel;

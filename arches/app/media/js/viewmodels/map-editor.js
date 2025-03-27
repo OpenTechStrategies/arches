@@ -9,8 +9,11 @@ import geojsonhint from "geojsonhint";
 import { kml } from "togeojson";
 import shpjs from "shpjsesm";
 import proj4 from "proj4";
+import MapboxDraw from "mapbox-gl-draw";
 import MapComponentViewModel from "views/components/map";
 import selectFeatureLayersFactory from "views/components/cards/select-feature-layers";
+import geojsonFeatureCollection from "views/components/datatypes/geojson-feature-collection";
+
 
 var viewModel = function (params) {
     var self = this;
@@ -80,10 +83,10 @@ var viewModel = function (params) {
         selectFeatureLayers =
             sources.indexOf(source) > 0
                 ? selectFeatureLayersFactory(
-                    resourceId,
-                    source,
-                    sourceLayer
-                )
+                        resourceId,
+                        source,
+                        sourceLayer
+                    )
                 : [];
         self.additionalLayers(
             extendedLayers.concat(selectFeatureLayers, geojsonLayers)
@@ -449,83 +452,82 @@ var viewModel = function (params) {
     };
 
     var setupDraw = function (map) {
-        require(["mapbox-gl-draw"], (MapboxDraw) => {
-            var modes = MapboxDraw.modes;
-            modes.static = {
-                onSetup: function () {
-                    this.setActionableState();
-                    return {};
-                },
-                toDisplayFeatures: function (state, geojson, display) {
-                    display(geojson);
-                },
-            };
-            self.draw = new MapboxDraw({
-                displayControlsDefault: false,
-                modes: modes,
-            });
-            map.addControl(self.draw);
-            self.draw.set({
-                type: "FeatureCollection",
-                features: getDrawFeatures(),
-            });
-            map.on("draw.create", function (e) {
-                e.features.forEach(function (feature) {
-                    self.draw.setFeatureProperty(
-                        feature.id,
-                        "nodeId",
-                        self.newNodeId
-                    );
-                });
-                self.updateTiles();
-            });
-            map.on("draw.update", function () {
-                self.updateTiles();
-                if (self.coordinateEditing()) {
-                    var editingFeature =
-                        self.draw.getSelected().features[0];
-                    if (editingFeature)
-                        updateCoordinatesFromFeature(editingFeature);
-                }
-                if (self.bufferNodeId()) self.updateBufferFeature();
-            });
-            map.on("draw.delete", self.updateTiles);
-            map.on("draw.modechange", function (e) {
-                self.updateTiles();
-                self.setSelectLayersVisibility(false);
-                map.draw_mode = e.mode;
-            });
-            map.on("draw.selectionchange", function (e) {
-                self.selectedFeatureIds(
-                    e.features.map(function (feature) {
-                        return feature.id;
-                    })
-                );
-                if (e.features.length > 0) {
-                    _.each(self.featureLookup, function (value) {
-                        value.selectedTool(null);
-                    });
-                }
-                self.setSelectLayersVisibility(false);
-            });
-
-            if (self.form)
-                self.form.on("tile-reset", function () {
-                    var style = self.map().getStyle();
-                    if (style) {
-                        self.draw.set({
-                            type: "FeatureCollection",
-                            features: getDrawFeatures(),
-                        });
-                    }
-                    _.each(self.featureLookup, function (value) {
-                        if (value.selectedTool()) value.selectedTool("");
-                    });
-                });
-            if (self.draw) {
-                self.drawAvailable(true);
-            }
+        var modes = MapboxDraw.modes;
+        modes.static = {
+            onSetup: function () {
+                this.setActionableState();
+                return {};
+            },
+            toDisplayFeatures: function (state, geojson, display) {
+                display(geojson);
+            },
+        };
+        self.draw = new MapboxDraw({
+            displayControlsDefault: false,
+            modes: modes,
         });
+        map.addControl(self.draw);
+        self.draw.set({
+            type: "FeatureCollection",
+            features: getDrawFeatures(),
+        });
+        map.on("draw.create", function (e) {
+            e.features.forEach(function (feature) {
+                self.draw.setFeatureProperty(
+                    feature.id,
+                    "nodeId",
+                    self.newNodeId
+                );
+            });
+            self.updateTiles();
+        });
+        map.on("draw.update", function () {
+            self.updateTiles();
+            if (self.coordinateEditing()) {
+                var editingFeature =
+                    self.draw.getSelected().features[0];
+                if (editingFeature)
+                    updateCoordinatesFromFeature(editingFeature);
+            }
+            if (self.bufferNodeId()) self.updateBufferFeature();
+        });
+        map.on("draw.delete", self.updateTiles);
+        map.on("draw.modechange", function (e) {
+            self.updateTiles();
+            self.setSelectLayersVisibility(false);
+            map.draw_mode = e.mode;
+        });
+        map.on("draw.selectionchange", function (e) {
+            self.selectedFeatureIds(
+                e.features.map(function (feature) {
+                    return feature.id;
+                })
+            );
+            if (e.features.length > 0) {
+                _.each(self.featureLookup, function (value) {
+                    value.selectedTool(null);
+                });
+            }
+            self.setSelectLayersVisibility(false);
+        });
+
+        if (self.form)
+            self.form.on("tile-reset", function () {
+                var style = self.map().getStyle();
+                if (style) {
+                    self.draw.set({
+                        type: "FeatureCollection",
+                        features: getDrawFeatures(),
+                    });
+                }
+                _.each(self.featureLookup, function (value) {
+                    if (value.selectedTool()) value.selectedTool("");
+                });
+            });
+        if (self.draw) {
+            self.drawAvailable(true);
+        }
+
     };
 
     if (this.provisionalTileViewModel) {
@@ -711,40 +713,38 @@ var viewModel = function (params) {
                 });
             } else {
                 promises.push(
-                    new Promise(function (resolve) {
-                        var file = files[i];
-                        var extension = file.name.split(".").pop();
-                        var reader = new window.FileReader();
-                        reader.onload = function (e) {
-                            var geoJSON;
-                            if (["json", "geojson"].includes(extension))
-                                geoJSON = JSON.parse(e.target.result);
-                            else if (extension === "kml")
-                                geoJSON = kml(
-                                    new window.DOMParser().parseFromString(
-                                        e.target.result,
-                                        "text/xml")
-                                );
-                            else if (extension === "shp")
-                                geoJSON = {
-                                    "type": "FeatureCollection", "features":
-                                        shpjs.parseShp(e.target.result).reduce(function (features, geometry) {
-                                            features = features.concat({ "type": "Feature", "geometry": geometry, "properties": {} });
-                                            return features;
-                                        }, [])
-                                };
-                            else if (extension === "zip")
-                                shpjs.parseZip(e.target.result).then(function (parsedZip) {
-                                    resolve(parsedZip);
-                                });
-                            if (extension !== "zip")
-                                resolve(geoJSON);
-                        };
-                        if (["shp", "zip"].includes(extension))
-                            reader.readAsArrayBuffer(file);
-                        else
-                            reader.readAsText(file);
-                    }));
+                    new Promise (function(resolve) {
+                    var file = files[i];
+                    var extension = file.name.split(".").pop();
+                    var reader = new window.FileReader();
+                    reader.onload = function(e) {
+                        var geoJSON;
+                        if (["json", "geojson"].includes(extension))
+                            geoJSON = JSON.parse(e.target.result);
+                        else if (extension === "kml")
+                            geoJSON = kml(
+                                new window.DOMParser().parseFromString(
+                                    e.target.result,
+                                    "text/xml")
+                            );
+                        else if (extension === "shp")
+                            geoJSON = {"type": "FeatureCollection", "features":
+                                    shpjs.parseShp(e.target.result).reduce(function(features, geometry) {
+                                        features = features.concat({"type": "Feature", "geometry": geometry, "properties": {}});
+                                        return features;
+                                    }, [])};
+                        else if (extension === "zip")
+                            shpjs.parseZip(e.target.result).then(function(parsedZip) {
+                                resolve(parsedZip);
+                            });
+                        if (extension !== "zip")
+                            resolve(geoJSON);
+                    };
+                    if (["shp", "zip"].includes(extension))
+                        reader.readAsArrayBuffer(file);
+                    else
+                        reader.readAsText(file);
+                }));
             }
         }
         Promise.all(promises).then(function (results) {
@@ -1075,8 +1075,8 @@ var viewModel = function (params) {
             window
                 .fetch(
                     arches.urls.buffer +
-                    "?filter=" +
-                    JSON.stringify(bufferParams)
+                        "?filter=" +
+                        JSON.stringify(bufferParams)
                 )
                 .then(function (response) {
                     if (response.ok) {
@@ -1137,5 +1137,4 @@ var viewModel = function (params) {
         }
     };
 };
-
 export default viewModel;

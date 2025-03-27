@@ -5,7 +5,8 @@ import moment from 'moment';
 import 'bindings/let';
 import 'views/components/simple-switch';
 
-const ReportViewModel = function (params) {
+
+var ReportViewModel = function(params) {
     var self = this;
 
     this.report = params.report || null;
@@ -20,41 +21,40 @@ const ReportViewModel = function (params) {
     this.configObservables = params.configObservables || {};
     this.configKeys = params.configKeys || [];
 
-    this.hasProvisionalData = ko.pureComputed(function () {
-        return _.some(self.tiles(), function (tile) {
+    this.hasProvisionalData = ko.pureComputed(function() {
+        return _.some(self.tiles(), function(tile){
             return _.keys(ko.unwrap(tile.provisionaledits)).length > 0;
         });
     });
-
+    
     this.hideEmptyNodes = ko.observable(params.report.hideEmptyNodes);
 
-    this.configJSON = ko.computed(function () {
-        self.configKeys.forEach(function (config) {
+    this.configJSON = ko.computed(function(){
+        self.configKeys.forEach(function(config) {
             self[config] = self.configState[config];
         });
         self.report.configJSON(koMapping.toJS(self.report.configState));
         return self.report.configJSON;
-    }).extend({ deferred: true });
+    }).extend({deferred: true});
 
-    var getCardTiles = function (card, tiles) {
+    var getCardTiles = function(card, tiles) {
         var cardTiles = ko.unwrap(card.tiles);
-        cardTiles.forEach(function (tile) {
+        cardTiles.forEach(function(tile) {
             tiles.push(tile);
-            tile.cards.forEach(function (card) {
+            tile.cards.forEach(function(card) {
                 getCardTiles(card, tiles);
             });
         });
     };
 
-    this.tiles = ko.computed(function () {
+    this.tiles = ko.computed(function() {
         var tiles = [];
         if (self.report) {
-            ko.unwrap(self.report.cards).forEach(function (card) {
+            ko.unwrap(self.report.cards).forEach(function(card) {
                 getCardTiles(card, tiles);
             });
         }
         return tiles;
     });
 };
-
 export default ReportViewModel;

@@ -11,17 +11,17 @@ import dispose from 'utils/dispose';
 *
 * @param  {string} params - a configuration object
 */
-const WidgetViewModel = function (params) {
+var WidgetViewModel = function(params) {
     this.externalObservables = ['value', 'config', 'expanded', 'defaultValueSubscription', 'valueSubscription'];
     var self = this;
     this.state = params.state || 'form';
     var expanded = params.expanded || ko.observable(false);
     var nodeid = params.node ? params.node.nodeid : uuid.generate();
     this.expanded = ko.computed({
-        read: function () {
+        read: function() {
             return nodeid === expanded();
         },
-        write: function (val) {
+        write: function(val) {
             if (val) {
                 expanded(nodeid);
             } else {
@@ -37,7 +37,7 @@ const WidgetViewModel = function (params) {
     this.inResourceEditor = (typeof params.inResourceEditor === "boolean" ? params.inResourceEditor : null);
     this.results = params.results || null;
     this.hideEmptyNodes = params.hideEmptyNodes;
-    this.displayValue = ko.computed(function () {
+    this.displayValue = ko.computed(function() {
         if (self.value.value) {
             return ko.unwrap(self.value.value);
         }
@@ -61,19 +61,19 @@ const WidgetViewModel = function (params) {
         this.config = ko.observable(this.config);
     }
 
-    this.nodeCssClasses = ko.pureComputed(function () {
+    this.nodeCssClasses = ko.pureComputed(function() {
         return [ko.unwrap(self.node?.alias),
-        self.node?.graph?.attributes?.slug,
-        self.widget?.widgetLookup[ko.unwrap(self.widget?.widget_id)].name
-        ].join(" ").trim();
+            self.node?.graph?.attributes?.slug,
+            self.widget?.widgetLookup[ko.unwrap(self.widget?.widget_id)].name
+            ].join(" ").trim();
     });
 
     this.disposables = [];
 
-    var subscribeConfigObservable = function (obs, key) {
+    var subscribeConfigObservable = function(obs, key) {
         self[key] = obs;
 
-        var forwardSubscription = self[key].subscribe(function (val) {
+        var forwardSubscription = self[key].subscribe(function(val) {
             if (params.hasOwnProperty('graphDesignerHasDirtyWidget')) {
                 if (val || val === 0) {
                     params.graphDesignerHasDirtyWidget(true);
@@ -85,7 +85,7 @@ const WidgetViewModel = function (params) {
             self.config(configObj);
         });
 
-        var reverseSubscription = self.config.subscribe(function (val) {
+        var reverseSubscription = self.config.subscribe(function(val) {
             if (val[key] !== self[key]()) {
                 self[key](val[key]);
             }
@@ -94,7 +94,7 @@ const WidgetViewModel = function (params) {
         self.disposables.push(reverseSubscription);
     };
     _.each(this.configObservables, subscribeConfigObservable);
-    _.each(this.configKeys, function (key) {
+    _.each(this.configKeys, function(key) {
         var obs = ko.observable(self.config()[key]);
         subscribeConfigObservable(obs, key);
     });
@@ -107,12 +107,12 @@ const WidgetViewModel = function (params) {
 
         if (!self.form) {
             if (ko.isObservable(self.value)) {
-                self.valueSubscription = self.value.subscribe(function (val) {
+                self.valueSubscription = self.value.subscribe(function(val){
                     if (self.defaultValue() != val) {
                         self.defaultValue(val);
                     }
                 });
-                self.defaultValueSubscription = self.defaultValue.subscribe(function (val) {
+                self.defaultValueSubscription = self.defaultValue.subscribe(function(val){
                     if (self.value() != val) {
                         self.value(val);
                     }
@@ -121,13 +121,13 @@ const WidgetViewModel = function (params) {
         }
     }
 
-    this.valueProperties.forEach(function (property) {
-        if (ko.isObservable(self.value)) {
+    this.valueProperties.forEach(function(property) {
+        if (ko.isObservable(self.value)){
             self[property] = ko.observable();
-            self[property].subscribe(function () {
+            self[property].subscribe(function() {
                 self.value(
                     self.valueProperties.reduce(
-                        function (data, property) {
+                        function(data, property){
                             data[property] = self[property]();
                             return data;
                         }, {}
@@ -147,7 +147,7 @@ const WidgetViewModel = function (params) {
         this.onInit();
     }
 
-    this.dispose = function () {
+    this.dispose = function(){
         //console.log('disposing ' + self.constructor.name);
         dispose(self);
     };

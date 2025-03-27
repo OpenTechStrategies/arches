@@ -5,11 +5,13 @@ import MapEditorViewModel from 'viewmodels/map-editor';
 import mapCardTemplate from 'templates/views/components/cards/map.htm';
 import 'bindings/chosen';
 import 'bindings/codemirror';
-// import 'views/components/datatypes/geojson-feature-collection';
+import 'views/components/datatypes/geojson-feature-collection';
 
-const viewModel = function (params) {
+
+var viewModel = function(params) {
     var self = this;
 
+        
     params.configKeys = [
         'basemap',
         'overlayConfigs',
@@ -26,7 +28,7 @@ const viewModel = function (params) {
     var widgets = [];
 
     if (self.form && self.tile) {
-        widgets = self.card.widgets().filter(function (widget) {
+        widgets = self.card.widgets().filter(function(widget) {
             var id = widget.node_id();
             var type = ko.unwrap(self.form.nodeLookup[id].datatype);
             return type === 'geojson-feature-collection';
@@ -46,14 +48,15 @@ const viewModel = function (params) {
         params.activeBasemap = this.card.activeBasemap;
     }
 
-    if (ko.isObservable(self.basemap)) {
+    if (ko.isObservable(self.basemap)) {  // if basemap has loaded
         if (self.centerX() == 0 && self.centerY() == 0 && self.zoom() == 0) {
             self.centerX(arches.mapDefaultX);
             self.centerY(arches.mapDefaultY);
             self.zoom(arches.mapDefaultZoom);
         }
 
-        this.basemap.subscribe(function (basemap) {
+        // subscriptions need to stay explicit! DRY-ing will break
+        this.basemap.subscribe(function(basemap) {
             if (self.config.basemap() !== basemap) {
                 self.config.basemap(basemap);
             }
@@ -62,7 +65,7 @@ const viewModel = function (params) {
                 widget.config.basemap(basemap);
             }
         });
-        this.overlayConfigs.subscribe(function (overlayConfigs) {
+        this.overlayConfigs.subscribe(function(overlayConfigs) {
             if (self.config.overlayConfigs() !== overlayConfigs) {
                 self.config.overlayConfigs(overlayConfigs);
             }
@@ -71,34 +74,34 @@ const viewModel = function (params) {
                 widget.config.overlayConfigs(overlayConfigs);
             }
         });
-        this.centerX.subscribe(function (x) {
+        this.centerX.subscribe(function(x) {
             if (self.config.centerX() !== x) {
                 self.config.centerX(x);
             }
 
-            self.centerX(x);
-
+            self.centerX(x); /* forces card-control update */
+            
             for (var widget of widgets) {
                 widget.config.centerX(x);
             }
         });
-        this.centerY.subscribe(function (y) {
+        this.centerY.subscribe(function(y) {
             if (self.config.centerY() !== y) {
                 self.config.centerY(y);
             }
 
-            self.centerY(y);
+            self.centerY(y); /* forces card-control update */
 
             for (var widget of widgets) {
                 widget.config.centerY(y);
             }
         });
-        this.zoom.subscribe(function (zoom) {
+        this.zoom.subscribe(function(zoom) {
             if (self.config.zoom() !== zoom) {
                 self.config.zoom(zoom);
             }
-
-            self.zoom(zoom);
+            
+            self.zoom(zoom); /* forces card-control update */
 
             for (var widget of widgets) {
                 widget.config.zoom(zoom);
@@ -117,7 +120,7 @@ const viewModel = function (params) {
 
     MapEditorViewModel.apply(this, [params]);
 
-    this.expandSidePanel = ko.computed(function () {
+    this.expandSidePanel = ko.computed(function(){
         if (self.tile) {
             return self.tile.hasprovisionaledits() && self.reviewer === true;
         } else {
@@ -137,5 +140,4 @@ ko.components.register('map-card', {
     viewModel: viewModel,
     template: mapCardTemplate,
 });
-
 export default viewModel;

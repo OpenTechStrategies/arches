@@ -5,10 +5,12 @@ import IIIFAnnotationViewmodel from 'views/components/iiif-annotation';
 import AlertViewModel from 'viewmodels/alert';
 import iiifCardTemplate from 'templates/views/components/cards/iiif-card.htm';
 
-const viewModel = function (params) {
+
+const viewModel = function(params) {
     var self = this;
 
     params.configKeys = ['defaultManifest'];
+        
 
     CardComponentViewModel.apply(this, [params]);
 
@@ -16,15 +18,15 @@ const viewModel = function (params) {
     if (self.tile) newTile = !self.tile.tileid;
 
     if (newTile) {
-        this.onSaveSuccess = function () {
+        this.onSaveSuccess = function() {
             self.card.center = self.map().getCenter();
             self.card.zoom = self.map().getZoom();
         };
     }
 
-    this.deleteTile = function () {
+    this.deleteTile = function() {
         self.loading(true);
-        self.tile.deleteTile(function (response) {
+        self.tile.deleteTile(function(response) {
             self.loading(false);
             params.pageVm.alert(
                 new AlertViewModel(
@@ -32,13 +34,13 @@ const viewModel = function (params) {
                     response.responseJSON.title,
                     response.responseJSON.message,
                     null,
-                    function () { }
+                    function() { }
                 )
             );
             if (params.form.onDeleteError) {
                 params.form.onDeleteError(self.tile);
             }
-        }, function () {
+        }, function() {
             self.loading(false);
             if (!self.card.tiles().length) {
                 self.card.manifest = undefined;
@@ -51,16 +53,16 @@ const viewModel = function (params) {
     };
 
     if (this.form && this.tile) {
-        params.widgets = this.card.widgets().filter(function (widget) {
+        params.widgets = this.card.widgets().filter(function(widget) {
             var id = widget.node_id();
             var type = ko.unwrap(self.form.nodeLookup[id].datatype);
             return type === 'annotation';
         });
-        params.widgets.forEach(function (widget) {
+        params.widgets.forEach(function(widget) {
             var id = widget.node_id();
             var featureCollection = koMapping.toJS(self.tile.data[id]);
             if (featureCollection) {
-                featureCollection.features.forEach(function (feature) {
+                featureCollection.features.forEach(function(feature) {
                     if (feature.properties.manifest && !params.manifest)
                         params.manifest = feature.properties.manifest;
                     if (feature.properties.canvas && !params.canvas)
@@ -83,29 +85,29 @@ const viewModel = function (params) {
     if (this.form && !this.preview) {
         this.card.manifest = this.manifest();
         this.card.canvas = this.canvas();
-        this.manifest.subscribe(function (manifest) {
+        this.manifest.subscribe(function(manifest) {
             self.card.manifest = manifest;
         });
-        this.canvas.subscribe(function (canvas) {
+        this.canvas.subscribe(function(canvas) {
             self.card.canvas = canvas;
         });
     }
 
     if (this.preview) {
-        this.manifest.subscribe(function (m) {
+        this.manifest.subscribe(function(m) {
             if (m !== self.defaultManifest()) self.defaultManifest(m);
         });
-        this.defaultManifest.subscribe(function (m) {
+        this.defaultManifest.subscribe(function(m) {
             if (m !== self.manifest()) self.manifest(m);
         });
     }
 
     self.card.center = undefined;
     self.card.zoom = undefined;
-    self.expandGallery.subscribe(function (expandGallery) {
+    self.expandGallery.subscribe(function(expandGallery) {
         self.card.expandGallery = expandGallery;
     });
-    self.showGallery.subscribe(function (showGallery) {
+    self.showGallery.subscribe(function(showGallery) {
         self.card.showGallery = showGallery;
     });
 };
@@ -114,5 +116,4 @@ ko.components.register('iiif-card', {
     viewModel: viewModel,
     template: iiifCardTemplate,
 });
-
 export default viewModel;

@@ -1,4 +1,3 @@
-import _ from 'underscore';
 import Cookies from 'js-cookie';
 import ko from 'knockout';
 import uuid from 'uuid';
@@ -9,7 +8,8 @@ import 'bindings/select2-query';
 import 'bindings/dropzone';
 import 'views/components/simple-switch';
 
-const ExcelFileExportViewModel = function (params) {
+
+const ExcelFileExportViewModel = function(params) {
     const self = this;
 
     this.loadDetails = params.load_details || ko.observable();
@@ -23,7 +23,7 @@ const ExcelFileExportViewModel = function (params) {
     this.timeDifference = params.timeDifference;
     this.exportConceptsAs = ko.observable('uuids');
 
-    this.graphs = arches.resources.map(resource => ({ name: resource.name, graphid: resource.graphid }));
+    this.graphs = arches.resources.map(resource => ({name: resource.name, graphid: resource.graphid}));
     this.selectedGraph = ko.observable();
     this.resourceids = ko.observable();
 
@@ -41,7 +41,7 @@ const ExcelFileExportViewModel = function (params) {
         }
     };
 
-    this.exportResources = async function () {
+    this.exportResources = async function() {
         if (self.searchUrl()) { self.formData.append('search_url', self.searchUrl()); }
         self.formData.append('graph_id', self.selectedGraph());
         self.formData.append('graph_name', self.getGraphName(self.selectedGraph()));
@@ -61,14 +61,14 @@ const ExcelFileExportViewModel = function (params) {
                     'ep-alert-red',
                     err.data,
                     null,
-                    function () { }
+                    function(){}
                 )
             );
         }
         this.loading(false);
     };
 
-    this.submit = function (action) {
+    this.submit = function(action) {
         self.formData.append('action', action);
         self.formData.append('load_id', self.loadId);
         self.formData.append('module', self.moduleId);
@@ -76,7 +76,7 @@ const ExcelFileExportViewModel = function (params) {
         if (self.filename()) {
             self.formData.append('filename', self.filename());
         }
-
+        
         return fetch(arches.urls.etl_manager, {
             method: 'POST',
             body: self.formData,
@@ -87,5 +87,4 @@ const ExcelFileExportViewModel = function (params) {
         });
     };
 };
-
 export default ExcelFileExportViewModel;

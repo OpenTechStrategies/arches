@@ -1,19 +1,21 @@
-export default function (source, sourceLayer, selectedResourceIds, visible, color, nodeids, filteredNodeids, hoverId, selectedLayerConfig) {
-    const layerConfig = selectedLayerConfig;
-    color = color || layerConfig.defaultcolor;
-    const selectionColor = layerConfig.selectioncolor;
-    const hoverColor = layerConfig.hovercolor;
-    const colorPalette = layerConfig.colorpalette;
 
-    const createColorExpressions = function (defaultColor, colorPalette) {
+export default function(source, sourceLayer, selectedResourceIds, visible, color, nodeids, filteredNodeids, hoverId, selectedLayerConfig) {
+
+    var layerConfig = selectedLayerConfig;
+    color = color || layerConfig.defaultcolor;
+    var selectionColor = layerConfig.selectioncolor;
+    var hoverColor = layerConfig.hovercolor;
+    var colorPalette = layerConfig.colorpalette;
+
+    var createColorExpressions = function(defaultColor, colorPalette){
         if (nodeids) {
-            const colorExpressions = ['case'];
-            nodeids.forEach(function (nodeid, i) {
+            var colorExpressions = ['case'];
+            nodeids.forEach(function(nodeid, i) {
                 colorExpressions.push(['==', ['get', 'nodeid'], nodeid]);
                 if (i <= colorPalette.length) {
                     colorExpressions.push(colorPalette[i]);
                 } else {
-                    colorExpressions.push(colorPalette[Math.floor(Math.random() * colorPalette.length)]);
+                    colorExpressions.push(colorPalette[Math.floor(Math.random() * Math.floor(colorPalette.length))]);
                 }
             });
             colorExpressions.push(color);
@@ -21,44 +23,49 @@ export default function (source, sourceLayer, selectedResourceIds, visible, colo
         } else {
             return defaultColor;
         }
-    };
+    }; 
     color = createColorExpressions(color, colorPalette);
-
-    let nodeFilter = ["!=", "resourceinstanceid", "x"]; // placeholder if there are no filteredNodeids
+    var nodeFilter = ["!=", "resourceinstanceid", "x"]; // just a placeholder if there are no filterNodeids
     if (filteredNodeids && nodeids.length > 0) {
         nodeFilter = filteredNodeids.map(id => ["==", "nodeid", id]);
         nodeFilter.splice(0, 0, 'any');
     }
     if (selectedResourceIds && selectedResourceIds.length > 0) {
-        color = ['match', ['get', 'resourceinstanceid'], selectedResourceIds, selectionColor, color];
+        color = ['match', ['get', 'resourceinstanceid'], selectedResourceIds, selectionColor, color
+        ];
     }
     if (hoverId) {
-        color = ['match', ['get', 'resourceinstanceid'], hoverId, hoverColor, color];
+        color = ['match', ['get', 'resourceinstanceid'], hoverId, hoverColor, color
+        ];
     }
     if (!source) return [];
-
-    const layers = [{
+    var layers = [{
         "id": "select-feature-polygon-fill",
         "type": "fill",
         "minzoom": layerConfig.minzoom,
-        "filter": ['all', ["==", "$type", "Polygon"], nodeFilter],
+        "filter": ['all',[
+            "==", "$type", "Polygon"
+        ], nodeFilter
+        ],
         "paint": {
             "fill-color": color,
             "fill-outline-color": color,
             "fill-opacity": layerConfig.fillopacity
         },
         "layout": {
-            "visibility": visible ? "visible" : "none"
+            "visibility": visible ? "visible": "none"
         }
-    }, {
+    },  {
         "id": "select-feature-polygon-under-stroke",
         "type": "line",
         "minzoom": layerConfig.minzoom,
-        "filter": ['all', ["==", "$type", "Polygon"], nodeFilter],
+        "filter": ['all',[
+            "==", "$type", "Polygon"
+        ], nodeFilter],
         "layout": {
             "line-cap": "round",
             "line-join": "round",
-            "visibility": visible ? "visible" : "none"
+            "visibility": visible ? "visible": "none"
         },
         "paint": {
             "line-color": layerConfig.strokecolor,
@@ -68,11 +75,13 @@ export default function (source, sourceLayer, selectedResourceIds, visible, colo
         "id": "select-feature-polygon-stroke",
         "type": "line",
         "minzoom": layerConfig.minzoom,
-        "filter": ['all', ["==", "$type", "Polygon"], nodeFilter],
+        "filter": ['all',[
+            "==", "$type", "Polygon"
+        ], nodeFilter],
         "layout": {
             "line-cap": "round",
             "line-join": "round",
-            "visibility": visible ? "visible" : "none"
+            "visibility": visible ? "visible": "none"
         },
         "paint": {
             "line-color": color,
@@ -82,11 +91,13 @@ export default function (source, sourceLayer, selectedResourceIds, visible, colo
         "id": "select-feature-line",
         "type": "line",
         "minzoom": layerConfig.minzoom,
-        "filter": ['all', ["==", "$type", "LineString"], nodeFilter],
+        "filter": ['all',[
+            "==", "$type", "LineString"
+        ], nodeFilter],
         "layout": {
             "line-cap": "round",
             "line-join": "round",
-            "visibility": visible ? "visible" : "none"
+            "visibility": visible ? "visible": "none"
         },
         "paint": {
             "line-color": color,
@@ -96,34 +107,35 @@ export default function (source, sourceLayer, selectedResourceIds, visible, colo
         "id": "select-feature-point-point-stroke",
         "type": "circle",
         "minzoom": layerConfig.minzoom,
-        "filter": ['all', ["==", "$type", "Point"]],
+        "filter": ['all',
+            ["==", "$type", "Point"]
+        ],
         "paint": {
             "circle-radius": layerConfig.strokepointradius,
             "circle-opacity": layerConfig.strokepointopacity,
             "circle-color": layerConfig.strokecolor
         },
         "layout": {
-            "visibility": visible ? "visible" : "none"
+            "visibility": visible ? "visible": "none"
         }
     }, {
         "id": "select-feature-point",
         "type": "circle",
         "minzoom": layerConfig.minzoom,
-        "filter": ['all', ["==", "$type", "Point"], nodeFilter],
+        "filter": ['all',[
+            "==", "$type", "Point"
+        ], nodeFilter],
         "paint": {
             "circle-radius": layerConfig.pointradius,
             "circle-color": color
         },
         "layout": {
-            "visibility": visible ? "visible" : "none"
+            "visibility": visible ? "visible": "none"
         }
     }];
-
-    layers.forEach(function (layer) {
-        layer.source = source;
-        if (sourceLayer) {
-            layer["source-layer"] = sourceLayer;
-        }
+    layers.forEach(function(layer) {
+        layer["source"] = source;
+        if (sourceLayer) layer["source-layer"] = sourceLayer;
     });
     return layers;
-}
+};

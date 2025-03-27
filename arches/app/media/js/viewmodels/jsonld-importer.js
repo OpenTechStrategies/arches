@@ -7,7 +7,8 @@ import 'dropzone';
 import 'bindings/select2-query';
 import 'bindings/dropzone';
 
-var JSONLDImportViewModel = function (params) {
+
+var JSONLDImportViewModel = function(params) {
     const self = this;
 
     this.loadDetails = params.load_details || ko.observable();
@@ -49,13 +50,13 @@ var JSONLDImportViewModel = function (params) {
             data["data"]["title"],
             data["data"]["message"],
             null,
-            function () { }
+            function(){}
         ));
     };
 
-    this.addFile = async function (file) {
+    this.addFile = async function(file){
         self.loading(true);
-        self.fileInfo({ name: file.name, size: file.size });
+        self.fileInfo({name: file.name, size: file.size});
         const formData = new window.FormData();
         formData.append('file', file, file.name);
         const response = await self.submit('read', formData);
@@ -71,7 +72,7 @@ var JSONLDImportViewModel = function (params) {
         }
     };
 
-    this.start = async function () {
+    this.start = async function(){
         self.loading(true);
         const response = await self.submit('start');
         self.loading(false);
@@ -83,7 +84,7 @@ var JSONLDImportViewModel = function (params) {
         }
     };
 
-    this.write = async function () {
+    this.write = async function(){
         self.loading(true);
         const formData = new window.FormData();
         formData.append('load_details', JSON.stringify(self.loadDetails()));
@@ -99,5 +100,4 @@ var JSONLDImportViewModel = function (params) {
         }
     };
 };
-
 export default JSONLDImportViewModel;

@@ -8,12 +8,12 @@ import ko from 'knockout';
 *
 * @param  {string} params - a configuration object
 */
-const CardMultiSelect = function () {
+var CardMultiSelect = function() {
     this.card.staging = ko.observableArray();
     this.staging = this.card.staging;
-    const self = this;
-    this.card.stageTile = function (tile, e) {
-        e.preventDefault(e);
+    var self = this;
+    this.card.stageTile = function(tile, e){
+        e.preventDefault(e); 
         if (self.staging.indexOf(tile.tileid) < 0) {
             self.staging.push(tile.tileid);
         } else {
@@ -21,5 +21,4 @@ const CardMultiSelect = function () {
         }
     };
 };
-
 export default CardMultiSelect;
