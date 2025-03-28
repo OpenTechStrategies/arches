@@ -1,14 +1,9 @@
 import json
-import os, uuid
+import uuid
 from django.test import TransactionTestCase
 from django.urls import reverse
-from django.test.utils import captured_stdout
-from django.core import management
 from arches.app.models.models import UserPreference
-from arches.app.models.system_settings import settings
 from arches.app.models import models
-from tests import test_settings
-from django.test.client import Client
 
 
 # these tests can be run from the command line via

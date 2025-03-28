@@ -16,17 +16,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import random
-import os, uuid
-from django.test import TransactionTestCase
-from django.test.utils import captured_stdout
-from django.db import connection, connections
-from django.core import management
+import uuid
 from tests.base_test import ArchesTestCase
 from arches.app.models import models
 from arches.app.models.models import UserPreference
-from arches.app.utils.data_management.resources.importer import BusinessDataImporter
-from tests import test_settings
 
 # these tests can be run from the command line via
 # python manage.py test tests.models.user_preference_model_tests --settings="tests.test_settings"
