@@ -2272,19 +2272,26 @@ class SpatialView(models.Model):
 
 
 class UserPreference(models.Model):
-    userpreferenceid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    userpreferenceid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, db_default=UUID4()
+    )
     user = models.ForeignKey(
         User,
         to_field="username",
         on_delete=models.PROTECT,
         null=False,
     )
-    preferencename = models.TextField(blank=True, null=True)
+    preferencename = models.CharField(blank=True, max_length=255)
     config = JSONField(blank=False, null=False)
 
     class Meta:
         managed = True
         db_table = "user_preferences"
+        constraints = [
+            UniqueConstraint(
+                fields=["user", "preferencename"], name="unique_preference"
+            )
+        ]
 
 
 # Import proxy models to ensure they are always discovered.
