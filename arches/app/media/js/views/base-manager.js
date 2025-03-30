@@ -4,7 +4,6 @@ import ko from 'knockout';
 import PageView from 'views/page-view';
 import data from 'view-data';
 import uuid from 'uuid';
-import 'core-js';
 import 'dom-4';
 import 'views/components/language-switcher';
 

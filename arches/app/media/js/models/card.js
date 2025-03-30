@@ -2,7 +2,6 @@ import _ from 'underscore';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
 import 'utils/dispose';
-import 'regenerator-runtime/runtime';
 
 import arches from 'arches';
 import AbstractModel from 'models/abstract';

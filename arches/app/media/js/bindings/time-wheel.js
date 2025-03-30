@@ -2,7 +2,6 @@ import $ from 'jquery';
 import _ from 'underscore';
 import ko from 'knockout';
 import arches from 'arches';
-import 'regenerator-runtime';
 import * as d3 from 'd3';
 
 var width = 300;

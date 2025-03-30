@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
-import FunctionViewModel from 'viewmodels/function';
+import FunctionViewModel from 'viewmodels/function-view-model';
 import chosen from 'bindings/chosen';
 import localFileStorageTemplate from 'templates/views/components/functions/local-file-storage.htm'; 
 

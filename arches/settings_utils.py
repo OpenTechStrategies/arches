@@ -10,7 +10,7 @@ from django.contrib.staticfiles.finders import AppDirectoriesFinder
 
 
 class ArchesApplicationsStaticFilesFinder(AppDirectoriesFinder):
-    source_dir = "media"
+    source_dir = os.path.join("app", "media", "build")
 
 
 class CoreArchesStaticFilesFinderBuildDirectory(AppDirectoriesFinder):

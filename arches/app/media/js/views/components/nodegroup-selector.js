@@ -2,7 +2,7 @@ import $ from 'jquery';
 import _ from 'underscore';
 import ko from 'knockout';
 import koMapping from 'knockout-mapping';
-import FunctionViewModel from 'viewmodels/function';
+import FunctionViewModel from 'viewmodels/function-view-model';
 import GraphModel from 'models/graph';
 import chosen from 'bindings/chosen';
 import nodegroupSelectorTemplate from 'templates/views/components/nodegroup-selector.htm';

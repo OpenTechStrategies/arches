@@ -2,7 +2,6 @@ import $ from 'jquery';
 import _ from 'underscore';
 import Backbone from 'backbone';
 import ko from 'knockout';
-import moment from 'moment';
 import arches from 'arches';
 import viewData from 'view-data';
 import AlertViewModel from 'viewmodels/alert';

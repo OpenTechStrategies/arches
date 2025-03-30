@@ -718,7 +718,7 @@ FILE_TYPES = [
 FILENAME_GENERATOR = "arches.app.utils.storage_filename_generator.generate_filename"
 UPLOADED_FILES_DIR = "uploadedfiles"
 
-MAPBOX_API_KEY = ""  # Put your Mapbox key here!
+MAPBOX_API_KEY = "pk.eyJ1Ijoicmdhc3RvbiIsImEiOiJJYTdoRWNJIn0.MN6DrT07IEKXadCU8xpUMg"  # Put your Mapbox key here!
 
 # links to sprites and glyphs for use on map
 MAPBOX_SPRITES = "mapbox://sprites/mapbox/basic-v9"

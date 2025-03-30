@@ -6,7 +6,7 @@ import GraphPageView from 'views/graph/graph-page-view';
 import JsonErrorAlertViewModel from 'viewmodels/alert-json';
 import FunctionList from 'views/graph/function-manager/function-list';
 import AppliedFunctionList from 'views/graph/function-manager/applied-function-list';
-import FunctionModel from 'models/function';
+import FunctionModel from 'models/function-model';
 import FunctionXGraphModel from 'models/function-x-graph';
 import baseData from 'views/graph/graph-base-data';
 import data from 'views/graph/graph-functions-data';
