@@ -79,6 +79,13 @@ var BaseManager = PageView.extend({
             }
         });
 
+        // this is to prevent an infinite spinner when the page is reloaded
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
         PageView.prototype.constructor.call(this, options);
         return this;
     }

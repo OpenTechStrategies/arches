@@ -267,11 +267,11 @@ module.exports = () => {
                 ...CSSFilepathLookup,
             },
             output: {
-                path: Path.resolve(__dirname, APP_ROOT, 'media', 'build'),
-                publicPath: STATIC_URL,
-                clean: true,
                 assetModuleFilename: 'img/[name].[contenthash][ext]',
                 filename: '[name].[contenthash].js',
+                clean: true,
+                path: Path.resolve(__dirname, APP_ROOT, 'media', 'build'),
+                publicPath: STATIC_URL,
             },
             optimization: {
                 splitChunks: {

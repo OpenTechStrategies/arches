@@ -17,17 +17,15 @@ module.exports = () => {
                 optimization: {
                     minimize: true,
                     minimizer: [
-                      new TerserPlugin({
-                        parallel: true,
-                        terserOptions: {
-                          compress: {
-                            drop_console: true,
-                          },
-                          mangle: {
-                            keep_fnames: true,
-                          },
-                        },
-                      }),
+                        new TerserPlugin({
+                            parallel: true,
+                            terserOptions: {
+                                compress: {
+                                    drop_console: true,
+                                },
+                                mangle: true,
+                            },
+                        }),
                     ],
                 },
                 plugins: [
