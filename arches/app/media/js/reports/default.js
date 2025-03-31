@@ -1,13 +1,11 @@
 import ko from 'knockout';
 import ReportViewModel from 'viewmodels/report';
-import defaultTemplate from 'templates/views/report-templates/default.htm';
+import defaultReportTemplate from 'templates/views/report-templates/default.htm';
 
-const viewModel = function(params) {
-    params.configKeys = [];
-    ReportViewModel.apply(this, [params]);
-};
-
-export default ko.components.register('default-report', {
-    viewModel: viewModel,
-    template: defaultTemplate
+ko.components.register('default-report', {
+    viewModel: function (params) {
+        params.configKeys = [];
+        ReportViewModel.apply(this, [params]);
+    },
+    template: defaultReportTemplate
 });
