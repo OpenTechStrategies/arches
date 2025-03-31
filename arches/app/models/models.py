@@ -15,7 +15,7 @@ from django.db import ProgrammingError, connection
 from django.db.models import Case, F, JSONField, Max, Q, Value, When
 from django.db.models.constraints import UniqueConstraint
 from django.db.models.expressions import CombinedExpression
-from django.db.models.functions import Concat
+from django.db.models.functions import Concat, Lower
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
@@ -2289,7 +2289,7 @@ class UserPreference(models.Model):
         db_table = "user_preferences"
         constraints = [
             UniqueConstraint(
-                fields=["user", "preferencename"], name="unique_preference"
+                "user", Lower("preferencename"), name="unique_preference_name_user"
             )
         ]
 
