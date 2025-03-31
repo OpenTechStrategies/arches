@@ -79,7 +79,7 @@ var BaseManager = PageView.extend({
             }
         });
 
-        // this is to prevent an infinite spinner when the page is reloaded
+        // this is to prevent an infinite spinner when the page is reloaded via back/forward page navigation
         window.addEventListener('pageshow', function (event) {
             if (event.persisted) {
                 window.location.reload();
