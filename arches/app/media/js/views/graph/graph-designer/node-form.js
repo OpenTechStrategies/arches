@@ -48,7 +48,6 @@ var NodeFormView = Backbone.View.extend({
 
             return nodegroup;
         });
-        this.restrictedNodegroups = options.restrictedNodegroups;
         this.appliedFunctions = options.appliedFunctions;
         this.primaryDescriptorFunction = options.primaryDescriptorFunction;
 
@@ -94,36 +93,17 @@ var NodeFormView = Backbone.View.extend({
                 );
         };
 
-        /**
-        * Checks if a node's card is editable and returns a boolean useful
-        * in disabling node properties not to be changed in cards/nodegroups with data saved against them.
-        * @memberof NodeFormView.prototype
-        * @return {boolean}
-        */
-        this.checkIfImmutable = function() {
-            var isImmutable = _.contains(this.restrictedNodegroups, self.node().nodeGroupId());
-            return isImmutable;
-        };
-
         this.extendNode = function(node, parameters)
         {
             return _.extend(node, parameters);
         };
 
         this.toggleRequired = function() {
-            var isImmutable = self.checkIfImmutable();
-            if (isImmutable === false) {
-                self.node().isrequired(!self.node().isrequired());
-            }
+            self.node().isrequired(!self.node().isrequired());
         };
 
         this.disableDatatype = ko.computed(function() {
-            var isImmutable = false;
-            var node = self.node();
-            if (node) {
-                isImmutable = self.checkIfImmutable();
-            }
-            return self.isResourceTopNode() || isImmutable;
+            return self.isResourceTopNode();
         });
 
         this.displayMakeCard = ko.computed(function() {
@@ -217,9 +197,7 @@ var NodeFormView = Backbone.View.extend({
      * @memberof NodeFormView.prototype
      */
     toggleIsCollector: function() {
-        if (this.checkIfImmutable() === false) {
-            this.node().toggleIsCollector();
-        }
+        this.node().toggleIsCollector();
     }
 });
 export default NodeFormView;

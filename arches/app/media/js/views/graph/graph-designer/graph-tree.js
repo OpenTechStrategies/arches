@@ -69,7 +69,6 @@ var GraphTree = TreeView.extend({
         this.items = this.graphModel.get('nodes');
         this.branchListVisible = ko.observable(false);
         this.scrollTo = ko.observable();
-        this.restrictedNodegroups = options.restrictedNodegroups;
         this.showIds = ko.observable(false);
         this.toggleIds = function() {
             self.showIds(!self.showIds());

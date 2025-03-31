@@ -12,7 +12,6 @@ try {
     const graphDesignerData = graphDesignerDataHTML.getAttribute('graphDesignerData');
 
     parsedGraphDesignerData = JSON.parse(removeTrailingCommaFromObject(graphDesignerData));
-    parsedGraphDesignerData.restrictedNodegroups = JSON.parse(forceDoubleQuotes(parsedGraphDesignerData.restrictedNodegroups));
     parsedGraphDesignerData.ontology_namespaces = JSON.parse(forceDoubleQuotes(parsedGraphDesignerData.ontology_namespaces));
 } catch (error) {
     console.error(error);
