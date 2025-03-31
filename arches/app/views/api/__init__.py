@@ -2465,7 +2465,6 @@ class UserPreference(APIBase):
                         status=400,
                     )
                 new_user_preference = models.UserPreference()
-                new_user_preference.userpreferenceid = uuid.uuid4()
                 new_user_preference.user = models.User.objects.get(
                     username=user_pref_json["user"]
                 )
@@ -2495,7 +2494,7 @@ class UserPreference(APIBase):
                 logger.error(e)
                 return JSONErrorResponse(
                     _("User Preference delete failed"),
-                    _("An error occurred when trying to delete the spatialview"),
+                    _("An error occurred when trying to delete the user preference"),
                     status=500,
                 )
 
