@@ -193,7 +193,7 @@ export default AbstractModel.extend({
                     this.get('edges').push(edge);
                 }, this);
                 this.set('nodegroups', response.responseJSON.nodegroups);
-                response.responseJSON.widgets.forEach(function (widget) {
+                response.responseJSON.cards_x_nodes_x_widgets.forEach(function(widget){
                     this.get('cardwidgets').push(widget);
                 }, this);
                 this.get('cards')(

@@ -51,11 +51,11 @@ var GraphDesignerView = BaseManagerView.extend({
         viewModel.isGraphActive = ko.observable();
 
         const url = new URL(window.location);
-        if (url.searchParams.has('has_been_redirected_from_editable_future_graph')) {
+        if (url.searchParams.has('has_been_redirected_from_draft_graph')) {
             viewModel.alert(new AlertViewModel(
                     'ep-alert-blue', 
-                    arches.translations.graphDesignerRedirectFromEditableFutureGraph.title,
-                    arches.translations.graphDesignerRedirectFromEditableFutureGraph.text,
+                    arches.translations.graphDesignerRedirectFromDraftGraph.title,
+                    arches.translations.graphDesignerRedirectFromDraftGraph.text,
                     null,
                     function(){
                         // removes query args without reloading page
@@ -65,7 +65,6 @@ var GraphDesignerView = BaseManagerView.extend({
                 )
             );
         }
-
 
         fetch(arches.urls.graph_is_active_api(data.graphid)).then(response => {
             if (response.ok) {
@@ -223,7 +222,7 @@ var GraphDesignerView = BaseManagerView.extend({
                         );
                     }
 
-                    // must reload window since this editable_future_graph has been deleted
+                    // must reload window since this draft_graph has been deleted
                     alert.active.subscribe(function() {
                         window.location.reload();
                     });
@@ -322,7 +321,7 @@ var GraphDesignerView = BaseManagerView.extend({
                         );
                     }
 
-                    // must reload window since this editable_future_graph has been deleted
+                    // must reload window since this draft_graph has been deleted
                     alert.active.subscribe(function() {
                         window.location.reload();
                     });
@@ -789,26 +788,16 @@ var GraphDesignerView = BaseManagerView.extend({
         viewModel.graphModel.on('select-node', function(node) {
             viewModel.graphTree.expandParentNode(node);
         });
-        function updateGraphUnpublishedChanges() {
-            $.ajax({
-                type: 'POST',
-                url: arches.urls.graph_has_unpublished_changes_api(data.graph.graphid),
-                data: {'has_unpublished_changes': true},
-                success: function(response) {
-                    viewModel.graphHasUnpublishedChanges(response['has_unpublished_changes']);
-                }
-            });
-        }
 
-        document.addEventListener('appendBranch', updateGraphUnpublishedChanges);
-        document.addEventListener('addChildNode', updateGraphUnpublishedChanges);
-        document.addEventListener('deleteNode', updateGraphUnpublishedChanges);
-        document.addEventListener('reorderNodes', updateGraphUnpublishedChanges);
-        document.addEventListener('reorderCards', updateGraphUnpublishedChanges);
-        document.addEventListener('cardSave', updateGraphUnpublishedChanges);
-        document.addEventListener('nodeSave', updateGraphUnpublishedChanges);
-        document.addEventListener('permissionsSave', updateGraphUnpublishedChanges);
-        document.addEventListener('graphSettingsSave', updateGraphUnpublishedChanges);
+        document.addEventListener('appendBranch', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('addChildNode', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('deleteNode', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('reorderNodes', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('reorderCards', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('cardSave', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('nodeSave', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('permissionsSave', () => viewModel.graphHasUnpublishedChanges(true));
+        document.addEventListener('graphSettingsSave', () => viewModel.graphHasUnpublishedChanges(true));
         
         BaseManagerView.prototype.initialize.apply(this, arguments);
     }

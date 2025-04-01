@@ -288,7 +288,7 @@ class ResourceViewTests(ArchesTestCase):
         )
         assign_perm("change_resourceinstance", group, resource)
         response = self.client.get(url)
-        self.assertTrue(response.status_code == 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_user_can_delete_with_permission(self):
         """
