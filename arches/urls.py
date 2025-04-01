@@ -565,9 +565,9 @@ urlpatterns = [
         api.Resources.as_view(),
         name="resources",
     ),
-    path("api/login", api_auth.Login.as_view(), name="api_login"),
-    path("api/logout", api_auth.Logout.as_view(), name="api_logout"),
-    path("api/user", api_user.UserView.as_view(), name="api_user"),
+    path("api/login", api.Login.as_view(), name="api_login"),
+    path("api/logout", api.Logout.as_view(), name="api_logout"),
+    path("api/user", api.UserView.as_view(), name="api_user"),
     re_path(
         r"^api/tiles/(?P<tileid>%s|())$" % (uuid_regex),
         api.Tile.as_view(),
