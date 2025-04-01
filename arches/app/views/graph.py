@@ -319,7 +319,6 @@ class GraphDesignerView(GraphBaseView):
             primary_descriptor_function=primary_descriptor_function,
             geocoding_providers=models.Geocoder.objects.all(),
             report_templates=models.ReportTemplate.objects.all(),
-            restricted_nodegroups=[],
             ontologies=JSONSerializer().serialize(
                 models.Ontology.objects.filter(parentontology=None),
                 exclude=["version", "path"],

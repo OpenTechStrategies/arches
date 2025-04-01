@@ -550,7 +550,6 @@ var GraphDesignerView = BaseManagerView.extend({
             node: viewModel.selectedNode,
             appliedFunctions: viewModel.appliedFunctions,
             primaryDescriptorFunction: viewModel.primaryDescriptorFunction,
-            restrictedNodegroups: data.restrictedNodegroups,
             updatedCardinalityData: viewModel.updatedCardinalityData,
         });
 
@@ -626,7 +625,6 @@ var GraphDesignerView = BaseManagerView.extend({
             permissionTree: viewModel.permissionTree,
             appliedFunctions: viewModel.appliedFunctions,
             primaryDescriptorFunction: viewModel.primaryDescriptorFunction,
-            restrictedNodegroups: data.restrictedNodegroups
         });
 
         viewModel.graphTree.branchListVisible.subscribe(function(visible) {
