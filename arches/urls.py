@@ -20,8 +20,7 @@ from arches.app.views.language import LanguageView
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib.auth import views as auth_views
 from django.urls import include, path, re_path
-from arches.app.views import concept, main, map, search, graph, api
-from arches.app.views.api import auth as api_auth, user as api_user
+from arches.app.views import concept, main, search, api
 from arches.app.views.admin import ReIndexResources, ClearUserPermissionCache
 from arches.app.views.etl_manager import ETLManagerView
 from arches.app.views.file import FileView, TempFileView
@@ -57,7 +56,6 @@ from arches.app.views.resource import (
     ResourceActivityStreamCollectionView,
 )
 from arches.app.views.plugin import PluginView
-from arches.app.views.workflow_history import WorkflowHistoryView
 from arches.app.views.concept import RDMView
 from arches.app.views.user import UserManagerView
 from arches.app.views.tile import TileData
@@ -650,7 +648,7 @@ urlpatterns = [
     path("plugins/<slug:slug>/<path:path>", PluginView.as_view(), name="plugins"),
     re_path(
         r"^workflow_history/(?P<workflowid>%s|())$" % uuid_regex,
-        WorkflowHistoryView.as_view(),
+        api.WorkflowHistoryView.as_view(),
         name="workflow_history",
     ),
     re_path(
