@@ -532,3 +532,9 @@ class BaseDataType(object):
         a GraphValidationError
         """
         pass
+
+    def build_dropdown_option(self, default_tile_value):
+        """
+        Transform db value to simpler representation for dropdown-style widgets
+        """
+        return default_tile_value
