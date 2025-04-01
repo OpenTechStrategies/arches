@@ -197,19 +197,25 @@ class GraphTests(ArchesTestCase):
 
     def test_new_graph(self):
         name = "TEST NEW GRAPH"
-        author = "ARCHES TEST"
-        graph = Graph.objects.create_graph(name=name, is_resource=True)
+
+        user = User.objects.create(
+            username="arches_test_user",
+            first_name="TEST",
+            last_name="USER",
+        )
+
+        graph = Graph.objects.create_graph(name=name, is_resource=True, user=user)
         self.assertEqual(graph.name, name)
-        self.assertEqual(graph.author, author)
+        self.assertEqual(graph.author, "TEST USER")
         self.assertTrue(graph.isresource)
         self.assertFalse(graph.root.is_collector)
         self.assertEqual(len(graph.nodes), 1)
         self.assertEqual(len(graph.cards), 0)
         self.assertEqual(len(graph.get_nodegroups()), 0)
 
-        graph = Graph.objects.create_graph(name=name, is_resource=False)
+        graph = Graph.objects.create_graph(name=name, is_resource=False, user=user)
         self.assertEqual(graph.name, name)
-        self.assertEqual(graph.author, author)
+        self.assertEqual(graph.author, "TEST USER")
         self.assertFalse(graph.isresource)
         self.assertTrue(graph.root.is_collector)
         self.assertEqual(len(graph.nodes), 1)
