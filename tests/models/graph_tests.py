@@ -198,7 +198,7 @@ class GraphTests(ArchesTestCase):
     def test_new_graph(self):
         name = "TEST NEW GRAPH"
         author = "ARCHES TEST"
-        graph = Graph.objects.create_graph(name=name, is_resource=True, author=author)
+        graph = Graph.objects.create_graph(name=name, is_resource=True)
         self.assertEqual(graph.name, name)
         self.assertEqual(graph.author, author)
         self.assertTrue(graph.isresource)
@@ -207,7 +207,7 @@ class GraphTests(ArchesTestCase):
         self.assertEqual(len(graph.cards), 0)
         self.assertEqual(len(graph.get_nodegroups()), 0)
 
-        graph = Graph.objects.create_graph(name=name, is_resource=False, author=author)
+        graph = Graph.objects.create_graph(name=name, is_resource=False)
         self.assertEqual(graph.name, name)
         self.assertEqual(graph.author, author)
         self.assertFalse(graph.isresource)
@@ -891,7 +891,8 @@ class GraphTests(ArchesTestCase):
 
         """
         graph = Graph.objects.create_graph(
-            name="TEST", is_resource=False, author="TEST"
+            name="TEST",
+            is_resource=False,
         )
 
         initial_node_count = models.Node.objects.count()
@@ -981,7 +982,8 @@ class GraphTests(ArchesTestCase):
         tests deleting a single node
         """
         graph = Graph.objects.create_graph(
-            name="TEST", is_resource=False, author="TEST"
+            name="TEST",
+            is_resource=False,
         )
 
         initial_graph_nodes_count = len(graph.nodes)
@@ -1087,7 +1089,8 @@ class GraphTests(ArchesTestCase):
 
         """
         graph = Graph.objects.create_graph(
-            name="TEST", is_resource=False, author="TEST"
+            name="TEST",
+            is_resource=False,
         )
         graph.description = "A test description"
 
@@ -1101,7 +1104,8 @@ class GraphTests(ArchesTestCase):
 
         """
         graph = Graph.objects.create_graph(
-            name="TEST", is_resource=False, author="TEST"
+            name="TEST",
+            is_resource=False,
         )
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1129,7 +1133,10 @@ class GraphTests(ArchesTestCase):
         Tests that cards in a resource have correctly derived values
 
         """
-        graph = Graph.objects.create_graph(name="TEST", is_resource=True, author="TEST")
+        graph = Graph.objects.create_graph(
+            name="TEST",
+            is_resource=True,
+        )
         graph.description = "A test description"
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1160,7 +1167,8 @@ class GraphTests(ArchesTestCase):
         """
 
         graph = Graph.objects.create_graph(
-            name="TEST", is_resource=False, author="TEST"
+            name="TEST",
+            is_resource=False,
         )
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1179,7 +1187,8 @@ class GraphTests(ArchesTestCase):
         """
 
         graph = Graph.objects.create_graph(
-            name="TEST", is_resource=False, author="TEST"
+            name="TEST",
+            is_resource=False,
         )
         graph.append_branch(
             "http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by",
@@ -1375,7 +1384,6 @@ class GraphTests(ArchesTestCase):
         graph = Graph.objects.create_graph(
             name="RESOURCE_INSTANCE_LIFECYCLE_TEST_GRAPH",
             is_resource=True,
-            author="ARCHES TEST",
         )
         graph.add_resource_instance_lifecycle(resource_instance_lifecycle)
         graph.save()
@@ -1768,7 +1776,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_publish_sets_correct_has_unpublished_changes_value(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
 
         source_graph.name = "TEST NAME"
@@ -1786,7 +1795,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_create_draft_graph_sets_correct_has_unpublished_changes_value(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
 
         self.assertFalse(source_graph.has_unpublished_changes)
@@ -1799,7 +1809,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_restore_state_from_serialized_graph(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
 
         source_graph.name = "TEST NAME"
@@ -1823,7 +1834,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_empty_graph_from_draft_graph(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = Graph.objects.get(source_identifier=source_graph)
 
@@ -1852,7 +1864,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_graph_with_multiple_nodes_and_edges(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = Graph.objects.get(source_identifier=source_graph)
 
@@ -1897,7 +1910,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_graph_with_permissions(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = Graph.objects.get(source_identifier=source_graph)
 
@@ -1935,7 +1949,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_graph_with_relatable_resources(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -1963,7 +1978,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_create_draft_graphs_does_not_pollute_database(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2012,7 +2028,8 @@ class DraftGraphTests(ArchesTestCase):
         )
 
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2050,7 +2067,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_revert_draft_graph(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
 
         draft_graph = source_graph.create_draft_graph()
@@ -2098,7 +2116,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_nodegroup(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2158,7 +2177,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_node(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2215,7 +2235,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_card(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2277,7 +2298,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_widget(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2354,7 +2376,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_update_from_draft_graph_does_not_affect_resources(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2418,7 +2441,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_placing_node_in_separate_card_does_not_pollute_database(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2493,7 +2517,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_can_update_graph_slug(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 
@@ -2543,7 +2568,8 @@ class DraftGraphTests(ArchesTestCase):
 
     def test_can_update_other_data_in_graph_with_slug(self):
         source_graph = Graph.objects.create_graph(
-            name="TEST RESOURCE", is_resource=True, author="TEST"
+            name="TEST RESOURCE",
+            is_resource=True,
         )
         draft_graph = source_graph.create_draft_graph()
 

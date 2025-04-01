@@ -310,8 +310,7 @@ def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs
     # NodeGroups have no direct relation to the GraphModel objects,
     # so this signal can fail to find the node when deleting a Graphs
     try:
-        node = models.Node.objects.filter(pk=instance.pk).first()
-        models.GraphModel.objects.filter(pk=node.graph_id).update(
+        models.GraphModel.objects.filter(pk=instance.grouping_node.graph_id).update(
             has_unpublished_changes=True
         )
     except:
@@ -324,8 +323,7 @@ def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs
     # CardXNodeXWidgets have no direct relation to the GraphModel objects,
     # so this signal can fail to find the node when deleting a Graphs
     try:
-        node = models.Node.objects.filter(pk=instance.node_id).first()
-        models.GraphModel.objects.filter(pk=node.graph_id).update(
+        models.GraphModel.objects.filter(pk=instance.node.graph_id).update(
             has_unpublished_changes=True
         )
     except:

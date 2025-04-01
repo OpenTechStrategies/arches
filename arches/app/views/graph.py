@@ -473,7 +473,7 @@ class GraphDataView(View):
                         name=(
                             _("New Resource Model") if is_resource else _("New Branch")
                         ),
-                        author=request.user.first_name + " " + request.user.last_name,
+                        user=request.user,
                         is_resource=is_resource,
                     )
 

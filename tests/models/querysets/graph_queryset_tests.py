@@ -6,16 +6,16 @@ from arches.app.models.graph import Graph
 from tests.base_test import ArchesTestCase
 
 
-class GraphManagerTests(ArchesTestCase):
+class GraphQuerySetTests(ArchesTestCase):
     def test_create_raises_not_implemented_for_create(self):
         """
         Calling create() should raise NotImplementedError.
         """
         with self.assertRaises(NotImplementedError):
-            Graph.objects.create(author="test", name="test")
+            Graph.objects.create(name="test")
 
-    @patch("uuid.uuid1")
-    def test_create_graph_is_resource_false(self, mock_uuid1):
+    @patch("uuid.uuid4")
+    def test_create_graph_is_resource_false(self, mock_uuid4):
         """
         When is_resource is False:
          - A new GraphModel is created.
@@ -25,14 +25,12 @@ class GraphManagerTests(ArchesTestCase):
          - The graph's publish and create_draft_graph methods are called.
         """
         fixed_uuid = uuid.UUID("00000000-0000-0000-0000-000000000001")
-        mock_uuid1.return_value = fixed_uuid
+        mock_uuid4.return_value = fixed_uuid
 
         with patch.object(Graph, "publish") as publish_mock:
             with patch.object(Graph, "create_draft_graph") as create_draft_mock:
 
-                graph = Graph.objects.create_graph(
-                    author="author1", name="Graph Test", is_resource=False
-                )
+                graph = Graph.objects.create_graph(name="Graph Test", is_resource=False)
 
                 self.assertIsNotNone(graph)
                 self.assertIsInstance(graph, Graph)
@@ -60,8 +58,8 @@ class GraphManagerTests(ArchesTestCase):
                 publish_mock.assert_called_once()
                 create_draft_mock.assert_called_once()
 
-    @patch("uuid.uuid1")
-    def test_create_graph_is_resource_true(self, mock_uuid1):
+    @patch("uuid.uuid4")
+    def test_create_graph_is_resource_true(self, mock_uuid4):
         """
         When is_resource is True:
          - A new GraphModel is created.
@@ -70,13 +68,13 @@ class GraphManagerTests(ArchesTestCase):
          - The graph's publish and create_draft_graph methods are called.
         """
         fixed_uuid = uuid.UUID("00000000-0000-0000-0000-000000000002")
-        mock_uuid1.return_value = fixed_uuid
+        mock_uuid4.return_value = fixed_uuid
 
         with patch.object(Graph, "publish") as publish_mock:
             with patch.object(Graph, "create_draft_graph") as create_draft_mock:
 
                 graph = Graph.objects.create_graph(
-                    author="author2", name="Resource Graph", is_resource=True
+                    name="Resource Graph", is_resource=True
                 )
 
                 self.assertIsNotNone(graph)
@@ -101,9 +99,7 @@ class GraphManagerTests(ArchesTestCase):
         """
         Neither the created graph nor the draft_graph should have unpublished changes.
         """
-        graph = Graph.objects.create_graph(
-            author="author2", name="Resource Graph", is_resource=True
-        )
+        graph = Graph.objects.create_graph(name="Resource Graph", is_resource=True)
         self.assertFalse(graph.has_unpublished_changes)
 
         draft_graph = Graph.objects.get(source_identifier=graph)

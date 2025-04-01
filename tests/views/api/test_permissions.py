@@ -21,7 +21,6 @@ class InstancePermissionsAPITest(ArchesTestCase):
         cls.graph = Graph.objects.create_graph(
             name="INSTANCE_PERMISSIONS_TEST_GRAPH",
             is_resource=False,  # creates a nodegroup, will undo this below.
-            author="ARCHES TEST",
         )
         cls.graph.isresource = True
         cls.graph.resource_instance_lifecycle_id = (

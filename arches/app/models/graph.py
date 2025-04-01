@@ -26,7 +26,7 @@ from django.db.utils import IntegrityError
 from arches.app.const import IntegrityCheck
 from arches.app.models import models
 from arches.app.models.card import Card
-from arches.app.models.managers.graph import GraphManager
+from arches.app.models.querysets.graph import GraphQuerySet
 from arches.app.models.system_settings import settings
 from arches.app.datatypes.datatypes import DataTypeFactory
 from arches.app.etl_modules.bulk_data_deletion import BulkDataDeletion
@@ -49,7 +49,7 @@ class Graph(models.GraphModel):
 
     """
 
-    objects = GraphManager()
+    objects = GraphQuerySet.as_manager()
 
     class Meta:
         proxy = True
@@ -2276,7 +2276,7 @@ class Graph(models.GraphModel):
         Changes information in in GraphPublication models without creating
         a new entry in graphs_x_published_graphs table
         """
-        if self.source_identifier:  # don't update future graphs
+        if self.source_identifier_id:  # don't update future graphs
             raise Exception(
                 "Cannot update graphs with a source_identifier. Please apply updates to the source graph."
             )
@@ -2631,7 +2631,7 @@ class Graph(models.GraphModel):
         and creates a PublishedGraph entry for every active language
         """
         if self.source_identifier_id:
-            raise RuntimeError("Publishing an draft_graph is prohibited.")
+            raise RuntimeError("Publishing a draft_graph is prohibited.")
 
         self.refresh_from_database()
 

@@ -3,27 +3,29 @@ from django.utils.translation import gettext as _
 from django.db import models
 
 
-class GraphManager(models.Manager):
+class GraphQuerySet(models.QuerySet):
     def create(self, *args, **kwargs):
         raise NotImplementedError(
-            _(
-                "Use create_graph() to create new Graph instances with proper business logic."
-            )
+            "Use create_graph() to create new Graph instances with proper business logic."
         )
 
-    def create_graph(self, author="", name="", is_resource=False):
+    def create_graph(self, name="", user=None, is_resource=False):
         from arches.app.models import models as arches_models
 
         """
         Create a new Graph and related objects, encapsulating all creation side effects.
         """
-        new_id = uuid.uuid1()
+        new_id = uuid.uuid4()
         nodegroup = None
 
         graph_model = arches_models.GraphModel(
             name=name,
             subtitle="",
-            author=author,
+            author=(
+                " ".join(filter(None, [user.first_name, user.last_name]))
+                if user
+                else ""
+            ),
             description="",
             version="",
             isresource=is_resource,
@@ -53,7 +55,10 @@ class GraphManager(models.Manager):
 
         graph = self.get(pk=graph_model.graphid)
 
-        graph.publish()
+        graph.publish(
+            user=user,
+            notes=_("Graph created."),
+        )
         graph.create_draft_graph()
 
         # ensures entity returned matches database entity

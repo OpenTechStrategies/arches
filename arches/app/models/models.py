@@ -525,20 +525,23 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
 
     def should_use_published_graph(self):
         return bool(
-            self.publication
-            and not self.source_identifier
+            self.publication_id
+            and not self.source_identifier_id
             and not self.has_unpublished_changes
         )
 
     def get_published_graph(self, language=None):
+        if not self.publication_id:
+            return None
+
         if not language:
             language = translation.get_language()
 
-        published_graph = PublishedGraph.objects.filter(
-            publication=self.publication, language=language
-        ).first()
+        for published_graph in self.publication.publishedgraph_set.all():
+            if published_graph.language_id == language:
+                return published_graph
 
-        return published_graph
+        return None
 
     def get_cards(self, force_recalculation=False):
         if self.should_use_published_graph() and not force_recalculation:
@@ -670,7 +673,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
     def save(self, **kwargs):
         if (
             self.isresource
-            and not self.source_identifier
+            and not self.source_identifier_id
             and not self.resource_instance_lifecycle
         ):
             self.resource_instance_lifecycle_id = (
