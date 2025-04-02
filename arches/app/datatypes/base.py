@@ -533,8 +533,8 @@ class BaseDataType(object):
         """
         pass
 
-    def build_dropdown_option(self, default_tile_value):
+    def transform_value_from_tile(self, value, **kwargs):
         """
-        Transform db value to simpler representation for dropdown-style widgets
+        Transform db value to simpler representation for use on the front-end
         """
-        return default_tile_value
+        return value
