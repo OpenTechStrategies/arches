@@ -3,13 +3,12 @@ import $ from 'jquery';
 import arches from 'arches';
 import WidgetViewModel from 'viewmodels/widget';
 
-
 var NAME_LOOKUP = {};
 var ConceptSelectViewModel = function(params) {
     var self = this;
 
     params.configKeys = ['placeholder', 'defaultValue'];
-    
+
     this.multiple = params.multiple || false;
     this.allowClear = params.allowClear ?? true;
     this.displayName = ko.observable('');
