@@ -644,9 +644,18 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
             published_graph = self.get_published_graph()
 
             cards_x_nodes_x_widgets_slugs = []
-            for cards_x_nodes_x_widgets_dict in published_graph.serialized_graph[
-                "cards_x_nodes_x_widgets"
-            ]:
+
+            try:
+                serialized_cards_x_nodes_x_widgets = published_graph.serialized_graph[
+                    "cards_x_nodes_x_widgets"
+                ]
+            except KeyError:
+                # Handle import of legacy (v7.6 and previous) graphs
+                serialized_cards_x_nodes_x_widgets = published_graph.serialized_graph[
+                    "widgets"
+                ]
+
+            for cards_x_nodes_x_widgets_dict in serialized_cards_x_nodes_x_widgets:
                 cards_x_nodes_x_widgets_slug = {}
 
                 for key, value in cards_x_nodes_x_widgets_dict.items():
