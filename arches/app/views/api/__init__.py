@@ -2385,7 +2385,88 @@ class SpatialView(APIBase):
         return JSONResponse(status=204)
 
 
-class UserPreference(APIBase):
+class UserPreferenceListCreateView(APIBase):
+    """
+    Does not take an identifier, and represents response as a list.  Use for GET and POST requests.
+    """
+
+    def get(self, request):
+        """
+        Returns a list of all current User's preferences.
+        Depending on permissions, returns a of all user preferences.
+        """
+
+        # check user permission
+        administrator_user = False
+        if request.user.groups.filter(name="Application Administrator").exists():
+            administrator_user = True
+
+        if administrator_user:  # give view to everything
+            return JSONResponse(models.UserPreference.objects.all())
+        else:
+            return JSONResponse(models.UserPreference.objects.filter(user=request.user))
+
+    @method_decorator(group_required("Application Administrator", raise_exception=True))
+    def post(self, request):
+        try:
+            user_pref_json = JSONDeserializer().deserialize(request.body)
+        except ValueError:
+            return JSONErrorResponse(
+                _("Invalid JSON data"),
+                _("The User Preference API was sent invalid JSON"),
+                status=400,
+            )
+
+        try:
+            if user_pref_json["userpreferenceid"]:
+                JSONErrorResponse(
+                    _("Incorrect User Preference json data"),
+                    _(
+                        "POST REST request should not have a userpreferenceid provided in the JSON data."
+                    ),
+                    status=400,
+                )
+        except KeyError:
+            pass
+
+        try:
+            user_pref_json.get("user")
+        except KeyError:
+            return JSONErrorResponse(
+                _("JSON data missing user"),
+                _("User has not been specified in JSON."),
+                status=400,
+            )
+
+        try:
+            preference_user = models.User.objects.get(username=user_pref_json["user"])
+        except:
+            return JSONErrorResponse(
+                _("Invalid user"),
+                _("The User Preference API includes an invalid user."),
+                status=400,
+            )
+
+        try:
+            new_user_preference = models.UserPreference()
+            new_user_preference.user = preference_user
+            new_user_preference.preferencename = user_pref_json["preferencename"]
+            new_user_preference.config = user_pref_json["config"]
+            new_user_preference.save()
+            return JSONResponse(new_user_preference, status=201)
+        except ValidationError as e:
+            return JSONErrorResponse(
+                _("Validation Error when creating User Preference"),
+                e.messages,
+                status=400,
+            )
+
+
+class UserPreferenceDetailView(APIBase):
+    """
+    Takes an identifier.  Use for GET or DELETE requests to a specific userpreferenceid.
+    """
+
     def get(self, request, identifier=None):
         """
         Returns specific user preference when given uuid
@@ -2393,9 +2474,9 @@ class UserPreference(APIBase):
         """
 
         # check user permission
-        overall_access = False
+        administrator_user = False
         if request.user.groups.filter(name="Application Administrator").exists():
-            overall_access = True
+            administrator_user = True
 
         if identifier:
             try:
@@ -2408,8 +2489,8 @@ class UserPreference(APIBase):
                     _("No User Preference with this id"),
                     status=404,
                 )
-            if overall_access or returned_user_preference.user == request.user:
-                response_data = returned_user_preference
+            if administrator_user or returned_user_preference.user == request.user:
+                return JSONResponse(returned_user_preference)
             else:
                 return JSONErrorResponse(
                     _("User Preference GET request failed"),
@@ -2417,63 +2498,11 @@ class UserPreference(APIBase):
                     status=403,
                 )
         else:
-            if overall_access:  # give view to everything
-                response_data = [x for x in models.UserPreference.objects.all()]
-            else:
-                response_data = [
-                    x for x in models.UserPreference.objects.filter(user=request.user)
-                ]
-
-        return JSONResponse(response_data)
-
-    @method_decorator(group_required("Application Administrator", raise_exception=True))
-    def post(self, request, identifier=None):
-        if identifier:
             return JSONErrorResponse(
-                _("User Preference creation failed"),
-                _(
-                    "POST request should not have a userpreferenceid provided in the URL"
-                ),
+                _("No userpreferenceid specified"),
+                _("GET request needs to specify a userpreferenceid"),
                 status=400,
             )
-
-        try:
-            user_pref_json = JSONDeserializer().deserialize(request.body)
-        except ValueError:
-            return JSONErrorResponse(
-                _("Invalid JSON data"),
-                _("The User Preference API was sent invalid JSON"),
-                status=400,
-            )
-
-        if user_pref_json:
-            if user_pref_json["userpreferenceid"]:
-                JSONErrorResponse(
-                    _("Incorrect User Preference json data"),
-                    _(
-                        "POST REST request should not have a userpreferenceid provided in the JSON data."
-                    ),
-                    status=400,
-                )
-            else:
-                try:
-                    models.User.objects.get(username=user_pref_json["user"])
-                except:
-                    return JSONErrorResponse(
-                        _("Invalid user"),
-                        _("The User Preference API includes an invalid user."),
-                        status=400,
-                    )
-                new_user_preference = models.UserPreference()
-                new_user_preference.user = models.User.objects.get(
-                    username=user_pref_json["user"]
-                )
-                new_user_preference.preferencename = user_pref_json["preferencename"]
-                new_user_preference.config = user_pref_json["config"]
-                new_user_preference.save()
-                return JSONResponse(new_user_preference, status=201)
-
-        return JSONErrorResponse(_("No json request payload"), status=400)
 
     @method_decorator(group_required("Application Administrator", raise_exception=True))
     def delete(self, request, identifier=None):
