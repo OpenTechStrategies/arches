@@ -2393,7 +2393,7 @@ class UserPreferenceListCreateView(APIBase):
     def get(self, request):
         """
         Returns a list of all current User's preferences.
-        Depending on permissions, returns a of all user preferences.
+        Depending on permissions, returns a list of all user preferences.
         """
 
         # check user permission
@@ -2452,6 +2452,7 @@ class UserPreferenceListCreateView(APIBase):
             new_user_preference.user = preference_user
             new_user_preference.preferencename = user_pref_json["preferencename"]
             new_user_preference.config = user_pref_json["config"]
+            new_user_preference.full_clean()
             new_user_preference.save()
             return JSONResponse(new_user_preference, status=201)
         except ValidationError as e:
@@ -2467,7 +2468,7 @@ class UserPreferenceDetailView(APIBase):
     Takes an identifier.  Use for GET or DELETE requests to a specific userpreferenceid.
     """
 
-    def get(self, request, identifier=None):
+    def get(self, request, identifier):
         """
         Returns specific user preference when given uuid
         If no id specified, and depending on user permissions, returns a list of all user preferences
@@ -2478,56 +2479,33 @@ class UserPreferenceDetailView(APIBase):
         if request.user.groups.filter(name="Application Administrator").exists():
             administrator_user = True
 
-        if identifier:
-            try:
-                returned_user_preference = models.UserPreference.objects.get(
-                    pk=identifier
-                )
-            except:
-                return JSONErrorResponse(
-                    _("User Preference GET request failed"),
-                    _("No User Preference with this id"),
-                    status=404,
-                )
-            if administrator_user or returned_user_preference.user == request.user:
-                return JSONResponse(returned_user_preference)
-            else:
-                return JSONErrorResponse(
-                    _("User Preference GET request failed"),
-                    _("You do not have access to view this userpreferenceid"),
-                    status=403,
-                )
-        else:
+        if not identifier:
             return JSONErrorResponse(
                 _("No userpreferenceid specified"),
                 _("GET request needs to specify a userpreferenceid"),
                 status=400,
             )
 
-    @method_decorator(group_required("Application Administrator", raise_exception=True))
-    def delete(self, request, identifier=None):
-        if identifier:
-            user_preference = None
-            try:
-                user_preference = models.UserPreference.objects.get(pk=identifier)
-            except ObjectDoesNotExist:
-                return JSONErrorResponse(
-                    _("User Preference delete failed"),
-                    _("User Preference does not exist"),
-                    status=404,
-                )
-
-            try:
-                user_preference.delete()
-            except Exception as e:
-                logger.error(e)
-                return JSONErrorResponse(
-                    _("User Preference delete failed"),
-                    _("An error occurred when trying to delete the user preference"),
-                    status=500,
-                )
-
+        try:
+            returned_user_preference = models.UserPreference.objects.get(pk=identifier)
+        except:
+            return JSONErrorResponse(
+                _("User Preference GET request failed"),
+                _("No User Preference with this id"),
+                status=404,
+            )
+        if administrator_user or returned_user_preference.user == request.user:
+            return JSONResponse(returned_user_preference)
         else:
+            return JSONErrorResponse(
+                _("User Preference GET request failed"),
+                _("You do not have access to view this userpreferenceid"),
+                status=403,
+            )
+
+    @method_decorator(group_required("Application Administrator", raise_exception=True))
+    def delete(self, request, identifier):
+        if not identifier:
             return JSONErrorResponse(
                 _("User Preference delete failed"),
                 _(
@@ -2535,4 +2513,25 @@ class UserPreferenceDetailView(APIBase):
                 ),
                 status=400,
             )
+
+        user_preference = None
+        try:
+            user_preference = models.UserPreference.objects.get(pk=identifier)
+        except ObjectDoesNotExist:
+            return JSONErrorResponse(
+                _("User Preference delete failed"),
+                _("User Preference does not exist"),
+                status=404,
+            )
+
+        try:
+            user_preference.delete()
+        except Exception as e:
+            logger.error(e)
+            return JSONErrorResponse(
+                _("User Preference delete failed"),
+                _("An error occurred when trying to delete the user preference"),
+                status=500,
+            )
+
         return JSONResponse(status=204)
