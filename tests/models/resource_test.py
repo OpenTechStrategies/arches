@@ -488,7 +488,9 @@ class ResourceTests(ArchesTestCase):
 
     def test_self_referring_resource_instance_descriptor(self):
         # Create a nodegroup with a string node and a resource-instance node.
-        graph = Graph.new(name="Self-referring descriptor test", is_resource=True)
+        graph = Graph.objects.create_graph(
+            name="Self-referring descriptor test", is_resource=True
+        )
         nodegroup = models.NodeGroup.objects.create()
         string_node = models.Node.objects.create(
             pk=nodegroup.pk,
