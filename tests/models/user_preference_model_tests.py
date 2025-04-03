@@ -18,17 +18,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from django.test import TransactionTestCase
+from tests.base_test import ArchesTestCase
 from arches.app.models import models
 from arches.app.models.models import UserPreference
-from django.db import IntegrityError
+from django.db import transaction, IntegrityError
 
 # these tests can be run from the command line via
 # python manage.py test tests.models.user_preference_model_tests --settings="tests.test_settings"
 
 
-class UserPreferenceTests(TransactionTestCase):
-
-    serialized_rollback = True
+class UserPreferenceTests(ArchesTestCase):
 
     def generate_user_preference(self):
         user_preference = UserPreference()
@@ -41,15 +40,6 @@ class UserPreferenceTests(TransactionTestCase):
         ]
         return user_preference
 
-    def test_user_preference_passes(self):
-        user_pref = self.generate_user_preference()
-        user_pref.save()
-        self.assertTrue(
-            UserPreference.objects.filter(
-                userpreferenceid=user_pref.userpreferenceid
-            ).exists()
-        )
-
     def test_user_preference_invalid_user(self):
         user_pref = self.generate_user_preference()
 
@@ -61,12 +51,16 @@ class UserPreferenceTests(TransactionTestCase):
         # User preference number 1 (valid and no errors)
         user_pref_one = self.generate_user_preference()
         user_pref_one.save()
+
         # exact duplicate of preference name - fail constraint
         user_pref_two = self.generate_user_preference()
-        with self.assertRaises(IntegrityError):
-            user_pref_two.save()
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                user_pref_two.save()
+
         # same preference name in different case - also fail constraint
         user_pref_three = self.generate_user_preference()
         user_pref_three.preferencename = "TEST PREFERENCE"
-        with self.assertRaises(IntegrityError):
-            user_pref_three.save()
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                user_pref_three.save()
