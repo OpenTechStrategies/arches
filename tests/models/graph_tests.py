@@ -1425,6 +1425,74 @@ class GraphTests(ArchesTestCase):
         self.assertIn(state1, resource_instance_lifecycle_states)
         self.assertIn(state2, resource_instance_lifecycle_states)
 
+    def test_geometry_config_persists_after_unpublishing_graph(self):
+
+        models.GraphModel.objects.create(
+            **{
+                "name": "Test Graph",
+                "graphid": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "isresource": True,
+                "slug": "test-graph",
+            }
+        )
+
+        models.NodeGroup.objects.create(pk="88677159-dccf-4629-9210-f6a2a7463552")
+
+        models.Node.objects.create(
+            **{
+                "name": "Top Node",
+                "graph_id": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "datatype": "semantic",
+                "istopnode": True,
+                "nodeid": "c1257d42-9275-40df-835e-5b99eee818fa",
+            }
+        )
+
+        models.Node.objects.create(
+            **{
+                "name": "GeoJSON Node",
+                "graph_id": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "datatype": "geojson-feature-collection",
+                "istopnode": False,
+                "config": {
+                    "fillColor": "rgba(130, 130, 130, 0.7)",
+                },
+                "nodeid": "88677159-dccf-4629-9210-f6a2a7463552",
+                "nodegroup_id": "88677159-dccf-4629-9210-f6a2a7463552",
+            }
+        )
+
+        models.Edge.objects.create(
+            **{
+                "domainnode_id": "c1257d42-9275-40df-835e-5b99eee818fa",
+                "edgeid": "16a8ec0d-7d8c-422a-aa33-fac1ac3a07b0",
+                "graph_id": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "rangenode_id": "88677159-dccf-4629-9210-f6a2a7463552",
+            }
+        )
+
+        graph = Graph.objects.get(pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954")
+        admin = User.objects.get(username="admin")
+        graph.create_draft_graph()
+        graph.publish(user=admin)
+
+        draft_graph = Graph.objects.get(slug="test-graph", source_identifier=graph.pk)
+        draft_node = draft_graph.node_set.get(name="GeoJSON Node")
+        draft_node.config["fillColor"] = "rgba(200, 130, 130, 0.7)"
+        draft_node.save()
+        draft_graph.refresh_from_database()
+
+        graph = Graph.objects.get(slug="test-graph", source_identifier=None)
+        graph.update_from_draft_graph(draft_graph)
+
+        graph_from_db = Graph.objects.get(pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954")
+        self.assertEqual(
+            graph_from_db.nodes[
+                uuid.UUID("88677159-dccf-4629-9210-f6a2a7463552")
+            ].config["fillColor"],
+            "rgba(200, 130, 130, 0.7)",
+        )
+
 
 class DraftGraphTests(ArchesTestCase):
     @classmethod
