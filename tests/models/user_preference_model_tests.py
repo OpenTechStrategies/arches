@@ -43,7 +43,7 @@ class UserPreferenceTests(ArchesTestCase):
     def test_user_preference_invalid_user(self):
         user_pref = self.generate_user_preference()
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             user_pref.user = "admin"
             user_pref.save()
 
