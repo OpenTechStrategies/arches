@@ -58,6 +58,7 @@ var ResourceInstanceSelectViewModel = function(params) {
     this.resourceTypesToDisplayInDropDown = ko.observableArray(!!params.graphids ? ko.toJS(params.graphids) : []);
     this.graphIds = ko.observableArray();
     this.searchString = params.searchString || ko.unwrap(params.node?.config.searchString);
+    this.resourceLookup = {};
     
     if (!!params.configForm) {
         this.allowInstanceCreation = false;
@@ -222,8 +223,7 @@ var ResourceInstanceSelectViewModel = function(params) {
                         if(!val.iconClass) {
                             Object.defineProperty(val, 'iconClass', {value: ko.observable()});
                         }
-                        const resourceLookup = {}
-                        resourceUtils.lookupResourceInstanceData(ko.unwrap(val.resourceId, resourceLookup))
+                        resourceUtils.lookupResourceInstanceData(ko.unwrap(val.resourceId), self.resourceLookup)
                             .then(function(resourceInstance) {
                                 if (resourceInstance) {
                                     names.push(resourceInstance["_source"].displayname);
@@ -524,8 +524,7 @@ var ResourceInstanceSelectViewModel = function(params) {
                         resourceId = ko.unwrap(val.resourceId);
                     }
 
-                    const resourceLookup = {};
-                    var resourceInstance = resourceUtils.lookupResourceInstanceData(resourceId, resourceLookup).then(
+                    var resourceInstance = resourceUtils.lookupResourceInstanceData(resourceId, self.resourceLookup).then(
                         function(resourceInstance) { return resourceInstance; }
                     );
 
