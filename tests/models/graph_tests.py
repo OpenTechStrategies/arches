@@ -1432,8 +1432,11 @@ class GraphTests(ArchesTestCase):
                 "name": "Test Graph",
                 "graphid": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
                 "isresource": True,
+                "slug": "test-graph",
             }
         )
+
+        models.NodeGroup.objects.create(pk="88677159-dccf-4629-9210-f6a2a7463552")
 
         models.Node.objects.create(
             **{
@@ -1455,6 +1458,7 @@ class GraphTests(ArchesTestCase):
                     "fillColor": "rgba(130, 130, 130, 0.7)",
                 },
                 "nodeid": "88677159-dccf-4629-9210-f6a2a7463552",
+                "nodegroup_id": "88677159-dccf-4629-9210-f6a2a7463552",
             }
         )
 
@@ -1469,13 +1473,17 @@ class GraphTests(ArchesTestCase):
 
         graph = Graph.objects.get(pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954")
         admin = User.objects.get(username="admin")
+        graph.create_draft_graph()
         graph.publish(user=admin)
 
-        node = models.Node.objects.get(pk="88677159-dccf-4629-9210-f6a2a7463552")
-        node.config["fillColor"] = "rgba(200, 130, 130, 0.7)"
-        node.save()
+        draft_graph = Graph.objects.get(slug="test-graph", source_identifier=graph.pk)
+        draft_node = draft_graph.node_set.get(name="GeoJSON Node")
+        draft_node.config["fillColor"] = "rgba(200, 130, 130, 0.7)"
+        draft_node.save()
+        draft_graph.refresh_from_database()
 
-        graph.unpublish()
+        graph = Graph.objects.get(slug="test-graph", source_identifier=None)
+        graph.update_from_draft_graph(draft_graph)
 
         graph_from_db = Graph.objects.get(pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954")
         self.assertEqual(
