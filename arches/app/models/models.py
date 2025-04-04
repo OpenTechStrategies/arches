@@ -2284,6 +2284,7 @@ class UserPreference(models.Model):
         related_query_name="preferences",
     )
     preferencename = models.CharField(blank=True, max_length=255)
+    appname = models.CharField(blank=False, max_length=255, default="arches")
     config = JSONField(blank=False, null=False)
 
     class Meta:

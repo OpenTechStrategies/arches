@@ -29,6 +29,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("preferencename", models.CharField(blank=True, max_length=255)),
+                (
+                    "appname",
+                    models.CharField(blank=False, max_length=255, default="arches"),
+                ),
                 ("config", models.JSONField()),
                 (
                     "username",
