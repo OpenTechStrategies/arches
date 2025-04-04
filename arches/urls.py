@@ -782,7 +782,7 @@ urlpatterns = [
         name="spatialview_api",
     ),
     re_path(
-        r"^api/user_preference$",
+        r"^api/user_preference/$",
         api.UserPreferenceListCreateView.as_view(),
         name="api_user_preference_list_view",
     ),

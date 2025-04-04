@@ -2479,13 +2479,6 @@ class UserPreferenceDetailView(APIBase):
         if request.user.groups.filter(name="Application Administrator").exists():
             administrator_user = True
 
-        if not identifier:
-            return JSONErrorResponse(
-                _("No userpreferenceid specified"),
-                _("GET request needs to specify a userpreferenceid"),
-                status=400,
-            )
-
         try:
             returned_user_preference = models.UserPreference.objects.get(pk=identifier)
         except:
@@ -2505,14 +2498,6 @@ class UserPreferenceDetailView(APIBase):
 
     @method_decorator(group_required("Application Administrator", raise_exception=True))
     def delete(self, request, identifier):
-        if not identifier:
-            return JSONErrorResponse(
-                _("User Preference delete failed"),
-                _(
-                    "DELETE REST request requires a userpreferenceid to be provided in the URL"
-                ),
-                status=400,
-            )
 
         user_preference = None
         try:

@@ -81,11 +81,13 @@ class UserPrefApiTest(ArchesTestCase):
             self.assertEqual(response.status_code, 404)
 
     def test_detail_get_no_identifier(self):
-        with self.assertLogs("django.request", level="WARNING"):
-            response = self.client.get(
-                reverse("api_user_preference_detail_view", kwargs={"identifier": ""}),
-            )
-            self.assertEqual(response.status_code, 400)
+        # Show that providing no identifier returns the listView
+        self.client.login(username="admin", password="admin")
+        response = self.client.get(
+            reverse("api_user_preference_detail_view", kwargs={"identifier": ""}),
+        )
+        response_json = json.loads(response.content)
+        self.assertTrue(isinstance(response_json, list))
 
     def test_list_get(self):
         # Tests the anonymous user gets only the one user preference in the db
@@ -143,7 +145,7 @@ class UserPrefApiTest(ArchesTestCase):
             response = self.client.delete(
                 reverse("api_user_preference_detail_view", kwargs={"identifier": ""}),
             )
-            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.status_code, 405)
 
     def test_delete_invalid_identifier(self):
         self.client.login(username="admin", password="admin")
