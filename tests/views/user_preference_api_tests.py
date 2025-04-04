@@ -107,8 +107,8 @@ class UserPrefApiTest(ArchesTestCase):
         )
         self.assertEqual(response.status_code, 200)
         response_json = json.loads(response.content)
-        self.assertTrue(isinstance(response_json, list))
-        self.assertTrue(len(response_json) == 2)
+        self.assertIsInstance(response_json, list)
+        self.assertEqual(len(response_json), 2)
 
     def test_list_get_with_identifer(self):
         with self.assertRaises(NoReverseMatch):
@@ -169,8 +169,7 @@ class UserPrefApiTest(ArchesTestCase):
         )
         self.assertEqual(response.status_code, 201)
         response_json = json.loads(response.content)
-        self.assertTrue("userpreferenceid" in response_json.keys())
-        admin_userpref_id = response_json["userpreferenceid"]
+        self.assertIn("userpreferenceid", response_json.keys())
 
     def test_post_unauthorised_user(self):
         user_pref = self.user_preference_json_data("anonymous")
