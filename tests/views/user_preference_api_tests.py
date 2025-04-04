@@ -171,6 +171,18 @@ class UserPrefApiTest(ArchesTestCase):
         response_json = json.loads(response.content)
         self.assertIn("userpreferenceid", response_json.keys())
 
+    def test_post_no_user(self):
+        self.client.login(username="admin", password="admin")
+        user_pref = self.user_preference_json_data("admin")
+        del user_pref["username"]
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.post(
+                reverse("api_user_preference_list_view"),
+                data=user_pref,
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 400)
+
     def test_post_unauthorised_user(self):
         user_pref = self.user_preference_json_data("anonymous")
         with self.assertLogs("django.request", level="WARNING"):

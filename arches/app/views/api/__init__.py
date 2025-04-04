@@ -2432,22 +2432,21 @@ class UserPreferenceListCreateView(APIBase):
             pass
 
         try:
-            user_pref_json.get("user")
-        except KeyError:
-            return JSONErrorResponse(
-                _("JSON data missing user"),
-                _("User has not been specified in JSON."),
-                status=400,
-            )
-
-        try:
+            try:
+                user_pref_json["username"]
+            except KeyError:
+                return JSONErrorResponse(
+                    _("JSON data missing user"),
+                    _("User has not been specified in JSON."),
+                    status=400,
+                )
             preference_user = models.User.objects.get(
                 username=user_pref_json["username"]
             )
         except:
             return JSONErrorResponse(
-                _("Invalid user"),
-                _("The User Preference API includes an invalid user."),
+                _("Invalid username"),
+                _("The User Preference API includes an invalid username."),
                 status=400,
             )
 
