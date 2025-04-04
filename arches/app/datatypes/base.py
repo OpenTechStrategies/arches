@@ -75,6 +75,12 @@ class BaseDataType(object):
         """
         return value
 
+    def transform_value_from_tile(self, value, **kwargs):
+        """
+        Transform db value to simpler representation for use on the front-end
+        """
+        return value
+
     def update(self, tile, data, nodeid, action):
         """
         Updates the tile.data value of a given datatype and returns the updated
@@ -532,9 +538,3 @@ class BaseDataType(object):
         a GraphValidationError
         """
         pass
-
-    def transform_value_from_tile(self, value, **kwargs):
-        """
-        Transform db value to simpler representation for use on the front-end
-        """
-        return value
