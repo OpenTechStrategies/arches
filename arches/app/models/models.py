@@ -2275,10 +2275,10 @@ class UserPreference(models.Model):
     userpreferenceid = models.UUIDField(
         primary_key=True, default=uuid.uuid4, db_default=UUID4()
     )
-    user = models.ForeignKey(
+    username = models.ForeignKey(
         User,
         to_field="username",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         null=False,
     )
     preferencename = models.CharField(blank=True, max_length=255)
@@ -2289,7 +2289,7 @@ class UserPreference(models.Model):
         db_table = "user_preferences"
         constraints = [
             UniqueConstraint(
-                "user", Lower("preferencename"), name="unique_preference_name_user"
+                "username", Lower("preferencename"), name="unique_preference_name_user"
             )
         ]
 

@@ -2404,7 +2404,9 @@ class UserPreferenceListCreateView(APIBase):
         if administrator_user:  # give view to everything
             return JSONResponse(models.UserPreference.objects.all())
         else:
-            return JSONResponse(models.UserPreference.objects.filter(user=request.user))
+            return JSONResponse(
+                models.UserPreference.objects.filter(username=request.user)
+            )
 
     @method_decorator(group_required("Application Administrator", raise_exception=True))
     def post(self, request):
@@ -2439,7 +2441,9 @@ class UserPreferenceListCreateView(APIBase):
             )
 
         try:
-            preference_user = models.User.objects.get(username=user_pref_json["user"])
+            preference_user = models.User.objects.get(
+                username=user_pref_json["username"]
+            )
         except:
             return JSONErrorResponse(
                 _("Invalid user"),
@@ -2449,7 +2453,7 @@ class UserPreferenceListCreateView(APIBase):
 
         try:
             new_user_preference = models.UserPreference()
-            new_user_preference.user = preference_user
+            new_user_preference.username = preference_user
             new_user_preference.preferencename = user_pref_json["preferencename"]
             new_user_preference.config = user_pref_json["config"]
             new_user_preference.full_clean()
@@ -2487,7 +2491,7 @@ class UserPreferenceDetailView(APIBase):
                 _("No User Preference with this id"),
                 status=404,
             )
-        if administrator_user or returned_user_preference.user == request.user:
+        if administrator_user or returned_user_preference.username == request.user:
             return JSONResponse(returned_user_preference)
         else:
             return JSONErrorResponse(

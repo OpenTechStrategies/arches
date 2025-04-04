@@ -22,7 +22,7 @@ class UserPrefApiTest(ArchesTestCase):
         # Test admin user preference
         cls.user_preference = UserPreference.objects.create(
             userpreferenceid=cls.admin_preference_id,
-            user=models.User.objects.get(username="admin"),
+            username=models.User.objects.get(username="admin"),
             preferencename="Admin test preference",
             config=[
                 {"overlayid": "7d0dffba-5bcf-4694-a5d7-3425ad97fa2b", "sortorder": 1},
@@ -32,14 +32,14 @@ class UserPrefApiTest(ArchesTestCase):
         # Test anonymous user preference
         cls.user_preference = UserPreference.objects.create(
             userpreferenceid=cls.anonymous_preference_id,
-            user=models.User.objects.get(username="anonymous"),
+            username=models.User.objects.get(username="anonymous"),
             preferencename="Anonymous test preference",
             config=[{"value": "True"}],
         )
 
     def user_preference_json_data(self, username):
         user_pref = {
-            "user": username,
+            "username": username,
             "preferencename": "test preference",
             "config": [
                 {"overlayid": "7d0dffba-5bcf-4694-a5d7-3425ad97fa2b", "sortorder": 1},
