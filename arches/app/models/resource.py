@@ -18,11 +18,12 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
 import logging
+from collections import defaultdict
 from time import time
 from uuid import UUID
 from types import SimpleNamespace
 from django.db import transaction
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q
 from django.contrib.auth.models import User, Group
 from django.forms.models import model_to_dict
 from django.core.exceptions import ObjectDoesNotExist
@@ -939,8 +940,8 @@ class Resource(models.ResourceInstance):
             )
 
             ret["resource_relationships"].append(relation)
-            instanceids.add(str(resourceid_to))
-            instanceids.add(str(resourceid_from))
+            instanceids.add(str(relation["resourceinstanceidto"]))
+            instanceids.add(str(relation["resourceinstanceidfrom"]))
 
         if str(self.resourceinstanceid) in instanceids:
             instanceids.remove(str(self.resourceinstanceid))
@@ -953,26 +954,42 @@ class Resource(models.ResourceInstance):
                     for resource in related_resources["docs"]
                     if resource["found"]
                 ]
-                count_query = (
-                    models.ResourceInstance.objects.filter(pk__in=related_resource_ids)
-                    .annotate(
-                        total_relations=(
-                            Count("resxres_resource_instance_ids_from", distinct=True)
-                            + Count("resxres_resource_instance_ids_to", distinct=True)
-                        )
+
+                to_counts = (
+                    models.ResourceXResource.objects.filter(
+                        resourceinstanceidto__in=related_resource_ids
                     )
-                    .only("pk")
+                    .values("resourceinstanceidto")
+                    .annotate(to_count=Count("resourceinstanceidto"))
+                    # ORDER BY NULLS LAST is necessary for "pipelined" GROUP BY, see
+                    # https://use-the-index-luke.com/sql/sorting-grouping/indexed-group-by
+                    .order_by(F("resourceinstanceidto").asc(nulls_last=True))
                 )
-                total_relations_by_resource_id = {
-                    obj.pk: obj.total_relations for obj in count_query.iterator()
-                }
+                from_counts = (
+                    models.ResourceXResource.objects.filter(
+                        resourceinstanceidfrom__in=related_resource_ids
+                    )
+                    .values("resourceinstanceidfrom")
+                    .annotate(from_count=Count("resourceinstanceidfrom"))
+                    .order_by(F("resourceinstanceidfrom").asc(nulls_last=True))
+                )
+
+                total_relations_by_resource_id: dict[UUID:int] = defaultdict(int)
+                for related_resource_count in to_counts:
+                    total_relations_by_resource_id[
+                        related_resource_count["resourceinstanceidto"]
+                    ] += related_resource_count["to_count"]
+                for related_resource_count in from_counts:
+                    total_relations_by_resource_id[
+                        related_resource_count["resourceinstanceidfrom"]
+                    ] += related_resource_count["from_count"]
 
                 for resource in related_resources["docs"]:
                     if resource["found"]:
                         if include_rr_count:
-                            resource["_source"]["total_relations"] = (
-                                total_relations_by_resource_id[UUID(resource["_id"])]
-                            )
+                            resource["_source"]["total_relations"] = {
+                                "value": total_relations_by_resource_id[UUID(resource["_id"])]
+                            }
                         for descriptor_type in ("displaydescription", "displayname"):
                             descriptor = get_localized_descriptor(
                                 resource, descriptor_type
