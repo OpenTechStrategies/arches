@@ -193,9 +193,8 @@ class UserPrefApiTest(ArchesTestCase):
             )
             self.assertEqual(response.status_code, 403)
 
-    def test_post_with_bad_json_user(self):
+    def test_post_invalid_user(self):
         self.client.login(username="admin", password="admin")
-        # Invalid user
         user_pref = self.user_preference_json_data("fakeuser")
         with self.assertLogs("django.request", level="WARNING"):
             response = self.client.post(

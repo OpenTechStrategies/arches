@@ -2443,7 +2443,7 @@ class UserPreferenceListCreateView(APIBase):
             preference_user = models.User.objects.get(
                 username=user_pref_json["username"]
             )
-        except:
+        except ObjectDoesNotExist:
             return JSONErrorResponse(
                 _("Invalid username"),
                 _("The User Preference API includes an invalid username."),
@@ -2501,7 +2501,9 @@ class UserPreferenceDetailView(APIBase):
 
     @method_decorator(group_required("Application Administrator", raise_exception=True))
     def delete(self, request, identifier):
-
+        """
+        Delete User Preference with given userpreferenceid.
+        """
         user_preference = None
         try:
             user_preference = models.UserPreference.objects.get(pk=identifier)
@@ -2511,15 +2513,5 @@ class UserPreferenceDetailView(APIBase):
                 _("User Preference does not exist"),
                 status=404,
             )
-
-        try:
-            user_preference.delete()
-        except Exception as e:
-            logger.error(e)
-            return JSONErrorResponse(
-                _("User Preference delete failed"),
-                _("An error occurred when trying to delete the user preference"),
-                status=500,
-            )
-
+        user_preference.delete()
         return JSONResponse(status=204)
