@@ -10,6 +10,9 @@ import os
 import time
 import json
 
+# these tests can be run from the command line via
+# python manage.py test tests.search.search_sort_tests --settings="tests.test_settings"
+
 
 class SearchSortTests(TestCase):
 
@@ -167,9 +170,9 @@ class SearchSortTests(TestCase):
             "The results are not ordered by date created",
         )
 
-    def test_sort_by_date_edited_asc(self):
-        hit_ids = self.search_request("&sort-by=date_edited&sort-order=asc")
-        ids_ordered_by_date_edited = [
+    def test_sort_by_date_last_edited_asc(self):
+        hit_ids = self.search_request("&sort-by=date_last_edited&sort-order=asc")
+        ids_ordered_by_date_last_edited = [
             "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
             "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (2nd updated)
             "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd updated)
@@ -177,13 +180,13 @@ class SearchSortTests(TestCase):
 
         self.assertListEqual(
             hit_ids,
-            ids_ordered_by_date_edited,
+            ids_ordered_by_date_last_edited,
             "The results are not ordered by date edited",
         )
 
-    def test_sort_by_date_edited_desc(self):
-        hit_ids = self.search_request("&sort-by=date_edited&sort-order=desc")
-        ids_ordered_by_date_edited = [
+    def test_sort_by_date_last_edited_desc(self):
+        hit_ids = self.search_request("&sort-by=date_last_edited&sort-order=desc")
+        ids_ordered_by_date_last_edited = [
             "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd updated)
             "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (2nd updated)
             "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
@@ -191,7 +194,7 @@ class SearchSortTests(TestCase):
 
         self.assertListEqual(
             hit_ids,
-            ids_ordered_by_date_edited,
+            ids_ordered_by_date_last_edited,
             "The results are not ordered by date edited",
         )
 
@@ -204,8 +207,8 @@ class SearchSortTests(TestCase):
         )
 
     def test_sort_by_asc_if_order_not_specified(self):
-        hit_ids = self.search_request("&sort-by=date_edited")
-        ids_ordered_by_date_edited = [
+        hit_ids = self.search_request("&sort-by=date_last_edited")
+        ids_ordered_by_date_last_edited = [
             "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
             "8ec120f4-61cd-4fa1-8f9a-3d12cff3176f",  # RB (2nd updated)
             "09ba8b82-b6db-4ece-9a46-98f6d381a7b2",  # RA (3rd updated)
@@ -213,6 +216,6 @@ class SearchSortTests(TestCase):
 
         self.assertListEqual(
             hit_ids,
-            ids_ordered_by_date_edited,
+            ids_ordered_by_date_last_edited,
             "The results are not ordered by date edited ascending",
         )

@@ -282,7 +282,7 @@ def prepare_search_index(create=False):
                     },
                 },
                 "date_created": {"type": "keyword"},
-                "date_edited": {"type": "keyword"},
+                "date_last_edited": {"type": "keyword"},
             },
         },
     }

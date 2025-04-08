@@ -511,7 +511,7 @@ class Resource(models.ResourceInstance):
         except:
             document["date_created"] = None
         try:
-            document["date_edited"] = (
+            document["date_last_edited"] = (
                 models.EditLog.objects.filter(
                     resourceinstanceid=str(self.resourceinstanceid)
                 )
@@ -519,7 +519,7 @@ class Resource(models.ResourceInstance):
                 .timestamp
             )
         except:
-            document["date_edited"] = None
+            document["date_last_edited"] = None
         for lang in settings.LANGUAGES:
             if context is None:
                 context = {}
