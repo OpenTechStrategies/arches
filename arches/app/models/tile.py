@@ -110,14 +110,14 @@ class Tile(models.TileModel):
         self.serialized_graph = None
         self.load_serialized_graph()
 
-    def load_serialized_graph(self, raise_if_missing=False):
+    def load_serialized_graph(self):
         try:
             resource = self.resourceinstance
         except models.ResourceInstance.DoesNotExist:
             return
-        published_graph = resource.graph.get_published_graph(
-            raise_if_missing=raise_if_missing
-        )
+
+        published_graph = resource.graph.get_published_graph()
+
         if published_graph:
             self.serialized_graph = published_graph.serialized_graph
 
@@ -435,7 +435,7 @@ class Tile(models.TileModel):
             datatype = self.datatype_factory.get_instance(node.datatype)
             datatype.post_tile_save(self, nodeid, request)
 
-    def save(self, *args, **kwargs):
+    def save(self, **kwargs):
         request = kwargs.pop("request", None)
         index = kwargs.pop("index", True)
         user = kwargs.pop("user", None)
@@ -451,7 +451,7 @@ class Tile(models.TileModel):
         oldprovisionalvalue = None
 
         if not self.serialized_graph:
-            self.load_serialized_graph(raise_if_missing=True)
+            self.load_serialized_graph()
         try:
             if user is None and request is not None:
                 user = request.user
@@ -472,14 +472,11 @@ class Tile(models.TileModel):
             self.check_for_missing_nodes()
             self.check_for_constraint_violation()
 
-            creating_new_tile = (
-                models.TileModel.objects.filter(pk=self.tileid).exists() is False
-            )
-            edit_type = "tile create" if (creating_new_tile is True) else "tile edit"
-
-            if creating_new_tile is False:
-                existing_model = models.TileModel.objects.get(pk=self.tileid)
-            else:
+            existing_model = models.TileModel.objects.filter(pk=self.tileid).first()
+            creating_new_tile = existing_model is None
+            edit_type = "tile edit"
+            if creating_new_tile:
+                edit_type = "tile create"
                 self.populate_missing_nodes()
 
             # this section moves the data over from self.data to self.provisionaledits if certain users permissions are in force
@@ -512,7 +509,7 @@ class Tile(models.TileModel):
             if user is not None:
                 self.validate([], request=request)
 
-            super(Tile, self).save(*args, **kwargs)
+            super(Tile, self).save(**kwargs)
             # We have to save the edit log record after calling save so that the
             # resource's displayname changes are avaliable
             user = {} if user is None else user
@@ -546,7 +543,6 @@ class Tile(models.TileModel):
                 tile.resourceinstance = self.resourceinstance
                 tile.parenttile = self
                 tile.save(
-                    *args,
                     request=request,
                     resource_creation=resource_creation,
                     index=False,
@@ -799,30 +795,18 @@ class Tile(models.TileModel):
         context -- string e.g. "copy" indicating conditions under which a resource is saved and how functions should behave.
         """
 
-        try:
-            for function in self._getFunctionClassInstances():
-                try:
-                    function.save(self, request, context=context)
-                except NotImplementedError:
-                    pass
-        except TypeError as e:
-            logger.warning(
-                _("No associated functions or other TypeError raised by a function")
-            )
-            logger.warning(e)
+        for function in self._getFunctionClassInstances():
+            try:
+                function.save(self, request, context=context)
+            except NotImplementedError:
+                pass
 
-    def __preDelete(self, request):
-        try:
-            for function in self._getFunctionClassInstances():
-                try:
-                    function.delete(self, request)
-                except NotImplementedError:
-                    pass
-        except TypeError as e:
-            logger.warning(
-                _("No associated functions or other TypeError raised by a function")
-            )
-            logger.warning(e)
+    def __preDelete(self, request=None):
+        for function in self._getFunctionClassInstances():
+            try:
+                function.delete(self, request)
+            except NotImplementedError:
+                pass
 
     def __postSave(self, request=None, context=None):
         """
@@ -831,27 +815,20 @@ class Tile(models.TileModel):
         context -- string e.g. "copy" indicating conditions under which a resource is saved and how functions should behave.
         """
 
-        try:
-            for function in self._getFunctionClassInstances():
-                try:
-                    function.post_save(self, request, context=context)
-                except NotImplementedError:
-                    pass
-        except TypeError as e:
-            logger.warning(
-                _("No associated functions or other TypeError raised by a function")
-            )
-            logger.warning(e)
+        for function in self._getFunctionClassInstances():
+            try:
+                function.post_save(self, request, context=context)
+            except NotImplementedError:
+                pass
 
     def _getFunctionClassInstances(self):
         ret = []
-        resource = models.ResourceInstance.objects.get(pk=self.resourceinstance_id)
         functionXgraphs = models.FunctionXGraph.objects.filter(
-            Q(graph_id=resource.graph_id),
+            Q(graph_id=self.resourceinstance.graph_id),
             Q(config__contains={"triggering_nodegroups": [str(self.nodegroup_id)]})
             | Q(config__triggering_nodegroups__exact=[]),
             ~Q(function__functiontype="primarydescriptors"),
-        )
+        ).select_related("function")
         for functionXgraph in functionXgraphs:
             func = functionXgraph.function.get_class_module()(
                 functionXgraph.config, self.nodegroup_id
@@ -881,17 +858,19 @@ class Tile(models.TileModel):
         return ret
 
 
-class TileValidationError(Exception):
+class TileValidationError(ValidationError):
     def __init__(self, message, code=None):
+        super().__init__(message)
         self.title = _("Tile Validation Error")
-        self.message = message
         self.code = code
 
     def __str__(self):
+        if hasattr(self, "messages"):
+            return repr(self.messages)
         return repr(self.message)
 
 
 class TileCardinalityError(TileValidationError):
     def __init__(self, message, code=None):
-        super(TileCardinalityError, self).__init__(message, code)
+        super().__init__(message, code)
         self.title = _("Tile Cardinality Error")

@@ -5,19 +5,15 @@ from django.apps import apps
 from django.contrib.staticfiles.finders import AppDirectoriesFinder
 
 
-class ArchesApplicationsStaticFilesFinder(AppDirectoriesFinder):
-    source_dir = "media"
-
-
-class CoreArchesStaticFilesFinderBuildDirectory(AppDirectoriesFinder):
+class StaticFilesFinderBuildDirectory(AppDirectoriesFinder):
     source_dir = os.path.join("app", "media", "build")
 
 
-class CoreArchesStaticFilesFinderMediaRoot(AppDirectoriesFinder):
+class StaticFilesFinderMediaRoot(AppDirectoriesFinder):
     source_dir = os.path.join("app", "media")
 
 
-class CoreArchesStaticFilesFinderNodeModules(AppDirectoriesFinder):
+class StaticFilesFinderNodeModules(AppDirectoriesFinder):
     source_dir = os.path.normpath(os.path.join("..", "node_modules"))
 
 
@@ -31,7 +27,7 @@ def list_arches_app_names():
 
 def list_arches_app_paths():
     return [
-        config.module.__path__[0]
+        os.path.realpath(config.module.__path__[0])
         for config in apps.get_app_configs()
         if getattr(config, "is_arches_application", False)
     ]
@@ -92,12 +88,19 @@ def build_templates_config(
     """
     directories = []
     try:
+        # allows for manual additions to template overrides
         if additional_directories:
             for additional_directory in additional_directories:
                 directories.append(additional_directory)
 
+        # allows for application-level overrides of generic Django templates
         if app_root:
             directories.append(os.path.join(app_root, "templates"))
+
+        # forces Arches-level overrides of generic Django templates
+        # directories.append(
+        #     os.path.join(Path(__file__).resolve().parent, "app", "templates")
+        # )
 
         return [
             {

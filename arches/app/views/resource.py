@@ -22,6 +22,7 @@ import uuid
 
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.contrib.auth.models import User, Group
+from django.db.models import Prefetch
 from django.forms.models import model_to_dict
 from django.http import HttpResponseNotFound
 from django.http import Http404
@@ -35,7 +36,6 @@ from django.utils import translation
 
 from arches.app.models import models
 from arches.app.models.card import Card
-from arches.app.models.graph import Graph
 from arches.app.models.tile import Tile
 from arches.app.models.resource import Resource
 from arches.app.models.system_settings import settings
@@ -303,14 +303,17 @@ class ResourceEditorView(MapBaseManagerView):
             cards = (
                 graph.cardmodel_set.order_by("sortorder")
                 .filter(nodegroup__in=nodegroups)
-                .prefetch_related("cardxnodexwidget_set")
+                .prefetch_related(
+                    Prefetch(
+                        "cardxnodexwidget_set",
+                        queryset=models.CardXNodeXWidget.objects.order_by("sortorder"),
+                    )
+                )
             )
             serialized_cards = JSONSerializer().serializeToPython(cards)
             cardwidgets = []
             for card in cards:
-                cardwidgets += list(
-                    card.cardxnodexwidget_set.order_by("sortorder").all()
-                )
+                cardwidgets += card.cardxnodexwidget_set.all()
 
         updated_cardwidgets = add_i18n_to_cardwidget_defaults(cardwidgets)
 
@@ -387,7 +390,7 @@ class ResourceEditorView(MapBaseManagerView):
         context["nav"]["title"] = ""
         context["nav"]["menu"] = nav_menu
 
-        if resourceid not in (None, ""):
+        if resourceid not in (None, "", settings.SYSTEM_SETTINGS_RESOURCE_ID):
             context["nav"]["report_view"] = True
 
         if resourceid == settings.RESOURCE_INSTANCE_ID:
@@ -666,9 +669,19 @@ class ResourceEditLogView(BaseManagerView):
             resource_instance = models.ResourceInstance.objects.get(pk=resourceid)
             edits = models.EditLog.objects.filter(resourceinstanceid=resourceid)
             permitted_edits = []
+            nodegroup_ids_from_edits = [
+                uuid.UUID(nodegroupid) if nodegroupid else nodegroupid
+                for nodegroupid in edits.values_list("nodegroupid", flat=True)
+            ]
+            nodegroups_for_edits = models.NodeGroup.objects.filter(
+                pk__in=nodegroup_ids_from_edits
+            ).in_bulk()
             for edit in edits:
                 if edit.nodegroupid is not None:
-                    if request.user.has_perm("read_nodegroup", edit.nodegroupid):
+                    edit_nodegroup = nodegroups_for_edits.get(
+                        uuid.UUID(edit.nodegroupid)
+                    )
+                    if request.user.has_perm("read_nodegroup", edit_nodegroup):
                         if edit.newvalue is not None:
                             self.getEditConceptValue(edit.newvalue)
                         if edit.oldvalue is not None:
@@ -676,7 +689,6 @@ class ResourceEditLogView(BaseManagerView):
                         permitted_edits.append(edit)
                 else:
                     permitted_edits.append(edit)
-
             resource = Resource.objects.get(pk=resourceid)
             displayname = resource.displayname()
             cards = Card.objects.filter(
@@ -947,21 +959,15 @@ class ResourceReportView(MapBaseManagerView):
     def get(self, request, resourceid=None):
         resource = (
             models.ResourceInstance.objects.filter(pk=resourceid)
-            .select_related("resource_instance_lifecycle_state")
-            .get()
+            .select_related("graph", "resource_instance_lifecycle_state")
+            .first()
         )
-        graph = Graph.objects.get(graphid=resource.graph_id)
+        if not resource:
+            raise Http404(_("Resource not found"))
+        graph = resource.graph
         graph_has_different_publication = bool(
             resource.graph_publication_id != graph.publication_id
         )
-
-        try:
-            map_markers = models.MapMarker.objects.all()
-            geocoding_providers = models.Geocoder.objects.all()
-        except AttributeError:
-            raise Http404(
-                _("No active report template is available for this resource.")
-            )
 
         context = self.get_context_data(
             main_script="views/resource/report",
@@ -969,8 +975,8 @@ class ResourceReportView(MapBaseManagerView):
             report_templates=models.ReportTemplate.objects.all(),
             card_components=models.CardComponent.objects.all(),
             widgets=models.Widget.objects.all(),
-            map_markers=map_markers,
-            geocoding_providers=geocoding_providers,
+            map_markers=models.MapMarker.objects.all(),
+            geocoding_providers=models.Geocoder.objects.all(),
             graph_has_different_publication=graph_has_different_publication,
             graph_has_different_publication_and_user_has_insufficient_permissions=bool(
                 graph_has_different_publication
@@ -1052,7 +1058,7 @@ class RelatedResourcesView(BaseManagerView):
 
         return ret
 
-    def get(self, request, resourceid=None):
+    def get(self, request, resourceid=None, include_rr_count=True):
         ret = {}
 
         if self.action == "get_candidates":
@@ -1099,6 +1105,7 @@ class RelatedResourcesView(BaseManagerView):
                     user=request.user,
                     resourceinstance_graphid=resourceinstance_graphid,
                     graphs=self.graphs,
+                    include_rr_count=include_rr_count,
                 )
 
                 ret = self.paginate_related_resources(
@@ -1110,6 +1117,7 @@ class RelatedResourcesView(BaseManagerView):
                     user=request.user,
                     resourceinstance_graphid=resourceinstance_graphid,
                     graphs=self.graphs,
+                    include_rr_count=include_rr_count,
                 )
 
         return JSONResponse(ret)

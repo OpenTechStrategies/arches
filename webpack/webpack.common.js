@@ -266,15 +266,31 @@ module.exports = () => {
                 ...projectEntryPointConfiguration,
                 ...CSSFilepathLookup,
             },
-            devServer: {
-                port: WEBPACK_DEVELOPMENT_SERVER_PORT,
-            },
             output: {
+                assetModuleFilename: 'img/[name].[contenthash][ext]',
+                filename: '[name].[contenthash].js',
+                clean: true,
                 path: Path.resolve(__dirname, APP_ROOT, 'media', 'build'),
                 publicPath: STATIC_URL,
-                libraryTarget: 'amd-require',
-                clean: true,
-                assetModuleFilename: 'img/[hash][ext][query]',
+            },
+            optimization: {
+                splitChunks: {
+                    chunks: 'all',
+                    cacheGroups: {
+                        vendors: {
+                            test: /[\\/]node_modules[\\/]/,
+                            priority: -10,
+                            reuseExistingChunk: true,
+                        },
+                        commons: {
+                            minChunks: 2,
+                            priority: -20,
+                            reuseExistingChunk: true,
+                        },
+                    },
+                },
+                concatenateModules: true,
+                removeAvailableModules: true,
             },
             plugins: [
                 new CleanWebpackPlugin(),
@@ -298,10 +314,12 @@ module.exports = () => {
                     jQuery: Path.resolve(__dirname, PROJECT_RELATIVE_NODE_MODULES_PATH, 'jquery', 'dist', 'jquery.min'),
                     jquery: Path.resolve(__dirname, PROJECT_RELATIVE_NODE_MODULES_PATH, 'jquery', 'dist', 'jquery.min')
                 }),
-                new MiniCssExtractPlugin(),
+                new MiniCssExtractPlugin({
+                    filename: '[name].[contenthash].css',
+                }),
                 new BundleTracker({
                     path: Path.resolve(__dirname),
-                    filename: 'webpack-stats.json'
+                    filename: 'webpack-stats.json',
                 }),
                 new VueLoaderPlugin(),
             ],
@@ -515,9 +533,11 @@ module.exports = () => {
                         use: Path.join(PROJECT_RELATIVE_NODE_MODULES_PATH, 'raw-loader'),
                     },
                     {
-                        test: /\.(png|svg|jpg|jpeg|gif)$/i,
-                        exclude: /node_modules/,
+                        test: /\.(png|jpe?g|gif|svg)$/,
                         type: 'asset/resource',
+                        generator: {
+                            filename: 'img/[name].[contenthash][ext]',
+                        },
                     },
                 ],
             },
