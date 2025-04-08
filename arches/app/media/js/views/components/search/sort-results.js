@@ -21,7 +21,7 @@ const viewModel = BaseFilter.extend({
                 '<i class="fa fa-sort-amount-desc fa-lg"></i>'
         }, this);
 
-        this.searchFilterVms['sort-results'](this); 
+        this.searchFilterVms[componentName](this);
 
         this.sortBy.subscribe(function(){
             this.updateQuery();
@@ -69,7 +69,7 @@ const viewModel = BaseFilter.extend({
 
 });
 
-export default ko.components.register('sort-results', {
+export default ko.components.register(componentName, {
     viewModel: viewModel,
     template: sortResultsTemplate,
 });
