@@ -12,8 +12,11 @@ export default function (
 
     const availableParams = Object.keys(urlParams);
     const candidates = routes.filter(
-        (route: { url: string; params: string[] }) =>
-            route.params.every((param) => availableParams.includes(param)),
+        (route: { url: string; params: string[] }) => {
+            return route.params.every((param) =>
+                availableParams.includes(param),
+            );
+        },
     );
 
     if (candidates.length === 0) {
@@ -22,18 +25,19 @@ export default function (
         );
     }
 
-    const exactCandidates = candidates.filter(
-        (candidate) => candidate.params.length === availableParams.length,
-    );
+    const exactCandidates = candidates.filter((candidate) => {
+        return candidate.params.length === availableParams.length;
+    });
     const chosen =
         exactCandidates.length > 0 ? exactCandidates[0] : candidates[0];
 
     let url = chosen.url;
     if (url.includes("{language_code}")) {
         if (!languageCode) {
-            const htmlLang = document.documentElement.lang;
-            languageCode = htmlLang.split("-")[0];
+            languageCode = document.documentElement.lang;
         }
+
+        languageCode = languageCode.split("-")[0];
         url = url.replace("{language_code}", languageCode);
     }
 
