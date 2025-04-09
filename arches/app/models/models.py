@@ -2436,8 +2436,8 @@ class UserPreference(models.Model):
         related_name="preference",
         related_query_name="preferences",
     )
-    preferencename = models.CharField(blank=True, max_length=255)
-    appname = models.CharField(blank=False, max_length=255, default="arches")
+    preferencename = models.CharField(max_length=255)
+    appname = models.CharField(max_length=255, default="arches")
     config = JSONField(blank=False, null=False)
 
     class Meta:
@@ -2445,7 +2445,10 @@ class UserPreference(models.Model):
         db_table = "user_preferences"
         constraints = [
             UniqueConstraint(
-                "username", Lower("preferencename"), name="unique_preference_name_user"
+                "username",
+                Lower("preferencename"),
+                Lower("appname"),
+                name="unique_preference_name_user",
             )
         ]
 
