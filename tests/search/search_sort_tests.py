@@ -206,7 +206,7 @@ class SearchSortTests(TestCase):
             unsorted_ids, desc_sorted_ids, "The data has been unexpectedly ordered"
         )
 
-    def test_sort_by_asc_if_order_not_specified(self):
+    def test_default_ascending_sort_order(self):
         hit_ids = self.search_request("&sort-by=date_last_edited")
         ids_ordered_by_date_last_edited = [
             "a94c81c5-2047-4b53-8341-495f12bfad95",  # RC (1st updated)
