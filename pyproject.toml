@@ -79,7 +79,6 @@ dev = [
 
 [project.scripts]
 arches-admin = "arches.install.arches_admin:main"
-arches-project = "arches.install.arches_project:main"
 
 [project.urls]
 Homepage = "https://archesproject.org/"
