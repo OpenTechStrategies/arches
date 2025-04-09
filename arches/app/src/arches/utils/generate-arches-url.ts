@@ -1,4 +1,4 @@
-export default function (
+export function generateArchesURL(
     urlName: string,
     urlParams: { [key: string]: string | number } = {},
     languageCode?: string,

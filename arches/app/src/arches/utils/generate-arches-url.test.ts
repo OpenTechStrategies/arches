@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import generateArchesURL from "@/arches/utils/generate-arches-url.ts";
+import { generateArchesURL } from "@/arches/utils/generate-arches-url.ts";
 
 const originalLang = document.documentElement.lang;
 
