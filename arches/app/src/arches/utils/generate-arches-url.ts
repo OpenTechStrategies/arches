@@ -13,9 +13,9 @@ export default function (
     const availableParams = Object.keys(urlParams);
     const candidates = routes.filter(
         (route: { url: string; params: string[] }) => {
-            return route.params.every((param) =>
-                availableParams.includes(param),
-            );
+            return route.params.every((param) => {
+                return availableParams.includes(param);
+            });
         },
     );
 
