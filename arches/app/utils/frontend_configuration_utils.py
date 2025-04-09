@@ -32,82 +32,85 @@ def _generate_frontend_configuration_directory():
 
 
 def _generate_urls_json():
-    def generate_human_readable_urls(patterns, prefix="", namespace=""):
-        def join_paths(*args):
-            components = []
+    def join_paths(*parts):
+        first, *middle, last = parts
+        segments = [first.rstrip("/")]
+        segments += [part.strip("/") for part in middle]
+        segments.append(last.lstrip("/"))
+        return "/".join(segment for segment in segments if segment)
 
-            for index, segment in enumerate(args):
-                if index == 0:  # Only strip trailing slash for the first segment
-                    segment = segment.rstrip("/")
-                elif (
-                    index == len(args) - 1
-                ):  # Only strip leading slash for the last segment
-                    segment = segment.lstrip("/")
-                else:  # Strip both slashes for middle segments
-                    segment = segment.strip("/")
+    def interpolate_route(pattern):
+        if isinstance(pattern, RoutePattern):
+            return re.sub(r"<(?:[^:]+:)?([^>]+)>", r"{\1}", pattern._route)
+        elif isinstance(pattern, RegexPattern):
+            regex = pattern._regex.strip("^").rstrip("$")
+            regex = re.sub(r"\(\?P<(\w+)>[^)]+\)", r"{\1}", regex)
+            regex = re.sub(r"\(\?:[^\)]+\)", "", regex)
+            regex = re.sub(r"\[[^\]]+\]", "", regex)
+            regex = regex.replace("\\", "")
+            regex = re.sub(r"[\^\$\+\*\?\(\)]", "", regex)
+            return regex
+        return ""
 
-                components.append(segment)
-
-            return "/".join(filter(None, components))
-
-        def interpolate_route(pattern):
-            if isinstance(pattern, RoutePattern):
-                return re.sub(r"<(?:[^:]+:)?([^>]+)>", r"{\1}", pattern._route)
-            elif isinstance(pattern, RegexPattern):
-                regex = pattern._regex.lstrip("^").rstrip("$")
-
-                # Replace named capture groups (e.g., (?P<param>)) with {param}
-                regex = re.sub(r"\(\?P<(\w+)>[^)]+\)", r"{\1}", regex)
-
-                # Remove non-capturing groups (e.g., (?:...))
-                regex = re.sub(r"\(\?:[^\)]+\)", "", regex)
-
-                # Remove character sets (e.g., [0-9])
-                regex = re.sub(r"\[[^\]]]+\]", "", regex)
-
-                # Remove backslashes (used to escape special characters in regex)
-                regex = regex.replace("\\", "")
-
-                # Remove regex-specific special characters
-                regex = re.sub(r"[\^\$\+\*\?\(\)]", "", regex)
-
-                return regex
-
-        result = {}
+    def build_urls(patterns, prefix="", namespace="", collected_urls=None):
+        if collected_urls is None:
+            collected_urls = {}
 
         for pattern in patterns:
             if isinstance(pattern, URLPattern):
-                url_name = f"{namespace}{pattern.name}"
-                url_path = "/" + join_paths(prefix, interpolate_route(pattern.pattern))
-                result[url_name] = url_path
+                full_name = f"{namespace}{pattern.name}" if pattern.name else None
+                path = "/" + join_paths(prefix, interpolate_route(pattern.pattern))
+                params = re.findall(r"{([^}]+)}", path)
+                key = path.rstrip("/")
+                if key not in collected_urls:
+                    collected_urls[key] = {
+                        "name": full_name,
+                        "url": path,
+                        "params": params,
+                    }
 
             elif isinstance(pattern, URLResolver):
-                current_namespace = (
+                next_namespace = (
                     f"{namespace}{pattern.namespace}:"
                     if pattern.namespace
                     else namespace
                 )
-
-                if isinstance(
-                    pattern.pattern, LocalePrefixPattern
-                ):  # Handles i18n_patterns
-                    new_prefix = join_paths(prefix, "{language_code}")
+                if isinstance(pattern.pattern, LocalePrefixPattern):
+                    next_prefix = join_paths(prefix, "{language_code}")
                 else:
-                    new_prefix = join_paths(prefix, interpolate_route(pattern.pattern))
-
-                sub_result = generate_human_readable_urls(
-                    pattern.url_patterns, new_prefix, current_namespace
+                    next_prefix = join_paths(prefix, interpolate_route(pattern.pattern))
+                build_urls(
+                    pattern.url_patterns, next_prefix, next_namespace, collected_urls
                 )
-                result.update(sub_result)
 
-        return result
+        return collected_urls
 
     resolver = get_resolver()
-    human_readable_urls = generate_human_readable_urls(resolver.url_patterns)
+    collected_urls = build_urls(resolver.url_patterns)
 
-    # Manual additions
-    human_readable_urls["static_url"] = settings.STATIC_URL
-    human_readable_urls["media_url"] = settings.MEDIA_URL
+    urls_grouped_by_name = {}
+    for entry in collected_urls.values():
+        name = entry["name"]
+        if not name:
+            segments = [
+                s for s in entry["url"].split("/") if s and s != "{language_code}"
+            ]
+            name = segments[0] if segments else "unnamed"
+        urls_grouped_by_name.setdefault(name, []).append(
+            {"url": entry["url"], "params": entry["params"]}
+        )
+
+    special_urls = {"static_url": settings.STATIC_URL, "media_url": settings.MEDIA_URL}
+
+    for key, url in special_urls.items():
+        entry = {"url": url, "params": []}
+        urls_grouped_by_name.setdefault(key, [])
+        if entry not in urls_grouped_by_name[key]:
+            urls_grouped_by_name[key].append(entry)
+
+    sorted_urls = {
+        name: urls_grouped_by_name[name] for name in sorted(urls_grouped_by_name)
+    }
 
     destination_path = os.path.realpath(
         os.path.join(_get_base_path(), "..", "frontend_configuration", "urls.json")
@@ -116,11 +119,8 @@ def _generate_urls_json():
     with open(destination_path, "w") as file:
         json.dump(
             {
-                "_comment": "This is a generated file. Do not edit directly.",
-                **{
-                    url_name: human_readable_urls[url_name]
-                    for url_name in sorted(human_readable_urls)
-                },
+                "_comment": "This file is auto-generated. Do not edit manually.",
+                **sorted_urls,
             },
             file,
             indent=4,
