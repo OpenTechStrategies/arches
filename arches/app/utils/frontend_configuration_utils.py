@@ -93,7 +93,9 @@ def _generate_urls_json():
         name = entry["name"]
         if not name:
             segments = [
-                s for s in entry["url"].split("/") if s and s != "{language_code}"
+                substring
+                for substring in entry["url"].split("/")
+                if substring and substring != "{language_code}"
             ]
             name = segments[0] if segments else "unnamed"
         urls_grouped_by_name.setdefault(name, []).append(
