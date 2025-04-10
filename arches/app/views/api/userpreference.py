@@ -49,7 +49,7 @@ class UserPreferenceListCreateView(APIBase):
 
         try:
             if user_pref_json["userpreferenceid"]:
-                JSONErrorResponse(
+                return JSONErrorResponse(
                     _("Incorrect User Preference json data"),
                     _(
                         "POST REST request should not have a userpreferenceid provided in the JSON data."
@@ -59,15 +59,20 @@ class UserPreferenceListCreateView(APIBase):
         except KeyError:
             pass
 
+        expected_keys = [
+            "preferencename",
+            "appname",
+            "username",
+            "config",
+        ]
+        if missing_keys := set(expected_keys) - set(user_pref_json):
+            return JSONErrorResponse(
+                _("JSON payload missing fields"),
+                _("The JSON payload is missing the fields {0}").format(missing_keys),
+                status=400,
+            )
+
         try:
-            try:
-                user_pref_json["username"]
-            except KeyError:
-                return JSONErrorResponse(
-                    _("JSON data missing user"),
-                    _("User has not been specified in JSON."),
-                    status=400,
-                )
             preference_user = models.User.objects.get(
                 username=user_pref_json["username"]
             )
@@ -82,6 +87,7 @@ class UserPreferenceListCreateView(APIBase):
             new_user_preference = models.UserPreference()
             new_user_preference.username = preference_user
             new_user_preference.preferencename = user_pref_json["preferencename"]
+            new_user_preference.appname = user_pref_json["appname"]
             new_user_preference.config = user_pref_json["config"]
             new_user_preference.full_clean()
             new_user_preference.save()

@@ -24,6 +24,7 @@ class UserPrefApiTest(ArchesTestCase):
             userpreferenceid=cls.admin_preference_id,
             username=models.User.objects.get(username="admin"),
             preferencename="Admin test preference",
+            appname="my app name",
             config=[
                 {"overlayid": "7d0dffba-5bcf-4694-a5d7-3425ad97fa2b", "sortorder": 1},
                 {"overlayid": "85c0cdd4-95d0-4350-bd9d-729f326fe1d5", "sortorder": 2},
@@ -34,6 +35,7 @@ class UserPrefApiTest(ArchesTestCase):
             userpreferenceid=cls.anonymous_preference_id,
             username=models.User.objects.get(username="anonymous"),
             preferencename="Anonymous test preference",
+            appname="my app name",
             config=[{"value": "True"}],
         )
 
@@ -41,6 +43,7 @@ class UserPrefApiTest(ArchesTestCase):
         user_pref = {
             "username": username,
             "preferencename": "test preference",
+            "appname": "my arches app",
             "config": [
                 {"overlayid": "7d0dffba-5bcf-4694-a5d7-3425ad97fa2b", "sortorder": 1},
                 {"overlayid": "85c0cdd4-95d0-4350-bd9d-729f326fe1d5", "sortorder": 2},
@@ -171,17 +174,19 @@ class UserPrefApiTest(ArchesTestCase):
         response_json = json.loads(response.content)
         self.assertIn("userpreferenceid", response_json.keys())
 
-    def test_post_no_user(self):
+    def test_post_missing_fields(self):
         self.client.login(username="admin", password="admin")
         user_pref = self.user_preference_json_data("admin")
         del user_pref["username"]
+        del user_pref["config"]
         with self.assertLogs("django.request", level="WARNING"):
             response = self.client.post(
                 reverse("api_user_preference_list_view"),
                 data=user_pref,
                 content_type="application/json",
             )
-            self.assertEqual(response.status_code, 400)
+            response_json = json.loads(response.content)
+        self.assertEqual(response.status_code, 400)
 
     def test_post_unauthorised_user(self):
         user_pref = self.user_preference_json_data("anonymous")
@@ -196,6 +201,18 @@ class UserPrefApiTest(ArchesTestCase):
     def test_post_invalid_user(self):
         self.client.login(username="admin", password="admin")
         user_pref = self.user_preference_json_data("fakeuser")
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.post(
+                reverse("api_user_preference_list_view"),
+                data=user_pref,
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_with_userpreferenceid(self):
+        self.client.login(username="admin", password="admin")
+        user_pref = self.user_preference_json_data("admin")
+        user_pref["userpreferenceid"] = str(uuid.uuid4())
         with self.assertLogs("django.request", level="WARNING"):
             response = self.client.post(
                 reverse("api_user_preference_list_view"),
