@@ -2433,8 +2433,8 @@ class UserPreference(models.Model):
         to_field="username",
         on_delete=models.CASCADE,
         null=False,
-        related_name="preference",
-        related_query_name="preferences",
+        related_name="preferences",
+        related_query_name="preference",
     )
     preferencename = models.CharField(max_length=255)
     appname = models.CharField(max_length=255, default="arches")

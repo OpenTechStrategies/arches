@@ -35,8 +35,8 @@ class Migration(migrations.Migration):
                     "username",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name="preference",
-                        related_query_name="preferences",
+                        related_name="preferences",
+                        related_query_name="preference",
                         to=settings.AUTH_USER_MODEL,
                         to_field="username",
                     ),
