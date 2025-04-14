@@ -1541,6 +1541,15 @@ class ResourceInstanceLifecycleStateFromXRef(models.Model):
     class Meta:
         db_table = "resource_instance_lifecycle_states_from_xref"
         managed = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "resource_instance_lifecycle_state_from",
+                    "resource_instance_lifecycle_state_to",
+                ],
+                name="unique_lifecycle_state_fromxref",
+            ),
+        ]
 
 
 class ResourceInstanceLifecycleStateToXRef(models.Model):
@@ -1558,6 +1567,15 @@ class ResourceInstanceLifecycleStateToXRef(models.Model):
     class Meta:
         db_table = "resource_instance_lifecycle_states_to_xref"
         managed = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "resource_instance_lifecycle_state_from",
+                    "resource_instance_lifecycle_state_to",
+                ],
+                name="unique_lifecycle_state_toxref",
+            ),
+        ]
 
 
 class SearchComponent(SaveSupportsBlindOverwriteMixin, models.Model):
