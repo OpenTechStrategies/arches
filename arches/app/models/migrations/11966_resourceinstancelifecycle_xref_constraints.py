@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("models", "11882_principal_user_read_only"),
+        ("models", "11565_graphmodel_unique_slug"),
     ]
 
     operations = [
