@@ -15,7 +15,7 @@ from django.db import ProgrammingError, connection
 from django.db.models import Case, F, JSONField, Max, Q, Value, When
 from django.db.models.constraints import UniqueConstraint
 from django.db.models.expressions import CombinedExpression
-from django.db.models.functions import Concat
+from django.db.models.functions import Concat, Lower
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
@@ -1541,6 +1541,15 @@ class ResourceInstanceLifecycleStateFromXRef(models.Model):
     class Meta:
         db_table = "resource_instance_lifecycle_states_from_xref"
         managed = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "resource_instance_lifecycle_state_from",
+                    "resource_instance_lifecycle_state_to",
+                ],
+                name="unique_lifecycle_state_fromxref",
+            ),
+        ]
 
 
 class ResourceInstanceLifecycleStateToXRef(models.Model):
@@ -1558,6 +1567,15 @@ class ResourceInstanceLifecycleStateToXRef(models.Model):
     class Meta:
         db_table = "resource_instance_lifecycle_states_to_xref"
         managed = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "resource_instance_lifecycle_state_from",
+                    "resource_instance_lifecycle_state_to",
+                ],
+                name="unique_lifecycle_state_toxref",
+            ),
+        ]
 
 
 class SearchComponent(SaveSupportsBlindOverwriteMixin, models.Model):
@@ -2425,6 +2443,35 @@ class SpatialView(models.Model):
             "attributenodes": self.attributenodes,
             "isactive": self.isactive,
         }
+
+
+class UserPreference(models.Model):
+    userpreferenceid = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, db_default=UUID4()
+    )
+    username = models.ForeignKey(
+        User,
+        to_field="username",
+        on_delete=models.CASCADE,
+        null=False,
+        related_name="preferences",
+        related_query_name="preference",
+    )
+    preferencename = models.CharField(max_length=255)
+    appname = models.CharField(max_length=255, default="arches")
+    config = JSONField(blank=False, null=False)
+
+    class Meta:
+        managed = True
+        db_table = "user_preferences"
+        constraints = [
+            UniqueConstraint(
+                "username",
+                Lower("preferencename"),
+                Lower("appname"),
+                name="unique_preference_name_user",
+            )
+        ]
 
 
 # Import proxy models to ensure they are always discovered.

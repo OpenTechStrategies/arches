@@ -19,6 +19,7 @@ class Command(BaseCommand):  # pragma: no cover
         answer = input(
             "This operation will upgrade your project to version 8.0\n"
             "This will replace the following files in your project:\n"
+            "  - <project>/apps.py\n"
             "  - .github/workflows/main.yml\n"
             "  - webpack/webpack-utils/build-filepath-lookup.js\n"
             "  - webpack/webpack.common.js\n"
@@ -54,6 +55,29 @@ class Command(BaseCommand):  # pragma: no cover
             self.stdout.write("Deleting {}".format("declarations.test.ts"))
             os.remove(declarations_test_file_path)
             self.stdout.write("Done!")
+
+        # Update apps.py to remove generate_frontend_configuration
+        to_replace_1 = """
+from django.conf import settings
+
+from arches.settings_utils import generate_frontend_configuration"""
+
+        to_replace_2 = """
+    def ready(self):
+        if settings.APP_NAME.lower() == self.name:
+            generate_frontend_configuration()"""
+
+        with open(
+            os.path.join(settings.APP_ROOT, "apps.py"), "r", encoding="utf-8"
+        ) as f:
+            apps_file_content = f.read()
+        with open(
+            os.path.join(settings.APP_ROOT, "apps.py"), "w", encoding="utf-8"
+        ) as f:
+            new_content = apps_file_content.replace(to_replace_1, "").replace(
+                to_replace_2, ""
+            )
+            f.write(new_content)
 
         # Updates webpack config files
         if os.path.isdir(os.path.join(settings.APP_ROOT, "..", "webpack")):
