@@ -7,6 +7,7 @@ import sys
 from django.conf import settings
 from django.urls import get_resolver, URLPattern, URLResolver
 from django.urls.resolvers import RegexPattern, RoutePattern, LocalePrefixPattern
+from pathlib import Path
 
 from arches.settings_utils import list_arches_app_names, list_arches_app_paths
 
@@ -118,7 +119,7 @@ def _generate_urls_json():
         os.path.join(_get_base_path(), "..", "frontend_configuration", "urls.json")
     )
 
-    with open(destination_path, "w") as file:
+    with open(destination_path, "w", encoding="utf-8") as file:
         json.dump(
             {
                 "_comment": "This file is auto-generated. Do not edit manually.",
@@ -142,7 +143,7 @@ def _generate_webpack_configuration():
         )
     )
 
-    with open(destination_path, "w") as file:
+    with open(destination_path, "w", encoding="utf-8") as file:
         json.dump(
             {
                 "_comment": "This is a generated file. Do not edit directly.",
@@ -209,13 +210,13 @@ def _generate_tsconfig_paths():
         os.path.join(base_path, "..", "frontend_configuration", "tsconfig-paths.json")
     )
 
-    with open(destination_path, "w") as file:
+    with open(destination_path, "w", encoding="utf-8") as file:
         json.dump(tsconfig_paths_data, file, indent=4)
 
 
 def _get_base_path():
     return (
         os.path.realpath(settings.ROOT_DIR)
-        if settings.APP_NAME == "Arches"
+        if Path(settings.APP_ROOT).parent == Path(settings.ROOT_DIR)
         else os.path.realpath(settings.APP_ROOT)
     )
