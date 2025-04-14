@@ -704,6 +704,9 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
         db_table = "graphs"
 
         constraints = [
+            models.UniqueConstraint(
+                fields=["slug", "source_identifier"], name="unique_slug"
+            ),
             models.CheckConstraint(
                 condition=(
                     Q(isresource=False, resource_instance_lifecycle__isnull=True)
@@ -719,7 +722,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
                     )
                 ),
                 name="resource_instance_lifecycle_conditional_null",
-            )
+            ),
         ]
 
 
