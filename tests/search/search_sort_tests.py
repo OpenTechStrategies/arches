@@ -1,12 +1,10 @@
 from django.contrib.auth.models import User
-from django.test import TestCase, RequestFactory
-from django.core import management
+from django.test import RequestFactory
+from tests.base_test import ArchesTestCase
 from arches.app.models.graph import Graph
 from arches.app.models.resource import Resource
 from arches.app.models.tile import Tile
 from arches.app.views.search import search_results
-from tests import test_settings
-import os
 import time
 import json
 
@@ -14,27 +12,15 @@ import json
 # python manage.py test tests.search.search_sort_tests --settings="tests.test_settings"
 
 
-class SearchSortTests(TestCase):
+class SearchSortTests(ArchesTestCase):
+    graph_fixtures = ["Search Sort Test Model"]
 
     @classmethod
     def setUpTestData(cls):
+        super().setUpTestData()
 
         cls.url = "/en/search?paging-filter=1&tiles=true&format=tilecsv&reportlink=false&precision=6&total=5&exportsystemvalues=false"
         cls.user = User.objects.get(username="admin")
-
-        search_sort_test_model_path = os.path.join(
-            test_settings.TEST_ROOT,
-            "fixtures",
-            "resource_graphs",
-            "Search Sort Test Model.json",
-        )
-
-        management.call_command(
-            "packages",
-            operation="import_graphs",
-            source=search_sort_test_model_path,
-            verbosity=0,
-        )
 
         test_graph = Graph.objects.get(pk="cfc0d27d-b1f4-4939-a870-07d580be2b60")
 
