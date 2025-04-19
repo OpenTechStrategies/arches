@@ -686,7 +686,7 @@ class ResourceReport(APIBase):
                     for resource_relationship in resource_relationships:
                         if (
                             related_resource["resourceinstanceid"]
-                            == resource_relationship["resourceinstanceidto"]
+                            == resource_relationship["to_resource"]
                         ):
                             rr_type = (
                                 resource_relationship_types[
@@ -699,7 +699,7 @@ class ResourceReport(APIBase):
                             relationship_summary.append(rr_type)
                         elif (
                             related_resource["resourceinstanceid"]
-                            == resource_relationship["resourceinstanceidfrom"]
+                            == resource_relationship["from_resource"]
                         ):
                             rr_type = (
                                 resource_relationship_types[
