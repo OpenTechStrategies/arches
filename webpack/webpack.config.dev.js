@@ -1,6 +1,5 @@
 /* eslint-disable */
 const fs = require('fs');
-
 const Path = require('path');
 const Webpack = require('webpack');
 const { merge } = require('webpack-merge');
@@ -75,7 +74,7 @@ module.exports = () => {
                         files: Path.join('src', '**/*.s?(a|c)ss'),
                     }),
                     new WatchFilePlugin(
-                        Path.resolve(__dirname, APP_ROOT, '..', 'frontend_configuration', 'urls.json')
+                        Path.join(__dirname, "..", "frontend_configuration", 'urls.json')
                     ),
                 ],
             }));
