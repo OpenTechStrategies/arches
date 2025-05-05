@@ -9,6 +9,7 @@ import sys
 import django
 
 from datetime import datetime
+from django.contrib.auth.models import User
 from django.db import connection, connections
 from django.db.models import prefetch_related_objects, Prefetch, Q, QuerySet
 from arches.app.models import models
@@ -21,8 +22,6 @@ from arches.app.search.mappings import TERMS_INDEX, CONCEPTS_INDEX, RESOURCES_IN
 from arches.app.datatypes.datatypes import DataTypeFactory
 from arches.app.utils import import_class_from_string
 from typing import Iterable
-
-from arches.app.models.models import EditLog
 
 
 logger = logging.getLogger(__name__)
@@ -251,6 +250,7 @@ def index_resources_using_singleprocessing(
         str(nodeid): datatype
         for nodeid, datatype in models.Node.objects.values_list("nodeid", "datatype")
     }
+    all_users = User.objects.prefetch_related("groups")
     with se.BulkIndexer(batch_size=batch_size, refresh=True) as doc_indexer:
         with se.BulkIndexer(batch_size=batch_size, refresh=True) as term_indexer:
             if quiet is False:
@@ -278,6 +278,7 @@ def index_resources_using_singleprocessing(
                     fetchTiles=False,
                     datatype_factory=datatype_factory,
                     node_datatypes=node_datatypes,
+                    all_users=all_users,
                 )
                 doc_indexer.add(
                     index=RESOURCES_INDEX,
