@@ -1,8 +1,7 @@
 import json
 import os
 from pathlib import Path
-import site
-import sys
+import sys, sysconfig
 
 from django.apps import apps
 from django.conf import settings
@@ -157,7 +156,7 @@ def generate_frontend_configuration():
             "APP_ROOT": app_root_path,
             "ARCHES_APPLICATIONS": arches_app_names,
             "ARCHES_APPLICATIONS_PATHS": path_lookup,
-            "SITE_PACKAGES_DIRECTORY": site.getsitepackages()[0],
+            "SITE_PACKAGES_DIRECTORY": sysconfig.get_path("purelib"),
             "PUBLIC_SERVER_ADDRESS": settings.PUBLIC_SERVER_ADDRESS,
             "ROOT_DIR": root_dir_path,
             "STATIC_URL": settings.STATIC_URL,
