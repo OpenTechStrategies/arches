@@ -6,6 +6,8 @@ import uuid
 import pyprind
 import sys
 
+import django
+
 from datetime import datetime
 from django.db import connection, connections
 from django.db.models import prefetch_related_objects, Prefetch, Q, QuerySet
@@ -183,7 +185,9 @@ def index_resources_using_multiprocessing(
     logger.debug(
         f"... resource type batch count (batch size={batch_size}): {len(resource_batches)}"
     )
-    with multiprocessing.Pool(processes=process_count) as pool:
+    with multiprocessing.Pool(
+        processes=process_count, initializer=django.setup
+    ) as pool:
         for resource_batch in resource_batches:
             pool.apply_async(
                 _index_resource_batch,
@@ -342,10 +346,9 @@ def index_resources_by_type(
             rq.add_query(term)
             rq.delete(index=RESOURCES_INDEX, refresh=True)
 
+        resources = Resource.objects.filter(graph_id=resource_type)
         if use_multiprocessing:
-            resource_ids = models.ResourceInstance.objects.filter(
-                graph_id=resource_type
-            ).values_list("resourceinstanceid", flat=True)
+            resource_ids = resources.values_list("resourceinstanceid", flat=True)
             index_resources_using_multiprocessing(
                 resourceids=resource_ids,
                 batch_size=batch_size,
@@ -359,7 +362,6 @@ def index_resources_by_type(
                 SearchEngineInstance as _se,
             )
 
-            resources = Resource.objects.filter(graph_id=resource_type)
             index_resources_using_singleprocessing(
                 resources=resources,
                 batch_size=batch_size,
