@@ -50,7 +50,9 @@ class EsMappingModifier:
         pass
 
     @staticmethod
-    def add_search_filter(search_query, term, permitted_nodegroups, include_provisional):
+    def add_search_filter(
+        search_query, term, permitted_nodegroups, include_provisional
+    ):
         """
         Adds to or modifies the term search_query to include the custom search document section as part of the search
         :param search_query: The original search term query
