@@ -183,6 +183,7 @@ class Graph(models.GraphModel):
         self.nodes = {}
         self.edges = {}
         self.cards = {}
+        self.widgets = {}
 
         nodes = self.node_set.all()
         edges = self.edge_set.all()
