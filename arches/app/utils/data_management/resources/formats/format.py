@@ -173,11 +173,6 @@ class Reader(object):
                         )
                     except ObjectDoesNotExist:
                         relation["to_resource_graph"] = None
-                if relation["datestarted"] == "" or relation["datestarted"] == "None":
-                    relation["datestarted"] = None
-                if relation["dateended"] == "" or relation["dateended"] == "None":
-                    relation["dateended"] = None
-
                 if (
                     "node" not in relation
                     or relation["node"] == ""
@@ -198,8 +193,6 @@ class Reader(object):
                     relationshiptype=str(relation["relationshiptype"]),
                     node_id=relation["nodeid"],
                     tile_id=relation["tileid"],
-                    datestarted=relation["datestarted"],
-                    dateended=relation["dateended"],
                     notes=relation["notes"],
                 )
                 relation.save()
