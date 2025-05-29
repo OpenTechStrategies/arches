@@ -766,3 +766,14 @@ class TileTests(ArchesTestCase):
 
         with self.assertRaisesMessage(TileValidationError, "Widget name"):
             tile.check_for_missing_nodes()
+
+    def test_save_blank_tile(self):
+        data_collecting_grouping_node_id = "72048cb3-adbc-11e6-9ccf-14109fd34195"
+        tile = Tile(
+            resourceinstance_id=UUID("40000000-0000-0000-0000-000000000000"),
+            nodegroup_id=UUID(data_collecting_grouping_node_id),
+            data={},  # v8: can just omit
+        )
+        tile.save()
+
+        self.assertEqual(tile.data, {data_collecting_grouping_node_id: None})
