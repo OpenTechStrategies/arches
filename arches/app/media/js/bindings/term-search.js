@@ -152,6 +152,7 @@ ko.bindingHandlers.termSearch = {
                     if(!!btn && btn.className === 'search-tag') {
                         let params = {el: $(btn), result: result};
                         searchbox.trigger('choice-selected', params);
+                        return false;
                     }
                 });
                 $(container).find('span.select2-selection__choice__remove').eq(0)
