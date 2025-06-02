@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.migrations.serializer import BaseSerializer, Serializer
 from django.db.models import JSONField
 from django.db.models.sql import Query
-from django.db.models.sql.compiler import SQLInsertCompiler
+from django.db.models.sql.compiler import SQLInsertCompiler, SQLUpdateCompiler
 from django.db.models.sql.where import NothingNode
 from django.utils.translation import get_language
 
@@ -62,8 +62,8 @@ class I18n_String(NothingNode):
         https://www.postgresql.org/docs/9.5/functions-json.html
         """
 
-        if (self.value_is_primitive or self.value is None) and not isinstance(
-            compiler, SQLInsertCompiler
+        if (self.value_is_primitive or self.value is None) and isinstance(
+            compiler, SQLUpdateCompiler
         ):
             self.sql = "jsonb_set(" + self.attname + ", %s, %s)"
             params = (f"{{{self.lang}}}", json.dumps(self.value))
