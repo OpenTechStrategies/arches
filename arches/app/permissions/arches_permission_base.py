@@ -338,7 +338,11 @@ class ArchesPermissionBase(PermissionFramework, metaclass=ABCMeta):
         """
         nodegroups = self.get_nodegroups_by_perm(user, perms)
         graphs = (
-            GraphModel.objects.filter(node__nodegroup__in=nodegroups, isresource=True)
+            GraphModel.objects.filter(
+                node__nodegroup__in=nodegroups,
+                isresource=True,
+                source_identifier__isnull=True,
+            )
             .exclude(pk=settings.SYSTEM_SETTINGS_RESOURCE_MODEL_ID)
             .values_list("pk", flat=True)
         )
