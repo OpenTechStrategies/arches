@@ -402,6 +402,8 @@ const CardModel = AbstractModel.extend({
         return AbstractModel.prototype.save.call(this, function(request, status, self) {
             if (status === 'success') {
                 this._card(JSON.stringify(this.toJSON()));
+
+                console.log('CardModel saved successfully', self.toJSON());
                 
                 // adds event to trigger dirty state in graph-designer
                 document.dispatchEvent(
