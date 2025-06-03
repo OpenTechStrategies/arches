@@ -1368,14 +1368,14 @@ class TileModel(models.Model):  # Tile
             if node.datatype == "semantic":
                 continue
             node_id_str = str(node.pk)
-            if not node_id_str in self.data:
+            if node_id_str not in self.data:
                 self.data[node_id_str] = None
                 any_key_set = True
 
         return any_key_set
 
     def save(self, *args, **kwargs):
-        if any_key_set := self.set_missing_keys_to_none():
+        if _any_key_set := self.set_missing_keys_to_none():
             add_to_update_fields(kwargs, "data")
         if self.sortorder is None or self.is_fully_provisional():
             sortorder_max = TileModel.objects.filter(
