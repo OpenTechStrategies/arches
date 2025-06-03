@@ -299,13 +299,26 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                                 {% trans 'Cards' %}
                             </a>
                         </li>
-                        <!--ko if: graph.isresource() && !graph.source_identifier_id() -->
-                        <li data-bind="css: { active: activeTab() === 'permissions' }, click: function(){activeTab('permissions');}">
-                            <a class="graph-designer-tab ion-lock-combination" aria-expanded="false">
-                                {% trans 'Permissions' %}
-                            </a>
-                        </li>
-                        <!--/ko-->
+                        <!-- ko if: graph.isresource() -->
+                            <li
+                                data-bind="
+                                    css: {
+                                        active: activeTab() === 'permissions',
+                                        'disabled-graph-designer-tab': graph.source_identifier_id()
+                                    },
+                                    click: function() {
+                                        if (!graph.source_identifier_id()) {
+                                            activeTab('permissions');
+                                        }
+                                    },
+                                    attr: { title: graph.source_identifier_id() ? &quot;{% trans "Disabled during drafting" %}&quot; : null }
+                                "
+                            >
+                                <a class="graph-designer-tab ion-lock-combination" aria-expanded="false">
+                                    {% trans 'Permissions' %}
+                                </a>
+                            </li>
+                        <!-- /ko -->
                     </ul>
                 </div>
 

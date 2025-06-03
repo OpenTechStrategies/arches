@@ -10347,14 +10347,22 @@ a.filter-tools:hover {
     border: 1px solid #f4f4f4;
 }
 
-.graph-designer-tab-container .nav-tabs>li:not(.active)>a {
+.graph-designer-tab-container .nav-tabs > li:not(.active) > a {
     color: #777;
 }
 
-.graph-designer-tab-container .nav-tabs>li:not(.active)>a:hover {
+.graph-designer-tab-container .nav-tabs > li:not(.active) > a:hover {
     cursor: pointer;
     color: #666;
     background: #ecf0f5;
+}
+
+.graph-designer-tab-container .nav-tabs > li.disabled-graph-designer-tab > a,
+.graph-designer-tab-container .nav-tabs > li.disabled-graph-designer-tab > a:hover {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: #777;
+    background: none;
 }
 
 .viewstate-btn {
