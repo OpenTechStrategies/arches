@@ -252,10 +252,15 @@ class GraphDesignerView(GraphBaseView):
 
         self.draft_graph = Graph.objects.filter(source_identifier_id=graphid).first()
 
-        if bool(request.GET.get("should_show_source_graph", "false").lower() == "true"):
-            self.graph = self.source_graph
-        else:
+        if self.draft_graph:
             self.graph = self.draft_graph
+        else:
+            self.graph = Graph.objects.get(pk=graphid)
+
+        # if bool(request.GET.get("should_show_source_graph", "false").lower() == "true"):
+        #     self.graph = self.source_graph
+        # else:
+        #     self.graph = self.draft_graph
 
         serialized_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self.graph)
@@ -749,7 +754,6 @@ class GraphPublicationView(View):
                 source_graph.update_published_graphs(
                     notes=data.get("notes"), user=request.user
                 )
-                source_graph.create_draft_graph()
 
                 return JSONResponse(
                     {

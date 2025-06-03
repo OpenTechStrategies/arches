@@ -65,6 +65,20 @@ var GraphDesignerView = BaseManagerView.extend({
                 )
             );
         }
+        if (url.searchParams.has('has_deleted_draft_graph')) {
+            viewModel.alert(new AlertViewModel(
+                    'ep-alert-blue',
+                    arches.translations.graphDesignerDraftGraphDeleted.title,
+                    arches.translations.graphDesignerDraftGraphDeleted.text,
+                    null,
+                    function(){
+                        // removes query args without reloading page
+                        url.search = '';
+                        window.history.replaceState({}, document.title, url.toString());
+                    },
+                )
+            );
+        }
 
         fetch(arches.urls.graph_is_active_api(data.graphid)).then(response => {
             if (response.ok) {
@@ -83,28 +97,28 @@ var GraphDesignerView = BaseManagerView.extend({
             viewModel.isGraphActive(responseJSON);
         });
 
-        viewModel.isGraphActive.subscribe(isGraphActive => {
-            $.ajax({
-                type: 'POST',
-                url: arches.urls.graph_is_active_api(data.graphid),
-                data: {'is_active': isGraphActive},
-                error: function() {
-                    const alert = new AlertViewModel(
-                        'ep-alert-red', 
-                        arches.translations.resourceGraphChangeActiveStatusError.title,
-                        arches.translations.resourceGraphChangeActiveStatusError.text,
-                        null,
-                        function(){},
-                    );
+        // viewModel.isGraphActive.subscribe(isGraphActive => {
+        //     $.ajax({
+        //         type: 'POST',
+        //         url: arches.urls.graph_is_active_api(data.graphid),
+        //         data: {'is_active': isGraphActive},
+        //         error: function() {
+        //             const alert = new AlertViewModel(
+        //                 'ep-alert-red', 
+        //                 arches.translations.resourceGraphChangeActiveStatusError.title,
+        //                 arches.translations.resourceGraphChangeActiveStatusError.text,
+        //                 null,
+        //                 function(){},
+        //             );
 
-                    viewModel.alert(alert);
+        //             viewModel.alert(alert);
 
-                    alert.active.subscribe(function() {
-                        window.location.reload();
-                    });
-                }
-            });
-        });
+        //             alert.active.subscribe(function() {
+        //                 window.location.reload();
+        //             });
+        //         }
+        //     });
+        // });
 
         viewModel.hasDirtyWidget = ko.observable();
 
@@ -173,6 +187,59 @@ var GraphDesignerView = BaseManagerView.extend({
         };
         viewModel.newBranch = function() {
             newGraph('/graph/new', {isresource: false});
+        };
+
+        viewModel.createDraftGraph = function() {
+            viewModel.loading(true);
+            $.ajax({
+                type: "POST",
+                url: arches.urls.draft_graph_api(viewModel.graph.graphid()),
+                success: function(response) {
+                    window.location.reload();
+                },
+                error: function() {
+                    viewModel.loading(false);
+                    viewModel.alert(new AlertViewModel(
+                        'ep-alert-red',
+                        arches.translations.graphDesignerCreateDraftGraphError.title,
+                        arches.translations.graphDesignerCreateDraftGraphError.text,
+                        null,
+                        function(){},
+                    ));
+                }
+            });
+        };
+
+        viewModel.deleteDraftGraph = function() {
+            viewModel.loading(true);
+            $.ajax({
+                type: "DELETE",
+                url: arches.urls.draft_graph_api(viewModel.graph.source_identifier_id()),
+                success: function(response) {
+                    window.location.href = window.location.pathname + '?has_deleted_draft_graph=true';
+                },
+                error: function(response) {
+                    viewModel.loading(false);
+                    viewModel.alert(new JsonErrorAlertViewModel(
+                        'ep-alert-red',
+                        response.responseJSON,
+                        null,
+                        function(){},
+                    ));
+                }
+            });
+        };
+    
+        viewModel.showDeleteDraftGraphAlert = function() {
+            viewModel.alert(new AlertViewModel(
+                'ep-alert-red',
+                arches.translations.confirmDraftGraphDelete.title,
+                arches.translations.confirmDraftGraphDelete.text,
+                function(){},
+                function(){
+                    viewModel.deleteDraftGraph();
+                }
+            ));
         };
 
         viewModel.exportMappingFile = function() {

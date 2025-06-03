@@ -127,3 +127,59 @@ class GraphIsActive(APIBase):
             )
         except:
             return JSONResponse(status=500)
+
+
+class DraftGraph(APIBase):
+    def get(self, request, graph_id):
+        """
+        Get a draft graph.
+        """
+        existing_draft_graph = Graph.objects.filter(
+            source_identifier_id=graph_id
+        ).first()
+
+        if not existing_draft_graph:
+            raise ValueError(_("No draft graph exists for this model."))
+
+        return JSONResponse(
+            {
+                "draft_graph_id": existing_draft_graph.pk,
+                "draft_graph": JSONSerializer().serialize(existing_draft_graph),
+            }
+        )
+
+    def post(self, request, graph_id):
+        """
+        Create a draft graph.
+        """
+        existing_draft_graph = Graph.objects.filter(
+            source_identifier_id=graph_id
+        ).first()
+
+        if existing_draft_graph:
+            raise ValueError(_("A draft already exists for this model."))
+
+        graph = Graph.objects.get(pk=graph_id)
+        draft_graph = graph.create_draft_graph()
+
+        return JSONResponse(
+            {
+                "draft_graph_id": draft_graph.pk,
+                "draft_graph": JSONSerializer().serialize(draft_graph),
+            }
+        )
+
+    def delete(self, request, graph_id):
+        """
+        Delete a draft graph.
+        """
+        existing_draft_graph = Graph.objects.filter(
+            source_identifier_id=graph_id
+        ).first()
+
+        if not existing_draft_graph:
+            raise ValueError(_("No draft graph exists for this model."))
+
+        existing_draft_graph.delete()
+
+        return JSONResponse({"message": _("Draft graph deleted successfully.")})

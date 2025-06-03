@@ -79,6 +79,18 @@
                 </li>
                 <!-- Menu Item -->
                 <li class="edit-menu-item">
+                    <a href="#", data-bind="click: createDraftGraph">
+                        <div class="media-body">
+                            <div class="menu-item-title">
+                                <i class="fa fa-file"></i>
+                                <span>{% trans "Draft a Model Update" %}</span>
+                            </div>
+                            <span class="text-muted menu-item-subtitle">{% trans "Create a draft of the current model for full editing capabilities" %}</span>
+                        </div>
+                    </a>
+                </li>
+                <!-- Menu Item -->
+                <li class="edit-menu-item">
                     <a href="{% url 'model_history' source_graph_id %}">
                         <div class="media-body">
                             <div class="menu-item-title">

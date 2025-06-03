@@ -2669,8 +2669,6 @@ class Graph(models.GraphModel):
             updated_graph.has_unpublished_changes = False
             updated_graph.save(validate=False)
 
-            updated_graph.create_draft_graph()
-
             return Graph.objects.get(pk=updated_graph.pk)
 
     def publish(self, user=None, notes=None):

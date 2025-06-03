@@ -53,14 +53,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                 color: #666;
             "
         >
-            <!-- ko if: $data.graph.source_identifier_id() -->
-            <span data-bind="text: {% quoted_trans 'Published on:' %}"></span>
-            <span data-bind="text: $data.sourceGraphPublicationDate"></span>
-            <!-- /ko -->
-            <!-- ko ifnot: $data.graph.source_identifier_id() -->
-            <span data-bind="text: {% quoted_trans 'Last Edit:' %}"></span>
-            <span data-bind="text: $data.sourceGraphPublicationMostRecentEditDate"></span>
-            <!-- /ko -->
+            YO ITS A DRAFT GRAPH
         </span>
         <!-- /ko -->
 
@@ -219,25 +212,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                 </script>
             </div>
 
-            <div>
-                <button
-                    class="btn btn-link"
-                    data-bind="click: $data.toggleLockedState"
-                >
-                    <span 
-                        style="
-                            font-size: 14px;
-                            border-left: 1px solid #ddd;
-                            border-right: 1px solid #ddd;
-                            padding: 0px 15px;
-                        "
-                        data-bind="
-                            text: $data.graph.source_identifier_id() ? {% quoted_trans 'Make changes without publishing' %} : {% quoted_trans 'Make changes to new publication' %}
-                        "
-                    ></span>
-                </button>
-            </div>
-
             <div class="graph-active-switch-container">
                 <div 
                     style="display: flex; justify-content: center;"
@@ -296,6 +270,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                     <button class="btn btn-md btn-primary btn-labeled fa fa-check" data-bind="click: function(){$parent.hasDirtyWidget(false); $data.save();}"><span>{% trans "Save Card Edits" %}</span></button>
                 <!-- /ko -->
             </span>
+            <!-- /ko -->
+
+            <div data-bind="text: console.log($data)" ></div>
+            <!-- ko if: graph.source_identifier_id() -->
+                <button class="btn btn-md btn-danger btn-labeled fa fa-times" data-bind="click: showDeleteDraftGraphAlert">
+                    <span>{% trans 'Abandon Draft' %}</span>
+                </button>
             <!-- /ko -->
 
             <a class="btn btn-md btn-mint btn-labeled fa fa-mail-reply back-to-designer" data-bind="
