@@ -5241,6 +5241,7 @@ div.card-grid-item.selected {
     float: right;
     list-style-type: none;
     margin-bottom: 0;
+    padding-inline-start: 0;
 }
 
 .ep-toolbar .top-left-nav {
@@ -5619,6 +5620,14 @@ div.card-grid-item.selected {
     height: 50px;
     overflow: hidden;
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ep-tools-title.draft-graph,
+.ep-tools-title.draft-graph * {
+    background: #ffeef0;
+    color: red;
 }
 
 .ep-graph-title {
