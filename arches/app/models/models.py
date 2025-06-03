@@ -1375,7 +1375,7 @@ class TileModel(models.Model):  # Tile
         return any_key_set
 
     def save(self, *args, **kwargs):
-        if _any_key_set := self.set_missing_keys_to_none():
+        if self.set_missing_keys_to_none():
             add_to_update_fields(kwargs, "data")
         if self.sortorder is None or self.is_fully_provisional():
             sortorder_max = TileModel.objects.filter(
