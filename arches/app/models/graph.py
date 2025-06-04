@@ -2155,11 +2155,12 @@ class Graph(models.GraphModel):
                     )
 
         # validates that a graph slug has not changed on a published graph
+        published_graph = self.get_published_graph()
         if (
             self.publication_id
             and not self.source_identifier_id
-            and self.get_published_graph() is not None
-            and self.slug != self.get_published_graph().serialized_graph["slug"]
+            and published_graph is not None
+            and self.slug != published_graph.serialized_graph["slug"]
         ):
             raise GraphValidationError(
                 _(
