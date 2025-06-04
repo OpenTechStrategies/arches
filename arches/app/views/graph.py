@@ -170,6 +170,8 @@ class GraphSettingsView(GraphBaseView):
                     nodegroup.save()
 
                 node.save()
+
+                graph.has_unpublished_changes = True
                 graph.save()
                 graph.refresh_from_database()
 
@@ -238,32 +240,15 @@ class GraphDesignerView(GraphBaseView):
                 raise PermissionDenied
 
         self.source_graph = Graph.objects.get(pk=graphid)
-        if self.source_graph.source_identifier_id:
-            url = reverse(
-                "graph_designer",
-                kwargs={"graphid": self.source_graph.source_identifier_id},
-            )
+        draft_graph = Graph.objects.filter(source_identifier_id=graphid).first()
 
-            query_dict = request.GET.copy()
-            query_dict["has_been_redirected_from_draft_graph"] = True
-            query_string = query_dict.urlencode()
-
-            return redirect("{}?{}".format(url, query_string))
-
-        self.draft_graph = Graph.objects.filter(source_identifier_id=graphid).first()
-
-        if self.draft_graph:
-            self.graph = self.draft_graph
+        if draft_graph:
+            self.graph = draft_graph
         else:
-            self.graph = Graph.objects.get(pk=graphid)
-
-        # if bool(request.GET.get("should_show_source_graph", "false").lower() == "true"):
-        #     self.graph = self.source_graph
-        # else:
-        #     self.graph = self.draft_graph
+            self.graph = self.source_graph
 
         serialized_graph = JSONDeserializer().deserialize(
-            JSONSerializer().serialize(self.graph)
+            JSONSerializer().serialize(self.graph, force_recalculation=True)
         )
         primary_descriptor_functions = models.FunctionXGraph.objects.filter(
             graph=self.graph
@@ -359,29 +344,9 @@ class GraphDesignerView(GraphBaseView):
             ).count()
         )
 
-        context["source_graph"] = JSONSerializer().serialize(
-            self.source_graph, force_recalculation=True
-        )
         context["source_graph_id"] = self.source_graph.pk
 
-        context["source_graph_publication"] = JSONSerializer().serialize(
-            self.source_graph.publication
-        )
-        context[
-            "source_graph_publication_most_recent_edit"
-        ] = JSONSerializer().serialize(
-            self.source_graph.publication.most_recent_edit
-            if self.source_graph.publication
-            else {}
-        )
-
-        context["draft_graph_id"] = self.draft_graph.pk if self.draft_graph else None
-        context["has_been_redirected_from_draft_graph"] = bool(
-            request.GET.get("has_been_redirected_from_draft_graph", "false").lower()
-            == "true"
-        )
         context["nav"]["menu"] = True
-
         context["nav"]["help"] = {"title": help_title, "templates": ["graph-tab-help"]}
 
         return render(request, "views/graph-designer.htm", context)

@@ -33,9 +33,6 @@ var GraphDesignerView = BaseManagerView.extend({
         viewModel.helpTemplate(viewData.help);
         viewModel.graphSettingsVisible = ko.observable(false);
         viewModel.graph = koMapping.fromJS(data['graph']);
-        viewModel.sourceGraph = koMapping.fromJS(data['source_graph']);
-        viewModel.sourceGraphPublicationDate = new Date(data['source_graph_publication']['published_time']).toLocaleString();
-        viewModel.sourceGraphPublicationMostRecentEditDate = data['source_graph_publication_most_recent_edit'] ? new Date(data['source_graph_publication_most_recent_edit']['edit_time']).toLocaleString() : null;
         viewModel.ontologies = ko.observable(data['ontologies']);
         viewModel.ontologyClasses = ko.pureComputed(function(){
             return data['ontologyClasses'].filter((cls) => cls.ontology_id === viewModel.graph.ontology_id());
@@ -50,21 +47,10 @@ var GraphDesignerView = BaseManagerView.extend({
         viewModel.publicationResourceInstanceCount = ko.observable(data['publication_resource_instance_count']);
         viewModel.isGraphActive = ko.observable();
 
+        console.log('Graph Designer ViewModel initialized with data:', data['graph']['has_unpublished_changes']);
+
         const url = new URL(window.location);
-        if (url.searchParams.has('has_been_redirected_from_draft_graph')) {
-            viewModel.alert(new AlertViewModel(
-                    'ep-alert-blue', 
-                    arches.translations.graphDesignerRedirectFromDraftGraph.title,
-                    arches.translations.graphDesignerRedirectFromDraftGraph.text,
-                    null,
-                    function(){
-                        // removes query args without reloading page
-                        url.search = '';
-                        window.history.replaceState({}, document.title, url.toString());
-                    },
-                )
-            );
-        } else if (url.searchParams.has('has_deleted_draft_graph')) {
+        if (url.searchParams.has('has_deleted_draft_graph')) {
             viewModel.alert(new AlertViewModel(
                     'ep-alert-blue',
                     arches.translations.graphDesignerDraftGraphDeleted.title,
@@ -92,45 +78,47 @@ var GraphDesignerView = BaseManagerView.extend({
             );
         }
 
-        fetch(arches.urls.graph_is_active_api(data.graphid)).then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            else {
-                viewModel.alert(new AlertViewModel(
-                    'ep-alert-red', 
-                    _("Could not obtain the Resource Model active status"),
-                    _('Please contact your System Administrator'),
-                    null,
-                    function(){},
-                ));
-            }
-        }).then(responseJSON => {
-            viewModel.isGraphActive(responseJSON);
+        if (!viewModel.graph.source_identifier_id()) {        
+            fetch(arches.urls.graph_is_active_api(data.graphid)).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                else {
+                    viewModel.alert(new AlertViewModel(
+                        'ep-alert-red', 
+                        _("Could not obtain the Resource Model active status"),
+                        _('Please contact your System Administrator'),
+                        null,
+                        function(){},
+                    ));
+                }
+            }).then(responseJSON => {
+                viewModel.isGraphActive(responseJSON);
+            });
+        }
+
+        viewModel.isGraphActive.subscribe(isGraphActive => {
+            $.ajax({
+                type: 'POST',
+                url: arches.urls.graph_is_active_api(data.graphid),
+                data: {'is_active': isGraphActive},
+                error: function() {
+                    const alert = new AlertViewModel(
+                        'ep-alert-red', 
+                        arches.translations.resourceGraphChangeActiveStatusError.title,
+                        arches.translations.resourceGraphChangeActiveStatusError.text,
+                        null,
+                        function(){},
+                    );
+
+                    viewModel.alert(alert);
+
+                    alert.active.subscribe(function() {
+                        window.location.reload();
+                    });
+                }
+            });
         });
-
-        // viewModel.isGraphActive.subscribe(isGraphActive => {
-        //     $.ajax({
-        //         type: 'POST',
-        //         url: arches.urls.graph_is_active_api(data.graphid),
-        //         data: {'is_active': isGraphActive},
-        //         error: function() {
-        //             const alert = new AlertViewModel(
-        //                 'ep-alert-red', 
-        //                 arches.translations.resourceGraphChangeActiveStatusError.title,
-        //                 arches.translations.resourceGraphChangeActiveStatusError.text,
-        //                 null,
-        //                 function(){},
-        //             );
-
-        //             viewModel.alert(alert);
-
-        //             alert.active.subscribe(function() {
-        //                 window.location.reload();
-        //             });
-        //         }
-        //     });
-        // });
 
         viewModel.hasDirtyWidget = ko.observable();
 
@@ -202,7 +190,20 @@ var GraphDesignerView = BaseManagerView.extend({
         };
 
         viewModel.createDraftGraph = function() {
+            if (viewModel.isDirty() || viewModel.graphHasUnpublishedChanges()) {
+                viewModel.alert(new AlertViewModel(
+                    'ep-alert-red',
+                    _("Cannot create a draft."),
+                    _("You must save all changes before creating a draft. If you want to create a draft without saving, please discard your changes first."),
+                    null,
+                    function(){},
+                ));
+
+                return;
+            } 
+            
             viewModel.loading(true);
+
             $.ajax({
                 type: "POST",
                 url: arches.urls.draft_graph_api(viewModel.graph.graphid()),
@@ -259,19 +260,6 @@ var GraphDesignerView = BaseManagerView.extend({
         };
 
         viewModel.shouldShowPublishModal = ko.observable(false);
-
-        viewModel.toggleLockedState = function() {
-            let url = new URL(window.location.href);
-
-            if (url.searchParams.has('should_show_source_graph')) {
-                url.searchParams.delete('should_show_source_graph');
-            }
-            else {
-                url.searchParams.append('should_show_source_graph', true);
-            }
-
-            window.location.href = url;
-        };
 
         viewModel.publishGraph = function() {
             viewModel.loading(true);
@@ -569,9 +557,20 @@ var GraphDesignerView = BaseManagerView.extend({
             graphModel: viewModel.graphModel,
             pageVm: viewModel,
         });
+        viewModel.selectedCard = ko.computed(function() {
+            var selection = viewModel.cardTree.selection();
+            if (selection) {
+                if (selection.widgets) {
+                    return selection;
+                }
+                return selection.parent;
+            } else {
+                return null;
+            }
+        });
 
         viewModel.permissionTree = new CardTreeViewModel({
-            graph: koMapping.fromJS(data.source_graph),
+            graph: viewModel.graph,
             graphModel: viewModel.graphModel,
             isPermissionTree: true,
             appliedFunctions: viewModel.appliedFunctions,
@@ -579,7 +578,6 @@ var GraphDesignerView = BaseManagerView.extend({
             pageVm: viewModel,
             multiselect: true
         });
-
         viewModel.selectedCards = ko.computed(function() {
             var selection = viewModel.permissionTree.selection();
             if (selection) {
@@ -591,17 +589,8 @@ var GraphDesignerView = BaseManagerView.extend({
                 return null;
             }
         });
-
-        viewModel.selectedCard = ko.computed(function() {
-            var selection = viewModel.cardTree.selection();
-            if (selection) {
-                if (selection.widgets) {
-                    return selection;
-                }
-                return selection.parent;
-            } else {
-                return null;
-            }
+        viewModel.permissionsDesigner = new PermissionDesigner({
+            cardTree: viewModel.permissionTree
         });
 
         viewModel.nodeForm = new NodeFormView({
@@ -622,10 +611,6 @@ var GraphDesignerView = BaseManagerView.extend({
             disableAppendButton: ko.computed(function() {
                 // self.node() && self.node().dirty();
             })
-        });
-
-        viewModel.permissionsDesigner = new PermissionDesigner({
-            cardTree: viewModel.permissionTree
         });
 
         viewModel.graphSettingsViewModel = new GraphSettingsViewModel({

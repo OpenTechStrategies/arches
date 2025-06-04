@@ -506,6 +506,8 @@ class Graph(models.GraphModel):
         if validate:
             self.validate()
 
+        # self.refresh_from_database()  # necessary to ensure correct has_unpublished_changes state
+
         with transaction.atomic():
             super(Graph, self).save()
 
@@ -2324,7 +2326,7 @@ class Graph(models.GraphModel):
         Changes information in in GraphPublication models without creating
         a new entry in graphs_x_published_graphs table
         """
-        if self.source_identifier_id:  # don't update future graphs
+        if self.source_identifier_id:  # don't update draft_graph
             raise Exception(
                 "Cannot update graphs with a source_identifier. Please apply updates to the source graph."
             )
@@ -2574,14 +2576,9 @@ class Graph(models.GraphModel):
 
     def restore_state_from_serialized_graph(self, serialized_graph):
         """
-        Restores a Graph's state from a serialized graph, and creates a
-        new draft_graph
+        Restores a Graph's state from a serialized graph
         """
         with transaction.atomic():
-            draft_graph = Graph.objects.filter(source_identifier_id=self.pk).first()
-            if draft_graph:
-                draft_graph.delete()
-
             self.delete_associated_entities()
 
             for serialized_nodegroup in serialized_graph["nodegroups"]:
