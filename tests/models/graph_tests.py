@@ -1410,6 +1410,17 @@ class GraphTests(ArchesTestCase):
             self.node_node_type_graph.validate()
         self.assertEqual(cm.exception.code, IntegrityCheck.TOO_MANY_WIDGETS.value)
 
+    def test_graph_validation_of_slug_changes(self):
+        """
+        Test that changing the slug of a graph raises a validation error for current graph publication.
+        """
+        graph = self.test_graph
+        with self.assertRaises(GraphValidationError) as raised:
+            graph.slug = "new-graph-slug"
+            graph.save()
+        exception = raised.exception
+        self.assertEqual(exception.code, 1018)
+
     def test_add_resource_instance_lifecycle(self):
         resource_instance_lifecycle = {
             "id": "f7a0fd46-4c71-49cb-ae1e-778c96763440",
