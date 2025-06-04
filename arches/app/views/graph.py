@@ -115,23 +115,25 @@ class GraphSettingsView(GraphBaseView):
         graph = Graph.objects.get(graphid=graphid)
         data = JSONDeserializer().deserialize(request.body)
 
+        data_keys = [
+            "iconclass",
+            "name",
+            "author",
+            "description",
+            "isresource",
+            "ontology_id",
+            "version",
+            "subtitle",
+            "color",
+            "jsonldcontext",
+            "config",
+            "template_id",
+            "is_copy_immutable",
+        ]
+        if graph.source_identifier is not None:
+            data_keys.append("slug")
         for key, value in data.get("graph").items():
-            if key in [
-                "iconclass",
-                "name",
-                "author",
-                "description",
-                "isresource",
-                "ontology_id",
-                "version",
-                "subtitle",
-                "color",
-                "jsonldcontext",
-                "slug",
-                "config",
-                "template_id",
-                "is_copy_immutable",
-            ]:
+            if key in data_keys:
                 setattr(graph, key, value)
 
         node = models.Node.objects.get(graph_id=graphid, istopnode=True)
