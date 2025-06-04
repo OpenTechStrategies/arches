@@ -2155,14 +2155,17 @@ class Graph(models.GraphModel):
                     )
 
         # validates that a graph slug has not changed on a published graph
-        if self.publication_id and not self.source_identifier_id:
-            if self.slug != self.get_published_graph().serialized_graph["slug"]:
-                raise GraphValidationError(
-                    _(
-                        "You cannot change the slug of a published graph. Please create a new publication to edit graph slug."
-                    ),
-                    1018,
-                )
+        if (
+            self.publication_id
+            and not self.source_identifier_id
+            and self.slug != self.get_published_graph().serialized_graph["slug"]
+        ):
+            raise GraphValidationError(
+                _(
+                    "You cannot change the slug of a published graph. Please create a new publication to edit graph slug."
+                ),
+                1018,
+            )
 
         def validate_fieldname(fieldname, fieldnames):
             if node.fieldname == "":
