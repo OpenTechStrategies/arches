@@ -2158,7 +2158,7 @@ class Graph(models.GraphModel):
         if (
             self.publication_id
             and not self.source_identifier_id
-            and self.get_published_graph().serialized_graph is not None
+            and self.get_published_graph() is not None
             and self.slug != self.get_published_graph().serialized_graph["slug"]
         ):
             raise GraphValidationError(
