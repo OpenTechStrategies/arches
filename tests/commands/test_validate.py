@@ -109,9 +109,9 @@ class ValidateTests(ArchesTestCase):
                 return datatype.defaultwidget_id
         return None
 
-    def test_no_widgets(self):
-        CardXNodeXWidget.objects.all().delete()
-
+    def test_too_many_widgets_pass(self):
         out = StringIO()
-        call_command("validate", codes=[IntegrityCheck.NO_WIDGETS.value], stdout=out)
-        self.assertEqual(out.getvalue().count("FAIL"), 1)
+        call_command(
+            "validate", codes=[IntegrityCheck.TOO_MANY_WIDGETS.value], stdout=out
+        )
+        self.assertEqual(out.getvalue().count("PASS"), 1)

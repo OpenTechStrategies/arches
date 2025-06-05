@@ -122,12 +122,12 @@
 
                     <div style="padding: 0px 10px;" class="row widget-container graph-settings-switch">
                         <div class="form-group">
-                            <div 
+                            <div
                                 style="position: relative; top: 18px; height: 44px; margin-top: -10px;"
-                                data-bind="component: { 
-                                    name: 'views/components/simple-switch', 
+                                data-bind="component: {
+                                    name: 'views/components/simple-switch',
                                     params: {
-                                        value: graphSettingsViewModel.graph.is_copy_immutable, 
+                                        value: graphSettingsViewModel.graph.is_copy_immutable,
                                     }
                                 }"
                             ></div>
@@ -234,13 +234,17 @@
                             </div>
 
                             <div class="col-xs-12">
-                                <input placeholder="{% trans "Slug" %}" class="form-control input-md widget-input" data-bind="textInput:graph.slug">
+                                <input placeholder="{% trans "Slug" %}" class="form-control input-md widget-input" data-bind="
+                                    textInput:graph.slug,
+                                    disable: !graph.source_identifier_id()"
+                                >
                             </div>
                         </div>
                     </div>
                     <!-- /ko -->
                 </form>
             </div>
+
 
             <div class="graph-designer-header">{% trans 'Appearance' %}</div>
             <div class="graph-settings-panel-body fade in">

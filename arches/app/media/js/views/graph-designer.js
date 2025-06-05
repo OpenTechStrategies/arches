@@ -17,7 +17,6 @@ import BranchListView from 'views/graph/graph-manager/branch-list';
 import CardTreeViewModel from 'views/graph/graph-designer/card-tree';
 import PermissionDesigner from 'views/graph/permission-designer';
 import GraphSettingsViewModel from 'viewmodels/graph-settings';
-import CardViewModel from 'viewmodels/card';
 import 'bindings/resizable-sidepanel';
 import 'views/components/simple-switch';
 import 'utils/set-csrf-token';

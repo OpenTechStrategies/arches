@@ -23,6 +23,8 @@ from django.db import connection
 from django.core import management
 from django.test import TestCase
 from django.test.utils import captured_stdout
+from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 
 from arches.app.models.graph import Graph
 from arches.app.models.models import Ontology
@@ -54,6 +56,7 @@ SYSTEM_SETINGS_GRAPH_ID = "ff623370-fa12-11e6-b98b-6c4008b05c4c"
 
 class ArchesTestCase(TestCase):
     graph_fixtures = []
+    test_users = {}
     """
     Similar to TestCase.fixtures, but uses ResourceGraphImporter to avoid flushing.
     Uses the name of the .json file (case-sensitive), not graph name.
@@ -113,6 +116,8 @@ class ArchesTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         LanguageSynchronizer.synchronize_settings_with_db(update_published_graphs=False)
+        for user in User.objects.all():
+            cls.test_users[user.username] = user
         cls.loadOntology()
         if not cls.graph_fixtures:
             return
@@ -201,3 +206,45 @@ class ArchesTestCase(TestCase):
         with connection.cursor() as cursor:
             cursor.execute(sql)
         super().tearDownClass()
+
+    @classmethod
+    def add_users(cls):
+        profiles = (
+            {
+                "name": "testuser",
+                "email": "test@test.com",
+                "password": "TestingTesting123!",
+                "groups": [],
+            },
+            {
+                "name": "ben",
+                "email": "ben@test.com",
+                "password": "Test12345!",
+                "groups": ["Graph Editor", "Resource Editor"],
+            },
+            {
+                "name": "sam",
+                "email": "sam@test.com",
+                "password": "Test12345!",
+                "groups": ["Graph Editor", "Resource Editor", "Resource Reviewer"],
+            },
+            {
+                "name": "jim",
+                "email": "jim@test.com",
+                "password": "Test12345!",
+                "groups": ["Graph Editor", "Resource Editor"],
+            },
+        )
+
+        for profile in profiles:
+            user = User.objects.create_user(
+                username=profile["name"],
+                email=profile["email"],
+                password=profile["password"],
+            )
+
+            for group_name in profile["groups"]:
+                group = Group.objects.get(name=group_name)
+                group.user_set.add(user)
+
+            cls.test_users[profile["name"]] = user

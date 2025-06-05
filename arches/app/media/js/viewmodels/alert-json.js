@@ -1,5 +1,6 @@
 import ko from 'knockout';
 import arches from 'arches';
+import ariaUtils from 'utils/aria';
 
 /**
 * A viewmodel used for alert messages from JSON responses
@@ -62,4 +63,7 @@ export default function(type, responseJSON, cancel, ok) {
             cancel();
         };
     }
+
+    const focusButton = document.querySelector('#card-alert-panel button:first-of-type');
+    ariaUtils.shiftFocus(focusButton);
 };

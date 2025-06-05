@@ -37,51 +37,12 @@ class PermissionTests(ArchesTestCase):
         super().setUpTestData()
         cls.add_users()
         cls.expected_resource_count = 2
-        cls.user = User.objects.get(username="ben")
+        cls.user = cls.test_users["ben"]
         cls.group = Group.objects.get(pk=2)
         cls.legacy_load_testing_package()
         cls.resource = Resource.objects.get(pk=cls.resource_instance_id)
         cls.resource.graph_id = cls.data_type_graphid
         cls.resource.remove_resource_instance_permissions()
-
-    @classmethod
-    def add_users(cls):
-        profiles = (
-            {
-                "name": "ben",
-                "email": "ben@test.com",
-                "password": "Test12345!",
-                "groups": ["Graph Editor", "Resource Editor"],
-            },
-            {
-                "name": "sam",
-                "email": "sam@test.com",
-                "password": "Test12345!",
-                "groups": ["Graph Editor", "Resource Editor", "Resource Reviewer"],
-            },
-            {
-                "name": "jim",
-                "email": "jim@test.com",
-                "password": "Test12345!",
-                "groups": ["Graph Editor", "Resource Editor"],
-            },
-        )
-
-        for profile in profiles:
-            try:
-                user = User.objects.create_user(
-                    username=profile["name"],
-                    email=profile["email"],
-                    password=profile["password"],
-                )
-                user.save()
-
-                for group_name in profile["groups"]:
-                    group = Group.objects.get(name=group_name)
-                    group.user_set.add(user)
-
-            except Exception as e:
-                print(e)
 
     def test_user_cannot_view_without_permission(self):
         """
@@ -128,9 +89,9 @@ class PermissionTests(ArchesTestCase):
         """
         assign_perm("no_access_to_resourceinstance", self.group, self.resource)
         ben = self.user
-        jim = User.objects.get(username="jim")
-        sam = User.objects.get(username="sam")
-        admin = User.objects.get(username="admin")
+        jim = self.test_users["jim"]
+        sam = self.test_users["sam"]
+        admin = self.test_users["admin"]
         assign_perm("view_resourceinstance", ben, self.resource)
         assign_perm("change_resourceinstance", jim, self.resource)
 

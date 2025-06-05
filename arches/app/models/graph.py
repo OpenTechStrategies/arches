@@ -2161,6 +2161,21 @@ class Graph(models.GraphModel):
                     "You cannot save a graph that has an active draft. \
                         Please publish or delete the draft before saving this graph."
                 ),
+                1019,
+            )
+
+        # validates that a graph slug has not changed on a published graph
+        published_graph = self.get_published_graph()
+        if (
+            self.publication_id
+            and not self.source_identifier_id
+            and published_graph is not None
+            and self.slug != published_graph.serialized_graph["slug"]
+        ):
+            raise GraphValidationError(
+                _(
+                    "You cannot change the slug of a published graph. Please create a new publication to edit graph slug."
+                ),
                 1018,
             )
 
