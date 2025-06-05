@@ -199,12 +199,12 @@ class SpatialViewTests(ArchesTestCase):
         spatialview.save()
 
         graph = Graph.objects.get(pk=spatialview.geometrynode.graph.pk)
-        draft_graph = graph.create_draft_graph()
+        graph.create_draft_graph()
         graph.publish()
 
         # updating graph from draft graph removes all elements
         # including the serialized graph - then recreates them
-        graph.update_from_draft_graph(draft_graph=draft_graph)
+        graph.promote_draft_graph_to_active_graph()
 
         # will throw if spatial view doesn't exist
         spatialview.refresh_from_db()

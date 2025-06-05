@@ -2161,7 +2161,7 @@ class Graph(models.GraphModel):
                     "You cannot save a graph that has an active draft. \
                         Please publish or delete the draft before saving this graph."
                 ),
-                IntegrityCheck.DRAFT_GRAPH_CANNOT_VALIDATE.value,
+                1018,
             )
 
         def validate_fieldname(fieldname, fieldnames):
@@ -2451,12 +2451,17 @@ class Graph(models.GraphModel):
 
         draft_graph.delete()
 
-    def update_from_draft_graph(self, draft_graph):
+    def promote_draft_graph_to_active_graph(self):
         """
         Updates the graph with any changes made to the draft_graph,
         deletes the draft_graph and related entities, then creates
         a new draft_graph from the updated graph.
         """
+        draft_graph = self.get_draft_graph()
+
+        if not draft_graph:
+            raise Graph.DoesNotExist(_("No draft graph exists for this model."))
+
         serialized_source_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self)
         )
@@ -2710,6 +2715,10 @@ class Graph(models.GraphModel):
         self.refresh_from_database()
 
         with transaction.atomic():
+            LanguageSynchronizer.synchronize_settings_with_db(
+                update_published_graphs=False
+            )
+
             publication = models.GraphXPublishedGraph.objects.create(
                 graph=self, notes=notes, user=user
             )

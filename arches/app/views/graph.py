@@ -669,9 +669,7 @@ class GraphPublicationView(View):
             try:
                 data = JSONDeserializer().deserialize(request.body)
 
-                updated_graph = source_graph.update_from_draft_graph(
-                    draft_graph=draft_graph
-                )
+                updated_graph = source_graph.promote_draft_graph_to_active_graph()
                 updated_graph.publish(notes=data.get("notes"), user=request.user)
 
                 return JSONResponse(
@@ -755,9 +753,6 @@ class GraphPublicationView(View):
                     }
                 )
             except Exception as e:
-                import pdb
-
-                pdb.set_trace()
                 return JSONErrorResponse(str(e))
 
 

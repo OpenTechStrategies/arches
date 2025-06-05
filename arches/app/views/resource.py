@@ -397,7 +397,6 @@ class ResourceEditorView(MapBaseManagerView):
                 "templates": ["resource-editor-help"],
             }
 
-        print(resource_instance.graph_publication_id, graph.publication_id)
         if (
             resource_instance
             and resource_instance.graph_publication_id != graph.publication_id
