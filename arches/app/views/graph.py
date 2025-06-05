@@ -522,10 +522,7 @@ class GraphDataView(View):
                         str(clone_data["copy"].slug) or "exported_branch", False
                     )
                     clone_data["copy"].publication = None
-
                     clone_data["copy"].save()
-
-                    clone_data["copy"].create_draft_graph()
                     clone_data["copy"].publish()
 
                     ret = {"success": True, "graphid": clone_data["copy"].pk}
@@ -544,7 +541,6 @@ class GraphDataView(View):
 
                     ret.save()
                     ret.publish()
-                    ret.create_draft_graph()
 
                     ret.copy_functions(
                         graph, [clone_data["nodes"], clone_data["nodegroups"]]
@@ -676,6 +672,7 @@ class GraphPublicationView(View):
                 updated_graph = source_graph.update_from_draft_graph(
                     draft_graph=draft_graph
                 )
+                updated_graph.delete_draft_graph()
                 updated_graph.publish(notes=data.get("notes"), user=request.user)
 
                 return JSONResponse(
@@ -695,7 +692,13 @@ class GraphPublicationView(View):
 
         elif self.action == "revert":
             try:
+                draft_graph = source_graph.get_draft_graph()
+
+                if draft_graph:
+                    draft_graph.delete_draft_graph()
+
                 source_graph.create_draft_graph()
+
                 return JSONResponse(
                     {
                         "title": _("Success!"),
