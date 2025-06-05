@@ -2154,6 +2154,21 @@ class Graph(models.GraphModel):
                         999,
                     )
 
+        # validates that a graph slug has not changed on a published graph
+        published_graph = self.get_published_graph()
+        if (
+            self.publication_id
+            and not self.source_identifier_id
+            and published_graph is not None
+            and self.slug != published_graph.serialized_graph["slug"]
+        ):
+            raise GraphValidationError(
+                _(
+                    "You cannot change the slug of a published graph. Please create a new publication to edit graph slug."
+                ),
+                1018,
+            )
+
         def validate_fieldname(fieldname, fieldnames):
             if node.fieldname == "":
                 raise GraphValidationError(_("Field name must not be blank."), 1008)
