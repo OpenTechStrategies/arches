@@ -658,9 +658,8 @@ class Graph(models.GraphModel):
         """
         with transaction.atomic():
             try:
-                draft_graph = Graph.objects.get(source_identifier_id=self.graphid)
-                draft_graph.delete()
-            except Graph.DoesNotExist:
+                self.delete_draft_graph()
+            except GraphPublicationError:
                 pass  # no draft_graph to delete
 
             for nodegroup in self.get_nodegroups(force_recalculation=True):
@@ -2156,6 +2155,15 @@ class Graph(models.GraphModel):
                         999,
                     )
 
+        if self.get_draft_graph():
+            raise GraphValidationError(
+                _(
+                    "You cannot save a graph that has an active draft. \
+                        Please publish or delete the draft before saving this graph."
+                ),
+                IntegrityCheck.DRAFT_GRAPH_CANNOT_VALIDATE.value,
+            )
+
         def validate_fieldname(fieldname, fieldnames):
             if node.fieldname == "":
                 raise GraphValidationError(_("Field name must not be blank."), 1008)
@@ -2398,11 +2406,7 @@ class Graph(models.GraphModel):
                 update_published_graphs=False
             )
 
-            previous_draft_graph = Graph.objects.filter(
-                source_identifier_id=self.graphid
-            ).first()
-
-            if previous_draft_graph:
+            if self.get_draft_graph():
                 raise GraphPublicationError(
                     message=_(
                         "A draft graph already exists for this graph. Please update the existing draft graph instead."
@@ -2440,13 +2444,12 @@ class Graph(models.GraphModel):
         """
         Deletes the draft_graph and all related entities.
         """
-        draft_graph = Graph.objects.filter(source_identifier_id=self.graphid).first()
+        draft_graph = self.get_draft_graph()
         if not draft_graph:
             raise GraphPublicationError(
                 message=_("No draft graph exists for this model.")
             )
 
-        draft_graph.delete_related_entities()
         draft_graph.delete()
 
     def update_from_draft_graph(self, draft_graph):
@@ -2607,14 +2610,6 @@ class Graph(models.GraphModel):
         """
         Restores a Graph's state from a serialized graph
         """
-        draft_graph = self.get_draft_graph()
-        if draft_graph:
-            raise GraphPublicationError(
-                message=_(
-                    "Cannot restore state from a serialized graph while a draft graph exists. Please delete the draft graph first."
-                )
-            )
-
         with transaction.atomic():
             self.delete_associated_entities()
 

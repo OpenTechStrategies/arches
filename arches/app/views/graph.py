@@ -240,7 +240,7 @@ class GraphDesignerView(GraphBaseView):
                 raise PermissionDenied
 
         self.source_graph = Graph.objects.get(pk=graphid)
-        draft_graph = Graph.objects.filter(source_identifier_id=graphid).first()
+        draft_graph = self.source_graph.get_draft_graph()
 
         if draft_graph:
             self.graph = draft_graph
@@ -672,7 +672,6 @@ class GraphPublicationView(View):
                 updated_graph = source_graph.update_from_draft_graph(
                     draft_graph=draft_graph
                 )
-                updated_graph.delete_draft_graph()
                 updated_graph.publish(notes=data.get("notes"), user=request.user)
 
                 return JSONResponse(
@@ -692,10 +691,10 @@ class GraphPublicationView(View):
 
         elif self.action == "revert":
             try:
-                draft_graph = source_graph.get_draft_graph()
-
-                if draft_graph:
-                    draft_graph.delete_draft_graph()
+                try:
+                    self.delete_draft_graph()
+                except Graph.DoesNotExist:
+                    pass  # no draft_graph to delete
 
                 source_graph.create_draft_graph()
 
@@ -743,6 +742,11 @@ class GraphPublicationView(View):
                 serialized_graph = published_graph.serialized_graph
 
                 source_graph.restore_state_from_serialized_graph(serialized_graph)
+
+                try:
+                    self.delete_draft_graph()
+                except Graph.DoesNotExist:
+                    pass  # no draft_graph to delete
 
                 return JSONResponse(
                     {
