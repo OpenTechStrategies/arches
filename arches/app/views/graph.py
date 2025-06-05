@@ -692,7 +692,7 @@ class GraphPublicationView(View):
         elif self.action == "revert":
             try:
                 try:
-                    self.delete_draft_graph()
+                    source_graph.delete_draft_graph()
                 except Graph.DoesNotExist:
                     pass  # no draft_graph to delete
 
@@ -744,7 +744,7 @@ class GraphPublicationView(View):
                 source_graph.restore_state_from_serialized_graph(serialized_graph)
 
                 try:
-                    self.delete_draft_graph()
+                    source_graph.delete_draft_graph()
                 except Graph.DoesNotExist:
                     pass  # no draft_graph to delete
 
@@ -755,6 +755,9 @@ class GraphPublicationView(View):
                     }
                 )
             except Exception as e:
+                import pdb
+
+                pdb.set_trace()
                 return JSONErrorResponse(str(e))
 
 

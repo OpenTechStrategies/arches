@@ -659,7 +659,7 @@ class Graph(models.GraphModel):
         with transaction.atomic():
             try:
                 self.delete_draft_graph()
-            except GraphPublicationError:
+            except Graph.DoesNotExist:
                 pass  # no draft_graph to delete
 
             for nodegroup in self.get_nodegroups(force_recalculation=True):
@@ -2445,10 +2445,9 @@ class Graph(models.GraphModel):
         Deletes the draft_graph and all related entities.
         """
         draft_graph = self.get_draft_graph()
+
         if not draft_graph:
-            raise GraphPublicationError(
-                message=_("No draft graph exists for this model.")
-            )
+            raise Graph.DoesNotExist()
 
         draft_graph.delete()
 

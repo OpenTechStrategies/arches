@@ -397,7 +397,8 @@ class ResourceEditorView(MapBaseManagerView):
                 "templates": ["resource-editor-help"],
             }
 
-        if graph.has_unpublished_changes or (
+        print(resource_instance.graph_publication_id, graph.publication_id)
+        if (
             resource_instance
             and resource_instance.graph_publication_id != graph.publication_id
         ):

@@ -393,19 +393,6 @@ vm.selectionBreadcrumbs = ko.computed(function () {
     return crumbs;
 });
 
-if (graphHasUnpublishedChanges()) {
-    // need setTimeout 0 here to push logic to bottom of call stack to wait for the viewModel to have the alert observable
-    setTimeout(function () {
-        vm.alert(new AlertViewModel(
-            'ep-alert-red',
-            arches.translations.resourceGraphHasUnpublishedChanges.title,
-            arches.translations.resourceGraphHasUnpublishedChanges.text,
-            null,
-            function () { }
-        ));
-    }, 0);
-}
-
 export default new BaseManagerView({
     viewModel: vm
 });
