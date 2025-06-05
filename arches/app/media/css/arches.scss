@@ -3417,6 +3417,9 @@ ul.nav.nav-tabs.nav-justified {
 .graph-active-switch-container {
     display: flex;
     align-items: center;
+    border-inline-start: 1px solid #ddd;
+    padding-inline-start: 15px;
+    margin-inline-start: 15px;
 }
 .graph-active-switch-container .toggle-container {
     padding: 0 !important;
