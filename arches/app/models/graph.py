@@ -2429,11 +2429,6 @@ class Graph(models.GraphModel):
             # draft_graphs do not interact with `Resource` objects
             draft_graph.resource_instance_lifecycle = None
 
-            # draft_graphs are never published, so on creation
-            # `has_unpublished_changes` should never be true, regardless
-            # of the state of the source_graph.
-            draft_graph.has_unpublished_changes = False
-
             draft_graph.root.set_relatable_resources(
                 [node.pk for node in self.root.get_relatable_resources()]
             )
@@ -2443,6 +2438,11 @@ class Graph(models.GraphModel):
             models.GraphModel.objects.filter(pk=draft_graph.pk).update(
                 has_unpublished_changes=False
             )
+
+            # draft_graphs are never published, so on creation
+            # `has_unpublished_changes` should never be true, regardless
+            # of the state of the source_graph.
+            draft_graph.has_unpublished_changes = False
 
             return draft_graph
 

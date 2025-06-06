@@ -1946,7 +1946,6 @@ class DraftGraphTests(ArchesTestCase):
 
         source_graph.name = "TEST NAME"
         source_graph.save()
-        source_graph.refresh_from_database()
 
         self.assertEqual(source_graph.name, "TEST NAME")
         self.assertTrue(source_graph.has_unpublished_changes)
