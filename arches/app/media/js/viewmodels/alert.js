@@ -38,7 +38,9 @@ var AlertViewModel = function(type, title, text, cancel, ok) {
         };
     }
 
-    const focusButton = document.querySelector('#card-alert-panel button:first-of-type');
-    ariaUtils.shiftFocus(focusButton);
+    ko.tasks.schedule(() => {
+        const focusButton = document.querySelector('#card-alert-panel button:first-of-type');
+        ariaUtils.shiftFocus(focusButton);
+    });
 };
 export default AlertViewModel;

@@ -64,6 +64,8 @@ export default function(type, responseJSON, cancel, ok) {
         };
     }
 
-    const focusButton = document.querySelector('#card-alert-panel button:first-of-type');
-    ariaUtils.shiftFocus(focusButton);
+    ko.tasks.schedule(() => {
+        const focusButton = document.querySelector('#card-alert-panel button:first-of-type');
+        ariaUtils.shiftFocus(focusButton);
+    });
 };
