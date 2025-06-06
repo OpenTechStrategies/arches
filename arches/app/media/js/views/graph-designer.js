@@ -584,9 +584,6 @@ var GraphDesignerView = BaseManagerView.extend({
                 return null;
             }
         });
-        viewModel.permissionsDesigner = new PermissionDesigner({
-            cardTree: viewModel.permissionTree
-        });
 
         viewModel.nodeForm = new NodeFormView({
             graph: viewModel.graph,
@@ -606,6 +603,10 @@ var GraphDesignerView = BaseManagerView.extend({
             disableAppendButton: ko.computed(function() {
                 // self.node() && self.node().dirty();
             })
+        });
+
+        viewModel.permissionsDesigner = new PermissionDesigner({
+            cardTree: viewModel.permissionTree
         });
 
         viewModel.graphSettingsViewModel = new GraphSettingsViewModel({
