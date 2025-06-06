@@ -47,7 +47,6 @@ const displayname = ko.observable(displayNameValue);
 var resourceId = ko.observable(data.resourceid);
 var appliedFunctions = ko.observable(data['appliedFunctions']);
 var primaryDescriptorFunction = ko.observable(data['primaryDescriptorFunction']);
-var graphHasUnpublishedChanges = ko.observable(data['graph_has_unpublished_changes'] === "True" ? true : false);
 var userIsCreator = data['useriscreator'];
 var creator = data['creator'];
 var selectedTile = ko.computed(function () {

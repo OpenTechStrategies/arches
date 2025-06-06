@@ -506,12 +506,8 @@ class Graph(models.GraphModel):
         if validate:
             self.validate()
 
-        # self.refresh_from_database()  # necessary to ensure correct has_unpublished_changes state
-
         with transaction.atomic():
             super(Graph, self).save()
-
-            has_unpublished_changes = self.has_unpublished_changes
 
             for nodegroup in self.get_nodegroups():
                 nodegroup.save()
@@ -638,10 +634,7 @@ class Graph(models.GraphModel):
                 nodegroup.delete()
             self._nodegroups_to_delete = []
 
-            # becuase of signals listeners on related graph entities,
-            # `has_unpublished_changes` must be updated manually after
-            # all related entities have updated.
-            self.has_unpublished_changes = has_unpublished_changes
+            self.has_unpublished_changes = True
             super().save()
 
         return self
@@ -2447,6 +2440,10 @@ class Graph(models.GraphModel):
 
             draft_graph.save(validate=False)
 
+            models.GraphModel.objects.filter(pk=draft_graph.pk).update(
+                has_unpublished_changes=False
+            )
+
             return draft_graph
 
     def get_draft_graph(self):
@@ -2716,6 +2713,10 @@ class Graph(models.GraphModel):
 
             updated_graph.has_unpublished_changes = False
             updated_graph.save(validate=False)
+
+            models.GraphModel.objects.filter(pk=updated_graph.pk).update(
+                has_unpublished_changes=False,
+            )
 
             return Graph.objects.get(pk=updated_graph.pk)
 
