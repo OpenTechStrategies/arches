@@ -2472,7 +2472,7 @@ class Graph(models.GraphModel):
         draft_graph = self.get_draft_graph()
 
         if not draft_graph:
-            raise Graph.DoesNotExist(_("No draft graph exists for this model."))
+            raise Graph.DoesNotExist()
 
         serialized_source_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self)

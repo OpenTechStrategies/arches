@@ -700,11 +700,9 @@ def update_resource_instance_data_based_on_graph_diff(
             # add nodes that only exist in updated graph
             # or update nodes default value if changed
             for node_id in updated_node_ids:
-                if node_id not in tile.data.keys() or tile.data[  # node added to tile
+                if node_id not in tile.data.keys() or tile.data[
                     node_id
-                ] == initial_node_ids_to_default_values.get(
-                    node_id
-                ):  # default value change
+                ] == initial_node_ids_to_default_values.get(node_id):
                     tile.data[node_id] = updated_node_ids_to_default_values.get(node_id)
 
             tile.save()
@@ -727,7 +725,7 @@ def update_resource_instance_data_based_on_graph_diff(
         logger.error(e)
         notify_completion(
             _(
-                "Business data update failed! Check the error logs for more information."
+                "Business data update failed. Check the error logs for more information."
             ),
             user,
         )
