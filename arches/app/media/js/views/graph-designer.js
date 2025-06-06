@@ -552,17 +552,6 @@ var GraphDesignerView = BaseManagerView.extend({
             graphModel: viewModel.graphModel,
             pageVm: viewModel,
         });
-        viewModel.selectedCard = ko.computed(function() {
-            var selection = viewModel.cardTree.selection();
-            if (selection) {
-                if (selection.widgets) {
-                    return selection;
-                }
-                return selection.parent;
-            } else {
-                return null;
-            }
-        });
 
         viewModel.permissionTree = new CardTreeViewModel({
             graph: viewModel.graph,
@@ -573,8 +562,21 @@ var GraphDesignerView = BaseManagerView.extend({
             pageVm: viewModel,
             multiselect: true
         });
+        
         viewModel.selectedCards = ko.computed(function() {
             var selection = viewModel.permissionTree.selection();
+            if (selection) {
+                if (selection.widgets) {
+                    return selection;
+                }
+                return selection.parent;
+            } else {
+                return null;
+            }
+        });
+
+        viewModel.selectedCard = ko.computed(function() {
+            var selection = viewModel.cardTree.selection();
             if (selection) {
                 if (selection.widgets) {
                     return selection;
