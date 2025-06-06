@@ -253,8 +253,6 @@ class GraphManagerViewTests(ArchesTestCase):
         )
         response_json = json.loads(response.content)
 
-        # import pdb; pdb.set_trace()
-
         node_count = 0
         for node in response_json["nodes"]:
             if node["nodeid"] == str(self.appended_branch_1.root.pk):
