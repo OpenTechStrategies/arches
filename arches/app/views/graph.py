@@ -664,10 +664,8 @@ class GraphPublicationView(View):
 
         if graph.source_identifier:
             source_graph = Graph.objects.get(pk=graph.source_identifier_id)
-            draft_graph = graph
         else:
             source_graph = graph
-            draft_graph = None
 
         if self.action == "publish":
             try:
@@ -734,10 +732,8 @@ class GraphPublicationView(View):
             except Exception as e:
                 logger.exception(e)
                 return JSONErrorResponse(
-                    str(
-                        _("Unable to process publication"),
-                        _("Please contact your administrator if issue persists"),
-                    )
+                    _("Unable to process publication"),
+                    _("Please contact your administrator if issue persists"),
                 )
 
         elif self.action == "update_published_graphs":
@@ -756,7 +752,11 @@ class GraphPublicationView(View):
                     }
                 )
             except Exception as e:
-                return JSONErrorResponse(str(e))
+                logger.exception(e)
+                return JSONErrorResponse(
+                    _("Unable to process publication"),
+                    _("Please contact your administrator if issue persists"),
+                )
 
         elif self.action == "restore_state_from_serialized_graph":
             try:
@@ -780,7 +780,11 @@ class GraphPublicationView(View):
                     }
                 )
             except Exception as e:
-                return JSONErrorResponse(str(e))
+                logger.exception(e)
+                return JSONErrorResponse(
+                    _("Unable to process publication"),
+                    _("Please contact your administrator if issue persists"),
+                )
 
 
 @method_decorator(group_required("Graph Editor"), name="dispatch")
