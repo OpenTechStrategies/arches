@@ -39,6 +39,8 @@ from pyld.jsonld import compact, JsonLdError
 from django.utils import translation
 from guardian.models import GroupObjectPermission, UserObjectPermission
 
+from arches.app.models.fields.i18n import I18n_JSON
+
 logger = logging.getLogger(__name__)
 
 
@@ -923,7 +925,12 @@ class Graph(models.GraphModel):
         Replaces node, nodegroup, card, and formids in configuration json objects during
         graph cloning/copying
         """
-        str_forms_config = json.dumps(config)
+        if isinstance(config, I18n_JSON):
+            str_forms_config = JSONSerializer().serialize(
+                config.serialize(use_raw_i18n_json=True)
+            )
+        else:
+            str_forms_config = json.dumps(config)
         for map in maps:
             for k, v in map.items():
                 str_forms_config = str_forms_config.replace(str(k), str(v))
@@ -1105,6 +1112,11 @@ class Graph(models.GraphModel):
                         sorted_widget_ids.append(str(widget_id))
 
                 copied_card.config["sortedWidgetIds"] = sorted_widget_ids
+
+        for node in copy_of_self.nodes.values():
+            node.config = self.replace_config_ids(
+                node.config, [node_map, nodegroup_map]
+            )
 
         return {
             "copy": copy_of_self,
@@ -2499,6 +2511,10 @@ class Graph(models.GraphModel):
             if serialized_node["source_identifier_id"]:
                 serialized_node["nodeid"] = serialized_node["source_identifier_id"]
                 serialized_node["source_identifier_id"] = None
+
+            serialized_node["config"] = self.replace_config_ids(
+                serialized_node["config"], [node_id_to_node_source_identifier_id]
+            )
 
             updated_nodegroup_id = node_id_to_node_source_identifier_id.get(
                 serialized_node["nodegroup_id"]
