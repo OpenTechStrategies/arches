@@ -45,8 +45,8 @@ var GraphDesignerView = BaseManagerView.extend({
         viewModel.graphHasUnpublishedChanges = ko.observable(data['graph']['has_unpublished_changes']);
         viewModel.publicationResourceInstanceCount = ko.observable(data['publication_resource_instance_count']);
         viewModel.isGraphActive = ko.observable();
-
-        console.log('Graph Designer ViewModel initialized with data:', data['graph']['has_unpublished_changes']);
+        viewModel.shouldShowPublishModal = ko.observable(false);
+        viewModel.shouldUpdateResourceInstanceData = ko.observable(false);
 
         const url = new URL(window.location);
         if (url.searchParams.has('has_deleted_draft_graph')) {
@@ -271,14 +271,15 @@ var GraphDesignerView = BaseManagerView.extend({
             window.open(arches.urls.export_mapping_file(viewModel.graph.source_identifier_id()), '_blank');
         };
 
-        viewModel.shouldShowPublishModal = ko.observable(false);
-
         viewModel.publishGraph = function() {
             viewModel.loading(true);
 
             $.ajax({
                 type: "POST",
-                data: JSON.stringify({'notes': viewModel.graphPublicationNotes()}),
+                data: JSON.stringify({
+                    'notes': viewModel.graphPublicationNotes(), 
+                    'shouldUpdateResourceInstanceData': viewModel.shouldUpdateResourceInstanceData()
+                }),
                 url: arches.urls.publish_graph(viewModel.graph.graphid()),
                 success: function(response) {
                     window.location.href = window.location.pathname + '?has_published_draft_graph=true';
@@ -286,6 +287,8 @@ var GraphDesignerView = BaseManagerView.extend({
                 error: function(response) {
                     viewModel.graphPublicationNotes(null);
                     viewModel.shouldShowPublishModal(false);
+                    viewModel.shouldUpdateResourceInstanceData(false);
+                    
                     viewModel.loading(false);
 
                     viewModel.alert(new JsonErrorAlertViewModel(

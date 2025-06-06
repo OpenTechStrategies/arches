@@ -50,18 +50,22 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 {% block main_content %}
 <div 
     class="modal-background" 
-    data-bind="visible: $data.shouldShowPublishModal, click: function() { $data.shouldShowPublishModal(false); }, clickBubble: false,"
+    data-bind="
+        visible: $data.shouldShowPublishModal, 
+        event: { 
+            mousedown: function() { 
+                if (event.target === event.currentTarget) {
+                    $data.shouldShowPublishModal(false);
+                } else {
+                    return true;
+                }
+            } 
+        }, 
+    "
 >
-    <div class="modal-content-container" data-bind="click: function(){}, clickBubble: false,">
-        <div 
-            style="
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-            "
-        >
-            <div style="display: flex;">
+    <div class="modal-content-container">
+        <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; padding-bottom: 10px; align-self: center;">
                 <h4>
                     <span 
                         data-bind="text: $data.graph.isresource() ? {% quoted_trans 'Resource Model:'%} : {% quoted_trans 'Branch:'%}"
@@ -73,7 +77,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                 ></h4>
             </div>
 
-            <div style="padding: 0 50px;">
+            <div>
                 <h5>
                     <!-- ko if: $data.graph.isresource() && $data.graph.source_identifier_id() -->
                     {% trans "This will save the Resource Model in its current state. It will also create a historical record of the Resource Model." %}
@@ -100,7 +104,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                 <!-- /ko -->
             </div>
 
-
             <div
                 style="
                     width: 100%;
@@ -116,7 +119,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                 </label>
                 <textarea 
                     data-bind="textInput: $data.graphPublicationNotes"
-                    style="margin-bottom: 12px; max-width: 560px;"
+                    style="margin-bottom: 12px; resize: vertical; min-height: 280px;"
                     class="form-control textarea textarea-resizable" 
                     rows="4" 
                     type="text" 
@@ -126,9 +129,37 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
             </div>
                     
             <!-- ko if: $data.shouldShowGraphPublishButtons() -->
-                <span style="align-self: flex-end; display: flex;">
+                <!-- ko if: ko.unwrap($data.graph.source_identifier_id) && $data.publicationResourceInstanceCount() -->
+                    <div style="display: flex;">
+                        <input 
+                            style="cursor: pointer; margin:0px;" 
+                            id="update-resource-instance-data-checkbox" 
+                            type="checkbox" 
+                            data-bind="checked: $data.shouldUpdateResourceInstanceData" 
+                        />
+
+                        <label for="update-resource-instance-data-checkbox">
+                            {% blocktrans %}
+                                <h5 style="margin: 10px;">
+                                    Checking this box will update all associated Resource Instance data automatically.
+                                    This action will follow the rules outlined <a href="">here.</a>
+                                    <span style="color: red;">This action cannot be undone.</span>
+                                </h5>
+                            {% endblocktrans %}
+                        </label>
+                    </div>
+                <!-- /ko -->
+
+                <!-- ko if: $data.shouldShowGraphPublishButtons() -->
+                <div style="align-self: flex-end; display: flex; padding-top: 10px;">
                     <button 
-                        style="transition: none;" 
+                        class="btn btn-sm btn-danger btn-labeled fa fa-times" 
+                        data-bind="visible: $data.shouldShowPublishModal, click: function() { $data.shouldShowPublishModal(false); }"
+                    >
+                        <span>{% trans "Cancel" %}</span>
+                    </button>
+
+                    <button 
                         class="btn btn-sm btn-primary btn-labeled fa fa-check" 
                         data-bind="click: $data.shouldShowUpdatePublishedGraphsButton() ? $data.updatePublishedGraphs : $data.publishGraph"
                     >
@@ -139,15 +170,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                         <span>{% trans "Publish" %}</span>
                         <!-- /ko -->
                     </button>
-
-                    <button 
-                        style="transition: none;" 
-                        class="btn btn-sm btn-danger btn-labeled fa fa-times" 
-                        data-bind="visible: $data.shouldShowPublishModal, click: function() { $data.shouldShowPublishModal(false); }"
-                    >
-                        <span>{% trans "Cancel" %}</span>
-                    </button>
-                </span>
+                </div>
+                <!-- /ko -->
             <!-- /ko -->
         </div>
     </div>
@@ -244,7 +268,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
                     </button>
                 <!-- /ko -->
                 <!-- ko ifnot: $data.graph.source_identifier_id() -->
-                    <button class="btn btn-md btn-danger btn-labeled fa fa-undo" data-bind="click: $data.showRestoreStateFromSerializedGraphAlert">
+                    <button class="btn btn-md btn-warning btn-labeled fa fa-undo" data-bind="click: $data.showRestoreStateFromSerializedGraphAlert">
                         <span style="font-size: 14px;">{% trans 'Revert All Changes'%}</span>
                     </button>
                     <button class="btn btn-md btn-primary btn-labeled fa fa-check" data-bind="click: $data.showUpdatePublishedGraphsModal">
