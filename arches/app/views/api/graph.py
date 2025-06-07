@@ -108,8 +108,9 @@ class GraphIsActive(APIBase):
                     raise ValueError(_("Cannot change the active status of a draft."))
 
                 if graph.is_active != is_active:
-                    graph.is_active = is_active
-                    graph.save()
+                    models.GraphModel.objects.filter(pk=graph.pk).update(
+                        is_active=is_active
+                    )
 
             return JSONResponse({"is_graph_active": graph.is_active})
         except:
