@@ -2058,11 +2058,13 @@ class DraftGraphTests(ArchesTestCase):
                 "nodegroup_id": "88677159-dccf-4629-9210-f6a2a7463552",
             }
         )
+        models.GraphModel.objects.filter(
+            pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954"
+        ).update(has_unpublished_changes=False)
 
         graph = Graph.objects.get(pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954")
-        graph.create_draft_graph()
 
-        draft_graph = Graph.objects.get(slug="test-graph", source_identifier=graph.pk)
+        draft_graph = graph.create_draft_graph()
         original_semantic_node = graph.node_set.get(name="Semantic Node")
         draft_node = draft_graph.node_set.get(name="Semantic Node")
         draft_top_node = draft_graph.node_set.get(name="Top Node")

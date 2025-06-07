@@ -122,7 +122,7 @@ class GraphPublicationViewTests(TestCase):
                 "message": "Please contact your administrator if issue persists",
                 "status": "false",
                 "success": False,
-                "title": "Unable to process publication",
+                "title": "Unable to revert changes",
             },
         )
 
@@ -164,7 +164,7 @@ class GraphPublicationViewTests(TestCase):
                 "message": "Please contact your administrator if issue persists",
                 "status": "false",
                 "success": False,
-                "title": "Unable to process publication",
+                "title": "Unable to update published graphs",
             },
         )
 
