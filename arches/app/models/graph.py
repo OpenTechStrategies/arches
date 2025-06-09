@@ -2024,7 +2024,7 @@ class Graph(models.GraphModel):
                     nodeobj = JSONSerializer().serializeToPython(
                         node, use_raw_i18n_json=use_raw_i18n_json
                     )
-                    nodeobj["parentproperty"] = parentproperties[node.nodeid]
+                    nodeobj["parentproperty"] = parentproperties.get(node.nodeid)
                     nodes.append(nodeobj)
 
                 ret["nodes"] = sorted(

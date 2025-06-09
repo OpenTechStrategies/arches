@@ -1,7 +1,6 @@
 import importlib
 import os
 import logging
-import shutil
 from celery import shared_task
 from datetime import datetime
 from datetime import timedelta
@@ -9,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core import management
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
+from django.db.models import F, Q
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
 from arches.app.models import models
@@ -637,43 +637,34 @@ def update_resource_instance_data_based_on_graph_diff(
     user = User.objects.get(id=user_id)
 
     try:
-        # delete extra tiles on nodegroup cardinality change
-        initial_nodegroup_ids_to_cardinality = {}
-        for initial_nodegroup in initial_graph["nodegroups"]:
-            initial_nodegroup_ids_to_cardinality[initial_nodegroup["nodegroupid"]] = (
-                initial_nodegroup["cardinality"]
-            )
+        updated_nodegroup_ids = {
+            nodegroup["nodegroupid"] for nodegroup in updated_graph["nodegroups"]
+        }
 
-        nodegroups_with_extra_tiles = []
-        for updated_nodegroup in updated_graph["nodegroups"]:
-            if (
-                updated_nodegroup["cardinality"] == "1"
-                and initial_nodegroup_ids_to_cardinality.get(
-                    updated_nodegroup["nodegroupid"]
-                )
-                == "n"
-            ):
-                nodegroups_with_extra_tiles.append(updated_nodegroup["nodegroupid"])
+        # delete tiles whose nodegroups are no longer in the updated graph
+        orphaned_nodegroup_ids = {
+            nodegroup["nodegroupid"]
+            for nodegroup in initial_graph["nodegroups"]
+            if nodegroup["nodegroupid"] not in updated_nodegroup_ids
+        }
+        models.TileModel.objects.filter(
+            nodegroup_id__in=orphaned_nodegroup_ids,
+            resourceinstance__graph_publication_id=initial_graph["publication_id"],
+        ).delete()
 
-        for tile in models.TileModel.objects.exclude(sortorder=0).filter(
-            nodegroup_id__in=nodegroups_with_extra_tiles
-        ):
-            tile.delete()
+        # delete tiles whose parent tile's nodegroup_id does not match the expected parent nodegroup_id
+        models.TileModel.objects.filter(
+            parenttile__isnull=False,
+            resourceinstance__graph_publication_id=initial_graph["publication_id"],
+        ).filter(
+            ~Q(parenttile__nodegroup_id=F("nodegroup__parentnodegroup_id"))
+        ).delete()
 
         # add/remove nodes and change default values
         resource_instances = models.ResourceInstance.objects.filter(
             graph_publication_id=initial_graph["publication_id"]
         )
         resource_instance_count = resource_instances.count()
-
-        updated_nodegroup_ids_to_node_ids = {}
-        for updated_node in updated_graph["nodes"]:
-            if not updated_nodegroup_ids_to_node_ids.get(updated_node["nodegroup_id"]):
-                updated_nodegroup_ids_to_node_ids[updated_node["nodegroup_id"]] = []
-
-            updated_nodegroup_ids_to_node_ids[updated_node["nodegroup_id"]].append(
-                updated_node["nodeid"]
-            )
 
         initial_node_ids_to_default_values = {}
         for initial_widget in initial_graph["cards_x_nodes_x_widgets"]:
@@ -690,7 +681,7 @@ def update_resource_instance_data_based_on_graph_diff(
         for tile in models.TileModel.objects.filter(
             resourceinstance__in=resource_instances
         ):
-            updated_node_ids = updated_nodegroup_ids_to_node_ids[str(tile.nodegroup_id)]
+            updated_node_ids = [node["nodeid"] for node in updated_graph["nodes"]]
 
             # delete nodes not in updated graph
             for node_id in list(tile.data.keys()):
@@ -700,9 +691,12 @@ def update_resource_instance_data_based_on_graph_diff(
             # add nodes that only exist in updated graph
             # or update nodes default value if changed
             for node_id in updated_node_ids:
-                if node_id not in tile.data.keys() or tile.data[
-                    node_id
-                ] == initial_node_ids_to_default_values.get(node_id):
+                initial_default_value = initial_node_ids_to_default_values.get(node_id)
+
+                if (
+                    node_id not in tile.data.keys()
+                    or tile.data[node_id] == initial_default_value
+                ):
                     tile.data[node_id] = updated_node_ids_to_default_values.get(node_id)
 
             tile.save()
