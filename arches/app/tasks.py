@@ -678,13 +678,13 @@ def update_resource_instance_data_based_on_graph_diff(
         initial_node_ids_to_default_values = {}
         for initial_widget in initial_graph["cards_x_nodes_x_widgets"]:
             initial_node_ids_to_default_values[initial_widget["node_id"]] = (
-                initial_widget["config"]["defaultValue"]
+                initial_widget.get("config", {}).get("defaultValue")
             )
 
         updated_node_ids_to_default_values = {}
         for updated_widget in updated_graph["cards_x_nodes_x_widgets"]:
             updated_node_ids_to_default_values[updated_widget["node_id"]] = (
-                updated_widget["config"]["defaultValue"]
+                updated_widget.get("config", {}).get("defaultValue")
             )
 
         for tile in models.TileModel.objects.filter(
