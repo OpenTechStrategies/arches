@@ -17,6 +17,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import uuid
+from unittest import mock
 
 from django.contrib.auth.models import User
 from guardian.models import GroupObjectPermission, UserObjectPermission
@@ -25,6 +26,7 @@ from arches.app.const import IntegrityCheck
 from arches.app.models import models
 from arches.app.models.graph import Graph, GraphValidationError
 from arches.app.utils.betterJSONSerializer import JSONSerializer, JSONDeserializer
+from arches.app.models.fields.i18n import I18n_JSONField
 from tests.base_test import ArchesTestCase
 
 # these tests can be run from the command line via
@@ -1409,6 +1411,17 @@ class GraphTests(ArchesTestCase):
             self.node_node_type_graph.validate()
         self.assertEqual(cm.exception.code, IntegrityCheck.TOO_MANY_WIDGETS.value)
 
+    def test_graph_validation_of_slug_changes(self):
+        """
+        Test that changing the slug of a graph raises a validation error for current graph publication.
+        """
+        graph = self.test_graph
+        with self.assertRaises(GraphValidationError) as raised:
+            graph.slug = "new-graph-slug"
+            graph.save()
+        exception = raised.exception
+        self.assertEqual(exception.code, 1018)
+
     def test_add_resource_instance_lifecycle(self):
         resource_instance_lifecycle = {
             "id": "f7a0fd46-4c71-49cb-ae1e-778c96763440",
@@ -1964,6 +1977,85 @@ class DraftGraphTests(ArchesTestCase):
 
         self.assertFalse(source_graph.has_unpublished_changes)
         self.assertEqual(source_graph.name, "TEST RESOURCE")
+
+    @mock.patch("arches.app.search.search.SearchEngine.create_mapping")
+    def test_saving_draft_graph_does_not_create_es_mapping(self, mocked_create_mapping):
+        source_graph = Graph.objects.create_graph(
+            name="TEST RESOURCE",
+            is_resource=True,
+        )
+        result = source_graph.append_node()
+        result["node"].datatype = "string"
+        source_graph.save()
+        mocked_create_mapping.assert_called_once()
+
+        draft_graph = source_graph.create_draft_graph()
+        draft_graph.save()
+
+        mocked_create_mapping.assert_called_once()
+
+    def test_node_configs_updated(self):
+        """
+        test to ensure node configs are updated when a draft graph is created
+
+        """
+        models.GraphModel.objects.create(
+            **{
+                "name": "Test Graph",
+                "graphid": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "isresource": True,
+                "slug": "test-graph",
+            }
+        )
+
+        models.NodeGroup.objects.create(pk="88677159-dccf-4629-9210-f6a2a7463552")
+
+        models.Node.objects.create(
+            **{
+                "name": "Top Node",
+                "graph_id": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "datatype": "semantic",
+                "istopnode": True,
+                "nodeid": "c1257d42-9275-40df-835e-5b99eee818fa",
+            }
+        )
+
+        models.Node.objects.create(
+            **{
+                "name": "Semantic Node",
+                "graph_id": "49a7eea8-2e2b-48e3-8b6e-650f25ec2954",
+                "datatype": "semantic",
+                "istopnode": False,
+                "config": {
+                    "i18n_properties": ["placeholder"],
+                    "placeholder": {
+                        "en": "Test Node",
+                        "es": "Nodo de prueba",
+                    },
+                    "nodeid": "c1257d42-9275-40df-835e-5b99eee818fa",
+                },
+                "nodeid": "88677159-dccf-4629-9210-f6a2a7463552",
+                "nodegroup_id": "88677159-dccf-4629-9210-f6a2a7463552",
+            }
+        )
+
+        graph = Graph.objects.get(pk="49a7eea8-2e2b-48e3-8b6e-650f25ec2954")
+        graph.create_draft_graph()
+
+        draft_graph = Graph.objects.get(slug="test-graph", source_identifier=graph.pk)
+        original_semantic_node = graph.node_set.get(name="Semantic Node")
+        draft_node = draft_graph.node_set.get(name="Semantic Node")
+        draft_top_node = draft_graph.node_set.get(name="Top Node")
+
+        # config for node ids should be different between draft and original
+        self.assertNotEqual(
+            original_semantic_node.config["nodeid"], draft_node.config["nodeid"]
+        )
+        # node configs should be updated per the new node mapping
+        self.assertEqual(draft_node.config["nodeid"], str(draft_top_node.nodeid))
+
+        # ensure we don't mangle the i18n_json field when mutating
+        self.assertEqual(draft_node.config["placeholder"]["es"], "Nodo de prueba")
 
     def test_update_empty_graph_from_draft_graph(self):
         source_graph = Graph.objects.create_graph(

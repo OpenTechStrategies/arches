@@ -18,6 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import json
+import uuid
 from http import HTTPStatus
 
 from tests import test_settings
@@ -158,7 +159,6 @@ class GraphManagerViewTests(ArchesTestCase):
     def create_test_graph(cls):
         test_graph = Graph.objects.create_graph()
         test_graph.name = "TEST GRAPH"
-        test_graph.slug = "test_graph"
         test_graph.subtitle = "ARCHES TEST GRAPH"
         test_graph.author = "Arches"
         test_graph.description = "ARCHES TEST GRAPH"
@@ -496,3 +496,18 @@ class GraphManagerViewTests(ArchesTestCase):
         self.assertEqual(imported_json[0], [])
         self.assertEqual(imported_json[1]["graphs_saved"], 1)
         self.assertEqual(imported_json[1]["name"], "Cardinality Test Model")
+
+    def test_save_new_card(self):
+        self.client.login(username="admin", password="admin")
+        new_card_id = str(uuid.uuid4())
+        response = self.client.post(
+            reverse("card", kwargs={"cardid": new_card_id}),
+            data={
+                "cardid": new_card_id,
+                "graph_id": str(self.test_graph.pk),
+                "nodegroup_id": str(self.test_graph.root.nodegroup_id),
+                "name": "My Card",
+            },
+            content_type="application/json",
+        )
+        self.assertContains(response, "My Card", status_code=HTTPStatus.OK)

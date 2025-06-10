@@ -39,6 +39,8 @@ from pyld.jsonld import compact, JsonLdError
 from django.utils import translation
 from guardian.models import GroupObjectPermission, UserObjectPermission
 
+from arches.app.models.fields.i18n import I18n_JSON
+
 logger = logging.getLogger(__name__)
 
 
@@ -481,14 +483,13 @@ class Graph(models.GraphModel):
 
     def update_es_node_mapping(self, node, datatype_factory, se):
         if self.isresource:
-            already_saved = models.Node.objects.filter(pk=node.nodeid).exists()
             saved_node_datatype = None
-            if already_saved:
-                saved_node = models.Node.objects.get(pk=node.nodeid)
+            target_node_id = node.source_identifier_id or node.nodeid
+            if saved_node := models.Node.objects.filter(pk=target_node_id).first():
                 saved_node_datatype = saved_node.datatype
             if saved_node_datatype != node.datatype:
                 datatype = datatype_factory.get_instance(node.datatype)
-                datatype_mapping = datatype.get_es_mapping(node.nodeid)
+                datatype_mapping = datatype.get_es_mapping(target_node_id)
                 if (
                     datatype_mapping
                     and datatype_factory.datatypes[node.datatype].defaultwidget
@@ -924,7 +925,12 @@ class Graph(models.GraphModel):
         Replaces node, nodegroup, card, and formids in configuration json objects during
         graph cloning/copying
         """
-        str_forms_config = json.dumps(config)
+        if isinstance(config, I18n_JSON):
+            str_forms_config = JSONSerializer().serialize(
+                config.serialize(use_raw_i18n_json=True)
+            )
+        else:
+            str_forms_config = json.dumps(config)
         for map in maps:
             for k, v in map.items():
                 str_forms_config = str_forms_config.replace(str(k), str(v))
@@ -1106,6 +1112,11 @@ class Graph(models.GraphModel):
                         sorted_widget_ids.append(str(widget_id))
 
                 copied_card.config["sortedWidgetIds"] = sorted_widget_ids
+
+        for node in copy_of_self.nodes.values():
+            node.config = self.replace_config_ids(
+                node.config, [node_map, nodegroup_map]
+            )
 
         return {
             "copy": copy_of_self,
@@ -2155,6 +2166,21 @@ class Graph(models.GraphModel):
                         999,
                     )
 
+        # validates that a graph slug has not changed on a published graph
+        published_graph = self.get_published_graph()
+        if (
+            self.publication_id
+            and not self.source_identifier_id
+            and published_graph is not None
+            and self.slug != published_graph.serialized_graph["slug"]
+        ):
+            raise GraphValidationError(
+                _(
+                    "You cannot change the slug of a published graph. Please create a new publication to edit graph slug."
+                ),
+                1018,
+            )
+
         def validate_fieldname(fieldname, fieldnames):
             if node.fieldname == "":
                 raise GraphValidationError(_("Field name must not be blank."), 1008)
@@ -2485,6 +2511,10 @@ class Graph(models.GraphModel):
             if serialized_node["source_identifier_id"]:
                 serialized_node["nodeid"] = serialized_node["source_identifier_id"]
                 serialized_node["source_identifier_id"] = None
+
+            serialized_node["config"] = self.replace_config_ids(
+                serialized_node["config"], [node_id_to_node_source_identifier_id]
+            )
 
             updated_nodegroup_id = node_id_to_node_source_identifier_id.get(
                 serialized_node["nodegroup_id"]

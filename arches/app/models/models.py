@@ -78,6 +78,7 @@ class CardModel(SaveSupportsBlindOverwriteMixin, models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
+        related_name="draft",
     )
 
     def __init__(self, *args, **kwargs):
@@ -159,6 +160,7 @@ class CardXNodeXWidget(SaveSupportsBlindOverwriteMixin, models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
+        related_name="draft",
     )
 
     def save(self, **kwargs):
@@ -290,6 +292,7 @@ class Edge(SaveSupportsBlindOverwriteMixin, models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
+        related_name="draft",
     )
 
     def __init__(self, *args, **kwargs):
@@ -511,6 +514,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
         null=True,
         on_delete=models.CASCADE,
         to="models.graphmodel",
+        related_name="draft",
     )
     has_unpublished_changes = models.BooleanField(default=False)
     resource_instance_lifecycle = models.ForeignKey(
@@ -880,7 +884,11 @@ class Node(SaveSupportsBlindOverwriteMixin, models.Model):
         on_delete=models.CASCADE,
     )
     graph = models.ForeignKey(
-        GraphModel, db_column="graphid", blank=True, null=True, on_delete=models.CASCADE
+        GraphModel,
+        db_column="graphid",
+        blank=True,
+        null=False,
+        on_delete=models.CASCADE,
     )
     config = I18n_JSONField(blank=True, null=True, db_column="config")
     issearchable = models.BooleanField(default=True)
@@ -897,6 +905,7 @@ class Node(SaveSupportsBlindOverwriteMixin, models.Model):
         blank=True,
         null=True,
         on_delete=models.CASCADE,
+        related_name="draft",
     )
     sourcebranchpublication = models.ForeignKey(
         GraphXPublishedGraph,
@@ -2325,7 +2334,11 @@ class LoadEvent(models.Model):
 
 class LoadStaging(models.Model):
     nodegroup = models.ForeignKey(
-        NodeGroup, db_column="nodegroupid", on_delete=models.CASCADE
+        NodeGroup,
+        blank=True,
+        null=True,
+        db_column="nodegroupid",
+        on_delete=models.CASCADE,
     )
     load_event = models.ForeignKey(
         LoadEvent, db_column="loadid", on_delete=models.CASCADE
