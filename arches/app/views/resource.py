@@ -36,6 +36,7 @@ from django.utils import translation
 
 from arches.app.models import models
 from arches.app.models.card import Card
+from arches.app.models.graph import Graph
 from arches.app.models.tile import Tile
 from arches.app.models.resource import Resource
 from arches.app.models.system_settings import settings
@@ -199,6 +200,19 @@ class ResourceEditorView(MapBaseManagerView):
                 "user_can_edit_instance_permissions"
             ]
 
+        serialized_graph = None
+        if graph.publication:
+            try:
+                published_graph = graph.get_published_graph()
+            except models.PublishedGraph.DoesNotExist:
+                LanguageSynchronizer.synchronize_settings_with_db()
+                published_graph = graph.get_published_graph()
+
+            serialized_graph = published_graph.serialized_graph
+
+        # TODO: Remove this when graph changes automatically sync to published graphs
+        graph = Graph(serialized_graph)
+
         ontologyclass = None
         nodegroups = []
         editable_nodegroups = []
@@ -280,16 +294,6 @@ class ResourceEditorView(MapBaseManagerView):
             tiles = provisionaltiles
             for tile in tiles:
                 prepare_tiledata(tile, nodes)
-
-        serialized_graph = None
-        if graph.publication:
-            try:
-                published_graph = graph.get_published_graph()
-            except models.PublishedGraph.DoesNotExist:
-                LanguageSynchronizer.synchronize_settings_with_db()
-                published_graph = graph.get_published_graph()
-
-            serialized_graph = published_graph.serialized_graph
 
         if serialized_graph:
             serialized_cards = serialized_graph["cards"]
@@ -397,9 +401,8 @@ class ResourceEditorView(MapBaseManagerView):
                 "templates": ["resource-editor-help"],
             }
 
-        if graph.has_unpublished_changes or (
-            resource_instance
-            and resource_instance.graph_publication_id != graph.publication_id
+        if resource_instance and str(resource_instance.graph_publication_id) != str(
+            graph.publication_id
         ):
             return redirect("resource_report", resourceid=resourceid)
         else:

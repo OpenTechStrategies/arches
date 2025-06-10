@@ -511,8 +511,6 @@ class Graph(models.GraphModel):
         with transaction.atomic():
             super(Graph, self).save()
 
-            has_unpublished_changes = self.has_unpublished_changes
-
             for nodegroup in self.get_nodegroups():
                 nodegroup.save()
 
@@ -638,10 +636,7 @@ class Graph(models.GraphModel):
                 nodegroup.delete()
             self._nodegroups_to_delete = []
 
-            # becuase of signals listeners on related graph entities,
-            # `has_unpublished_changes` must be updated manually after
-            # all related entities have updated.
-            self.has_unpublished_changes = has_unpublished_changes
+            self.has_unpublished_changes = True
             super().save()
 
         return self
@@ -658,8 +653,7 @@ class Graph(models.GraphModel):
         """
         with transaction.atomic():
             try:
-                draft_graph = Graph.objects.get(source_identifier_id=self.graphid)
-                draft_graph.delete()
+                self.delete_draft_graph()
             except Graph.DoesNotExist:
                 pass  # no draft_graph to delete
 
@@ -2030,7 +2024,7 @@ class Graph(models.GraphModel):
                     nodeobj = JSONSerializer().serializeToPython(
                         node, use_raw_i18n_json=use_raw_i18n_json
                     )
-                    nodeobj["parentproperty"] = parentproperties[node.nodeid]
+                    nodeobj["parentproperty"] = parentproperties.get(node.nodeid)
                     nodes.append(nodeobj)
 
                 ret["nodes"] = sorted(
@@ -2165,6 +2159,15 @@ class Graph(models.GraphModel):
                         ),
                         999,
                     )
+
+        if self.get_draft_graph():
+            raise GraphValidationError(
+                _(
+                    "You cannot save a graph that has an active draft. \
+                        Please publish or delete the draft before saving this graph."
+                ),
+                1019,
+            )
 
         # validates that a graph slug has not changed on a published graph
         published_graph = self.get_published_graph()
@@ -2351,7 +2354,7 @@ class Graph(models.GraphModel):
         Changes information in in GraphPublication models without creating
         a new entry in graphs_x_published_graphs table
         """
-        if self.source_identifier_id:  # don't update future graphs
+        if self.source_identifier_id:  # don't update draft_graph
             raise Exception(
                 "Cannot update graphs with a source_identifier. Please apply updates to the source graph."
             )
@@ -2411,18 +2414,24 @@ class Graph(models.GraphModel):
         """
         Creates an additional entry in the Graphs table that represents an draft version of the current graph
         """
+        if self.has_unpublished_changes:
+            raise GraphPublicationError(
+                message=_(
+                    "This graph has unpublished changes. Please either apply or discard them before creating a draft graph."
+                )
+            )
+
         with transaction.atomic():
             LanguageSynchronizer.synchronize_settings_with_db(
                 update_published_graphs=False
             )
 
-            try:
-                previous_draft_graph = Graph.objects.get(
-                    source_identifier_id=self.graphid
+            if self.get_draft_graph():
+                raise GraphPublicationError(
+                    message=_(
+                        "A draft graph already exists for this graph. Please update the existing draft graph instead."
+                    )
                 )
-                previous_draft_graph.delete()
-            except Graph.DoesNotExist:
-                pass
 
             graph_copy = self.copy(set_source=True)
 
@@ -2432,25 +2441,51 @@ class Graph(models.GraphModel):
             # draft_graphs do not interact with `Resource` objects
             draft_graph.resource_instance_lifecycle = None
 
-            # draft_graphs are never published, so on creation
-            # `has_unpublished_changes` should never be true, regardless
-            # of the state of the source_graph.
-            draft_graph.has_unpublished_changes = False
-
             draft_graph.root.set_relatable_resources(
                 [node.pk for node in self.root.get_relatable_resources()]
             )
 
             draft_graph.save(validate=False)
 
+            models.GraphModel.objects.filter(pk=draft_graph.pk).update(
+                has_unpublished_changes=False
+            )
+
+            # draft_graphs are never published, so on creation
+            # `has_unpublished_changes` should never be true, regardless
+            # of the state of the source_graph.
+            draft_graph.has_unpublished_changes = False
+
             return draft_graph
 
-    def update_from_draft_graph(self, draft_graph):
+    def get_draft_graph(self):
+        """
+        Returns the draft_graph associated with this graph.
+        """
+        return Graph.objects.filter(source_identifier_id=self.graphid).first()
+
+    def delete_draft_graph(self):
+        """
+        Deletes the draft_graph and all related entities.
+        """
+        draft_graph = self.get_draft_graph()
+
+        if not draft_graph:
+            raise Graph.DoesNotExist()
+
+        draft_graph.delete()
+
+    def promote_draft_graph_to_active_graph(self):
         """
         Updates the graph with any changes made to the draft_graph,
         deletes the draft_graph and related entities, then creates
         a new draft_graph from the updated graph.
         """
+        draft_graph = self.get_draft_graph()
+
+        if not draft_graph:
+            raise Graph.DoesNotExist()
+
         serialized_source_graph = JSONDeserializer().deserialize(
             JSONSerializer().serialize(self)
         )
@@ -2605,14 +2640,9 @@ class Graph(models.GraphModel):
 
     def restore_state_from_serialized_graph(self, serialized_graph):
         """
-        Restores a Graph's state from a serialized graph, and creates a
-        new draft_graph
+        Restores a Graph's state from a serialized graph
         """
         with transaction.atomic():
-            draft_graph = Graph.objects.filter(source_identifier_id=self.pk).first()
-            if draft_graph:
-                draft_graph.delete()
-
             self.delete_associated_entities()
 
             for serialized_nodegroup in serialized_graph["nodegroups"]:
@@ -2700,7 +2730,9 @@ class Graph(models.GraphModel):
             updated_graph.has_unpublished_changes = False
             updated_graph.save(validate=False)
 
-            updated_graph.create_draft_graph()
+            models.GraphModel.objects.filter(pk=updated_graph.pk).update(
+                has_unpublished_changes=False,
+            )
 
             return Graph.objects.get(pk=updated_graph.pk)
 
@@ -2715,6 +2747,10 @@ class Graph(models.GraphModel):
         self.refresh_from_database()
 
         with transaction.atomic():
+            LanguageSynchronizer.synchronize_settings_with_db(
+                update_published_graphs=False
+            )
+
             publication = models.GraphXPublishedGraph.objects.create(
                 graph=self, notes=notes, user=user
             )

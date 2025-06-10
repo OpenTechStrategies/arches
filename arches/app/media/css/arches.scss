@@ -3275,6 +3275,21 @@ ul.nav.nav-tabs.nav-justified {
     min-height: 50px;
     display: flex;
     align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.settings-panel-heading.draft-graph,
+.settings-panel-heading.draft-graph * {
+    background: firebrick;
+    color: #ffeef0;
+}
+
+.settings-panel-draft-label {
+    padding-inline-end: 24px;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 .settings-panel-body {
@@ -3402,6 +3417,9 @@ ul.nav.nav-tabs.nav-justified {
 .graph-active-switch-container {
     display: flex;
     align-items: center;
+    border-inline-start: 1px solid #ddd;
+    padding-inline-start: 15px;
+    margin-inline-start: 15px;
 }
 .graph-active-switch-container .toggle-container {
     padding: 0 !important;
@@ -3617,15 +3635,19 @@ div.dropdown-menu.open {
 }
 
 .modal-content-container {
-    cursor: default;
-    background-color: #fafafa;
-    margin: 15% auto;
-    max-width: 600px;
-    padding: 18px;
-    z-index: 9999;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 70%;
+  position: fixed;
+  top: 15%;                   
+  left: 50%;
+  transform: translateX(-50%);
+  max-height: 80vh;          
+  padding: 1.5rem 2rem;
+  background-color: #ffffff;  
+  border-radius: 0.5rem;  
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
 .loading-mask {
@@ -5241,6 +5263,7 @@ div.card-grid-item.selected {
     float: right;
     list-style-type: none;
     margin-bottom: 0;
+    padding-inline-start: 0;
 }
 
 .ep-toolbar .top-left-nav {
@@ -5619,6 +5642,8 @@ div.card-grid-item.selected {
     height: 50px;
     overflow: hidden;
     display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .ep-graph-title {
@@ -6902,7 +6927,6 @@ div .switch label:hover,
 .ep-form-alert-text {
     font-size: 1.2rem;
     font-weight: 400;
-    overflow: hidden;
 }
 
 .ep-form-alert-default-dismiss {
@@ -10338,14 +10362,22 @@ a.filter-tools:hover {
     border: 1px solid #f4f4f4;
 }
 
-.graph-designer-tab-container .nav-tabs>li:not(.active)>a {
+.graph-designer-tab-container .nav-tabs > li:not(.active) > a {
     color: #777;
 }
 
-.graph-designer-tab-container .nav-tabs>li:not(.active)>a:hover {
+.graph-designer-tab-container .nav-tabs > li:not(.active) > a:hover {
     cursor: pointer;
     color: #666;
     background: #ecf0f5;
+}
+
+.graph-designer-tab-container .nav-tabs > li.disabled-graph-designer-tab > a,
+.graph-designer-tab-container .nav-tabs > li.disabled-graph-designer-tab > a:hover {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: #777;
+    background: none;
 }
 
 .viewstate-btn {

@@ -28,8 +28,12 @@ class ValidateTests(ArchesTestCase):
         cls.graph = Graph.objects.create_graph(
             name="Datatype Lookups", is_resource=True
         )
-        cls.graph.slug = "datatype_lookups"
-        cls.graph.save()
+        draft_graph = cls.graph.get_draft_graph()
+        draft_graph.slug = "datatype_lookups"
+        draft_graph.save()
+
+        cls.graph.promote_draft_graph_to_active_graph()
+
         cls.top_node = Node.objects.create(
             graph=cls.graph, istopnode=True, datatype="semantic"
         )

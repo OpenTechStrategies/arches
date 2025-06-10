@@ -532,10 +532,7 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
             return _(
                 "This Model is not active, and is not available for instance creation."
             )
-        if self.has_unpublished_changes:
-            return _(
-                "This Model has unpublished changes, and is not available for instance creation."
-            )
+
         return False
 
     def is_editable(self):

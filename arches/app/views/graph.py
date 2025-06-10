@@ -38,8 +38,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
 from django.core.exceptions import PermissionDenied
 from arches.app.utils.decorators import group_required
+from arches.app.utils import task_management
+
 from arches.app.utils.betterJSONSerializer import JSONSerializer, JSONDeserializer
 from arches.app.utils.response import JSONResponse, JSONErrorResponse
+from arches.app.utils.update_resource_instance_data_based_on_graph_diff import (
+    update_resource_instance_data_based_on_graph_diff,
+)
 from arches.app.models import models
 from arches.app.models.graph import Graph, GraphValidationError
 from arches.app.models.card import Card
@@ -241,27 +246,15 @@ class GraphDesignerView(GraphBaseView):
                 raise PermissionDenied
 
         self.source_graph = Graph.objects.get(pk=graphid)
-        if self.source_graph.source_identifier_id:
-            url = reverse(
-                "graph_designer",
-                kwargs={"graphid": self.source_graph.source_identifier_id},
-            )
+        draft_graph = self.source_graph.get_draft_graph()
 
-            query_dict = request.GET.copy()
-            query_dict["has_been_redirected_from_draft_graph"] = True
-            query_string = query_dict.urlencode()
-
-            return redirect("{}?{}".format(url, query_string))
-
-        self.draft_graph = Graph.objects.filter(source_identifier_id=graphid).first()
-
-        if bool(request.GET.get("should_show_source_graph", "false").lower() == "true"):
-            self.graph = self.source_graph
+        if draft_graph:
+            self.graph = draft_graph
         else:
-            self.graph = self.draft_graph
+            self.graph = self.source_graph
 
         serialized_graph = JSONDeserializer().deserialize(
-            JSONSerializer().serialize(self.graph)
+            JSONSerializer().serialize(self.graph, force_recalculation=True)
         )
         primary_descriptor_functions = models.FunctionXGraph.objects.filter(
             graph=self.graph
@@ -357,29 +350,9 @@ class GraphDesignerView(GraphBaseView):
             ).count()
         )
 
-        context["source_graph"] = JSONSerializer().serialize(
-            self.source_graph, force_recalculation=True
-        )
         context["source_graph_id"] = self.source_graph.pk
 
-        context["source_graph_publication"] = JSONSerializer().serialize(
-            self.source_graph.publication
-        )
-        context[
-            "source_graph_publication_most_recent_edit"
-        ] = JSONSerializer().serialize(
-            self.source_graph.publication.most_recent_edit
-            if self.source_graph.publication
-            else {}
-        )
-
-        context["draft_graph_id"] = self.draft_graph.pk if self.draft_graph else None
-        context["has_been_redirected_from_draft_graph"] = bool(
-            request.GET.get("has_been_redirected_from_draft_graph", "false").lower()
-            == "true"
-        )
         context["nav"]["menu"] = True
-
         context["nav"]["help"] = {"title": help_title, "templates": ["graph-tab-help"]}
 
         return render(request, "views/graph-designer.htm", context)
@@ -555,10 +528,7 @@ class GraphDataView(View):
                         str(clone_data["copy"].slug) or "exported_branch", False
                     )
                     clone_data["copy"].publication = None
-
                     clone_data["copy"].save()
-
-                    clone_data["copy"].create_draft_graph()
                     clone_data["copy"].publish()
 
                     ret = {"success": True, "graphid": clone_data["copy"].pk}
@@ -577,7 +547,6 @@ class GraphDataView(View):
 
                     ret.save()
                     ret.publish()
-                    ret.create_draft_graph()
 
                     ret.copy_functions(
                         graph, [clone_data["nodes"], clone_data["nodegroups"]]
@@ -697,27 +666,53 @@ class GraphPublicationView(View):
 
         if graph.source_identifier:
             source_graph = Graph.objects.get(pk=graph.source_identifier_id)
-            draft_graph = graph
         else:
             source_graph = graph
-            draft_graph = None
 
         if self.action == "publish":
             try:
-                data = JSONDeserializer().deserialize(request.body)
+                with transaction.atomic():
+                    data = JSONDeserializer().deserialize(request.body)
+                    notes = data.get("notes")
+                    should_update_resource_instance_data = data.get(
+                        "shouldUpdateResourceInstanceData"
+                    )
 
-                updated_graph = source_graph.update_from_draft_graph(
-                    draft_graph=draft_graph
-                )
-                updated_graph.publish(notes=data.get("notes"), user=request.user)
+                    if should_update_resource_instance_data:
+                        published_source_graph = source_graph.get_published_graph(
+                            language=settings.LANGUAGE_CODE
+                        )
 
-                return JSONResponse(
-                    {
-                        "title": _("Success!"),
-                        "message": _(
-                            "The graph has been updated. Please click the OK button to reload the page."
-                        ),
-                    }
+                    source_graph.promote_draft_graph_to_active_graph()
+                    source_graph.publish(notes=notes, user=request.user)
+
+                    if should_update_resource_instance_data:
+                        updated_published_source_graph = (
+                            source_graph.get_published_graph(
+                                language=settings.LANGUAGE_CODE
+                            )
+                        )
+
+                        update_resource_instance_data_based_on_graph_diff(
+                            initial_graph=published_source_graph.serialized_graph,
+                            updated_graph=updated_published_source_graph.serialized_graph,
+                            user=request.user,
+                        )
+
+                    return JSONResponse(
+                        {
+                            "title": _("Success!"),
+                            "message": _(
+                                "The graph has been successfully published. If you selected to update resource instance data, it will be updated based on the changes made."
+                            ),
+                        }
+                    )
+            except task_management.CeleryNotAvailableError:
+                return JSONErrorResponse(
+                    _("Celery Not Available"),
+                    _(
+                        "Could not establish a connection with celery. Please ensure celery is running before attempting to update business data."
+                    ),
                 )
             except Exception as e:
                 logger.exception(e)
@@ -728,7 +723,13 @@ class GraphPublicationView(View):
 
         elif self.action == "revert":
             try:
+                try:
+                    source_graph.delete_draft_graph()
+                except Graph.DoesNotExist:
+                    pass  # no draft_graph to delete
+
                 source_graph.create_draft_graph()
+
                 return JSONResponse(
                     {
                         "title": _("Success!"),
@@ -740,10 +741,8 @@ class GraphPublicationView(View):
             except Exception as e:
                 logger.exception(e)
                 return JSONErrorResponse(
-                    str(
-                        _("Unable to process publication"),
-                        _("Please contact your administrator if issue persists"),
-                    )
+                    _("Unable to revert changes"),
+                    _("Please contact your administrator if issue persists"),
                 )
 
         elif self.action == "update_published_graphs":
@@ -752,7 +751,6 @@ class GraphPublicationView(View):
                 source_graph.update_published_graphs(
                     notes=data.get("notes"), user=request.user
                 )
-                source_graph.create_draft_graph()
 
                 return JSONResponse(
                     {
@@ -763,7 +761,11 @@ class GraphPublicationView(View):
                     }
                 )
             except Exception as e:
-                return JSONErrorResponse(str(e))
+                logger.exception(e)
+                return JSONErrorResponse(
+                    _("Unable to update published graphs"),
+                    _("Please contact your administrator if issue persists"),
+                )
 
         elif self.action == "restore_state_from_serialized_graph":
             try:
@@ -775,6 +777,11 @@ class GraphPublicationView(View):
 
                 source_graph.restore_state_from_serialized_graph(serialized_graph)
 
+                try:
+                    source_graph.delete_draft_graph()
+                except Graph.DoesNotExist:
+                    pass  # no draft_graph to delete
+
                 return JSONResponse(
                     {
                         "title": _("Success!"),
@@ -782,7 +789,11 @@ class GraphPublicationView(View):
                     }
                 )
             except Exception as e:
-                return JSONErrorResponse(str(e))
+                logger.exception(e)
+                return JSONErrorResponse(
+                    _("Unable to process publication"),
+                    _("Please contact your administrator if issue persists"),
+                )
 
 
 @method_decorator(group_required("Graph Editor"), name="dispatch")

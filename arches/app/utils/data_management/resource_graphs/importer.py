@@ -193,11 +193,6 @@ def import_graph(graphs, overwrite_graphs=True, user=None):
                         pk=graph.graphid, source_identifier_id__isnull=True
                     )  # retrieve graph using the ORM to ensure strings are I18n_Strings
 
-                    try:
-                        Graph.objects.get(source_identifier_id=graph.graphid)
-                    except Graph.DoesNotExist:
-                        graph.create_draft_graph()
-
                     if publication_data:
                         GraphXPublishedGraph.objects.update_or_create(
                             publicationid=publication_data["publicationid"],
