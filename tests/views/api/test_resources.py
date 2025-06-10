@@ -22,7 +22,6 @@ import uuid
 from http import HTTPStatus
 
 from tests.base_test import ArchesTestCase
-from tests.utils.permission_test_utils import add_users
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.test.client import RequestFactory
@@ -47,7 +46,7 @@ class ResourceAPITests(ArchesTestCase):
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
-        add_users()
+        cls.add_users()
 
         # add resource and tile not sourced from legacy_load_testing_package
         cls.non_legacy_resource = Resource.objects.create(
