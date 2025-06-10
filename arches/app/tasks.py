@@ -636,12 +636,16 @@ def update_resource_instance_data_based_on_graph_diff(
     logger = logging.getLogger(__name__)
     user = User.objects.get(id=user_id)
 
+    # TODO: update function name to be less specific
+    notify_completion(
+        _("Updating business data based on graph changes."),
+    )
+
     try:
+        # delete tiles whose nodegroups are no longer in the updated graph
         updated_nodegroup_ids = {
             nodegroup["nodegroupid"] for nodegroup in updated_graph["nodegroups"]
         }
-
-        # delete tiles whose nodegroups are no longer in the updated graph
         orphaned_nodegroup_ids = {
             nodegroup["nodegroupid"]
             for nodegroup in initial_graph["nodegroups"]
@@ -681,7 +685,11 @@ def update_resource_instance_data_based_on_graph_diff(
         for tile in models.TileModel.objects.filter(
             resourceinstance__in=resource_instances
         ):
-            updated_node_ids = [node["nodeid"] for node in updated_graph["nodes"]]
+            updated_node_ids = [
+                node["nodeid"]
+                for node in updated_graph["nodes"]
+                if node["nodegroup_id"] == str(tile.nodegroup_id)
+            ]
 
             # delete nodes not in updated graph
             for node_id in list(tile.data.keys()):
