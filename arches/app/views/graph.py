@@ -711,7 +711,7 @@ class GraphPublicationView(View):
                 return JSONErrorResponse(
                     _("Celery Not Available"),
                     _(
-                        "The process to update resource data was initiated, but the task management system is not available. Please contact your administrator."
+                        "Could not establish a connection with celery. Please ensure celery is running before attempting to update business data."
                     ),
                 )
             except Exception as e:
