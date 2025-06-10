@@ -45,6 +45,7 @@ class TileTests(ArchesTestCase):
         "rdf_export_document_model",
         "rdf_export_object_model",
         "Cardinality Test Model",
+        "All_Datatypes",
     ]
 
     @classmethod
@@ -54,6 +55,13 @@ class TileTests(ArchesTestCase):
             pk="40000000-0000-0000-0000-000000000000",
             legacyid="40000000-0000-0000-0000-000000000000",
             graph_id="2f7f8e40-adbc-11e6-ac7f-14109fd34195",
+            createdtime="1/1/2000",
+            resource_instance_lifecycle_state_id="4e2a6b8e-2489-4377-9c9f-29cfbd3e76c8",
+        )
+        ResourceInstance.objects.create(
+            pk="44000000-0000-0000-0000-000000000000",
+            legacyid="44000000-0000-0000-0000-000000000000",
+            graph_id="d71a8f56-987f-4fd1-87b5-538378740f15",
             createdtime="1/1/2000",
             resource_instance_lifecycle_state_id="4e2a6b8e-2489-4377-9c9f-29cfbd3e76c8",
         )
@@ -382,6 +390,39 @@ class TileTests(ArchesTestCase):
         obj.refresh_from_db()  # give test opportunity to fail on Django 4.2+
 
         self.assertEqual(obj.sortorder, 1)
+
+    def test_is_fully_provisional(self):
+        """
+        Tests that a tile is marked as fully provisional even if it has falsey values in its data.
+        """
+        json = {
+            "resourceinstance_id": "44000000-0000-0000-0000-000000000000",
+            "parenttile_id": "",
+            "nodegroup_id": "fa6614e4-c8c0-11ed-a172-0242ac130009",
+            "tileid": "",
+            "data": {
+                "fa6614e4-c8c0-11ed-a172-0242ac130009": False,
+                "088e7d2c-c8c1-11ed-a172-0242ac130009": None,
+            },
+        }
+
+        authoritative_tile = Tile(json)
+        authoritative_tile.save(index=False)
+
+        user = User.objects.create_user(
+            username="testuser", password="TestingTesting123!"
+        )
+        login = self.client.login(username="testuser", password="TestingTesting123!")
+        provisional_tile = Tile.objects.get(
+            resourceinstance_id=authoritative_tile.resourceinstance_id
+        )
+
+        provisional_tile.data["088e7d2c-c8c1-11ed-a172-0242ac130009"] = True
+
+        request = HttpRequest()
+        request.user = user
+        provisional_tile.save(index=False, request=request)
+        self.assertIs(provisional_tile.is_fully_provisional(), False)
 
     def test_tile_cardinality(self):
         """
@@ -788,3 +829,13 @@ class TileTests(ArchesTestCase):
 
         with self.assertRaisesMessage(TileValidationError, "Widget name"):
             tile.check_for_missing_nodes()
+
+    def test_save_blank_tile(self):
+        data_collecting_grouping_node_id = "72048cb3-adbc-11e6-9ccf-14109fd34195"
+        tile = Tile(
+            resourceinstance_id=UUID("40000000-0000-0000-0000-000000000000"),
+            nodegroup_id=UUID(data_collecting_grouping_node_id),
+        )
+        tile.save()
+
+        self.assertEqual(tile.data, {data_collecting_grouping_node_id: None})

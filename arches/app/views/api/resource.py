@@ -3,7 +3,6 @@ import logging
 import sys
 import traceback
 import uuid
-from collections import OrderedDict
 from http import HTTPStatus
 
 from django.core.cache import cache
@@ -845,8 +844,11 @@ class BulkDisambiguatedResourceInstance(APIBase):
         user = request.user
         perm = "read_nodegroup"
 
-        disambiguated_resource_instances = OrderedDict().fromkeys(resource_ids)
-        for resource in Resource.objects.filter(pk__in=resource_ids):
+        permitted_resource_ids = [
+            res_id for res_id in resource_ids if user_can_read_resource(user, res_id)
+        ]
+        disambiguated_resource_instances = dict.fromkeys(permitted_resource_ids)
+        for resource in Resource.objects.filter(pk__in=permitted_resource_ids):
             disambiguated_resource_instances[str(resource.pk)] = resource.to_json(
                 compact=compact,
                 version=version,
