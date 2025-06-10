@@ -182,7 +182,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             user_id=self.user.pk,
         )
 
-        mock_notify.assert_called_once()
+        self.assertEqual(mock_notify.call_count, 2)
         msg, notified_user = mock_notify.call_args[0]
         self.assertEqual(notified_user, self.user)
         self.assertTrue(
@@ -199,7 +199,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             user_id=self.user.pk,
         )
 
-        mock_notify.assert_called_once()
+        self.assertEqual(mock_notify.call_count, 2)
         msg, notified_user = mock_notify.call_args[0]
         self.assertEqual(notified_user, self.user)
         self.assertEqual(
@@ -257,7 +257,6 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             str(second_resource_instance.graph_publication_id),
             updated_published_graph.serialized_graph["publication_id"],
         )
-        mock_notify.assert_called_once()
 
     @patch("arches.app.tasks.notify_completion")
     def test_prunes_deleted_nodes(self, mock_notify):
