@@ -47,6 +47,6 @@ class UpdateResourceInstanceDataBasedOnGraphDiffTest(TestCase):
 
         self.assertEqual(
             str(context.exception),
-            "Could not establish a connection with celery. Please ensure celery is running before attempting to update business data.",
+            "Celery is not available. Please check your configuration.",
         )
         mock_check_celery.assert_called_once()
