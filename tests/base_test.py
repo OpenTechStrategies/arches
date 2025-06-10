@@ -45,8 +45,8 @@ OAUTH_CLIENT_SECRET = "7fos0s7qIhFqUmalDI1QiiYj0rAtEdVMY4hYQDQjOxltbRCBW3dIydOeM
         ap9Ke2aaAZaeMPejzafPSj96ID"
 CREATE_TOKEN_SQL = """
         INSERT INTO public.oauth2_provider_accesstoken(
-            token, expires, scope, application_id, user_id, created, updated)
-            VALUES ('{token}', '1-1-2068', 'read write', 44, {user_id}, '1-1-2018', '1-1-2018');
+            token, expires, scope, application_id, user_id, created, updated, token_checksum)
+            VALUES ('{token}', '1-1-2068', 'read write', 44, {user_id}, '1-1-2018', '1-1-2018', '{token_checksum}');
     """
 DELETE_TOKEN_SQL = (
     "DELETE FROM public.oauth2_provider_accesstoken WHERE application_id = 44;"
@@ -95,11 +95,11 @@ class ArchesTestCase(TestCase):
             INSERT INTO public.oauth2_provider_application(
                 id, client_id, redirect_uris, client_type, authorization_grant_type,
                 client_secret,
-                name, user_id, skip_authorization, created, updated, algorithm)
+                name, user_id, skip_authorization, created, updated, algorithm, post_logout_redirect_uris, hash_client_secret, allowed_origins)
             VALUES (
                 44, '{oauth_client_id}', 'http://localhost:8000/test', 'public', 'client-credentials',
                 '{oauth_client_secret}',
-                'TEST APP', {user_id}, false, '1-1-2000', '1-1-2000', '{jwt_algorithm}')
+                'TEST APP', {user_id}, false, '1-1-2000', '1-1-2000', '{jwt_algorithm}', '', true, '*')
             ON CONFLICT DO NOTHING;
         """
 
