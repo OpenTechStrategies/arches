@@ -698,8 +698,6 @@ class GraphPublicationView(View):
                                 user=request.user,
                             )
                         except Exception as e:
-                            transaction.set_rollback(True)
-
                             logger.exception(e)
                             return JSONErrorResponse(
                                 _("Unable to update resource instance data"),
