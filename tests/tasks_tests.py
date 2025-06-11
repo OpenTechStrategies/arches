@@ -333,8 +333,8 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             nodegroup_id=self.test_graph.get_nodegroups()[0].nodegroupid,
             data={
                 str(self.string_node_id): {
-                    "en": {"value": "test value", "direction": "ltr"}
-                },
+                    "en": {"value": "test value", "direction": "ltr"},
+                }
             },
             sortorder=0,
         )
@@ -343,7 +343,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             tile.data,
             {
                 str(self.string_node_id): {
-                    "en": {"value": "test value", "direction": "ltr"}
+                    "en": {"value": "test value", "direction": "ltr"},
                 }
             },
         )
@@ -353,7 +353,9 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
         new_node_id = "33333333-3333-3333-3333-333333333333"
         node_to_add = models.Node.objects.create(
             config={
-                "defaultValue": {"en": {"value": "Default Value", "direction": "ltr"}},
+                "defaultValue": {
+                    "en": {"value": "Default Value", "direction": "ltr"},
+                }
             },
             datatype="string",
             description="Added test node",
@@ -373,8 +375,8 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
         models.CardXNodeXWidget.objects.create(
             config={
                 "defaultValue": {
-                    "en": {"value": "Overridden Default Value", "direction": "ltr"}
-                },
+                    "en": {"value": "Overridden Default Value", "direction": "ltr"},
+                }
             },
             card=card,
             node_id=node_to_add.nodeid,
@@ -400,7 +402,9 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
 
         self.assertEqual(
             tile.data[str(self.string_node_id)],
-            {"en": {"value": "test value", "direction": "ltr"}},
+            {
+                "en": {"value": "test value", "direction": "ltr"},
+            },
         )
 
         widget_defaults = {
@@ -458,7 +462,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             tile.data,
             {
                 str(self.string_node_id): {
-                    "en": {"value": "Default Value", "direction": "ltr"}
+                    "en": {"value": "Default Value", "direction": "ltr"},
                 }
             },
         )
@@ -472,7 +476,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
         ).update(
             config={
                 "defaultValue": {
-                    "en": {"value": "Overridden Default Value", "direction": "ltr"}
+                    "en": {"value": "Overridden Default Value", "direction": "ltr"},
                 },
             }
         )
@@ -497,7 +501,9 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
 
         self.assertEqual(
             tile.data[str(self.string_node_id)],
-            {"en": {"value": "Overridden Default Value", "direction": "ltr"}},
+            {
+                "en": {"value": "Overridden Default Value", "direction": "ltr"},
+            },
         )
 
     @patch("arches.app.tasks.notify_completion")
@@ -517,8 +523,8 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             nodegroup_id=nodegroup_id,
             data={
                 str(self.string_node_id): {
-                    "en": {"value": "Default Value", "direction": "ltr"}
-                },
+                    "en": {"value": "Default Value", "direction": "ltr"},
+                }
             },
             sortorder=0,
         )
@@ -527,7 +533,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             tile.data,
             {
                 str(self.string_node_id): {
-                    "en": {"value": "Default Value", "direction": "ltr"}
+                    "en": {"value": "Default Value", "direction": "ltr"},
                 }
             },
         )
