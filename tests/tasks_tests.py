@@ -334,18 +334,14 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             data={
                 str(self.string_node_id): {
                     "en": {"value": "test value", "direction": "ltr"},
-                },
+                }
             },
             sortorder=0,
         )
 
-        self.assertEqual(
-            tile.data,
-            {
-                str(self.string_node_id): {
-                    "en": {"value": "test value", "direction": "ltr"}
-                }
-            },
+        self.assertDictEqual(
+            tile.data[str(self.string_node_id)],
+            {"en": {"value": "test value", "direction": "ltr"}},
         )
 
         draft_graph = self.test_graph.create_draft_graph()
@@ -355,7 +351,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             config={
                 "defaultValue": {
                     "en": {"value": "Default Value", "direction": "ltr"},
-                },
+                }
             },
             datatype="string",
             description="Added test node",
@@ -376,7 +372,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             config={
                 "defaultValue": {
                     "en": {"value": "Overridden Default Value", "direction": "ltr"},
-                },
+                }
             },
             card=card,
             node_id=node_to_add.nodeid,
@@ -400,7 +396,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
 
         tile.refresh_from_db()
 
-        self.assertEqual(
+        self.assertDictEqual(
             tile.data[str(self.string_node_id)],
             {"en": {"value": "test value", "direction": "ltr"}},
         )
@@ -411,8 +407,6 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
                 "cards_x_nodes_x_widgets"
             ]
         }
-
-        self.assertIn(new_node_id, tile.data)
 
         self.assertEqual(
             tile.data[new_node_id],
@@ -456,13 +450,9 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             sortorder=0,
         )
 
-        self.assertEqual(
-            tile.data,
-            {
-                str(self.string_node_id): {
-                    "en": {"value": "Default Value", "direction": "ltr"}
-                }
-            },
+        self.assertDictEqual(
+            tile.data[str(self.string_node_id)],
+            {"en": {"value": "Default Value", "direction": "ltr"}},
         )
 
         draft_graph = self.test_graph.create_draft_graph()
@@ -497,7 +487,7 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
 
         tile.refresh_from_db()
 
-        self.assertEqual(
+        self.assertDictEqual(
             tile.data[str(self.string_node_id)],
             {"en": {"value": "Overridden Default Value", "direction": "ltr"}},
         )
@@ -520,18 +510,14 @@ class UpdateResourceInstanceDataTaskTests(ArchesTestCase):
             data={
                 str(self.string_node_id): {
                     "en": {"value": "Default Value", "direction": "ltr"},
-                },
+                }
             },
             sortorder=0,
         )
 
-        self.assertEqual(
-            tile.data,
-            {
-                str(self.string_node_id): {
-                    "en": {"value": "Default Value", "direction": "ltr"}
-                }
-            },
+        self.assertDictEqual(
+            tile.data[str(self.string_node_id)],
+            {"en": {"value": "Default Value", "direction": "ltr"}},
         )
 
         draft_graph = self.test_graph.create_draft_graph()
