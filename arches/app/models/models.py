@@ -1765,14 +1765,24 @@ class TileModel(SaveSupportsBlindOverwriteMixin, models.Model):  # Tile
             val is not None for val in self.data.values()
         )
 
-    def save(self, **kwargs):
-        if self.sortorder is None or self.is_fully_provisional():
-            for node in Node.objects.filter(nodegroup_id=self.nodegroup_id).exclude(
-                datatype="semantic"
-            ):
-                if not str(node.pk) in self.data:
-                    self.data[str(node.pk)] = None
+    def set_missing_keys_to_none(self):
+        any_key_set = False
+        if not self.nodegroup_id:
+            return any_key_set
+        for node in self.nodegroup.node_set.all():
+            if node.datatype == "semantic":
+                continue
+            node_id_str = str(node.pk)
+            if node_id_str not in self.data:
+                self.data[node_id_str] = None
+                any_key_set = True
 
+        return any_key_set
+
+    def save(self, **kwargs):
+        if self.set_missing_keys_to_none():
+            add_to_update_fields(kwargs, "data")
+        if self.sortorder is None or self.is_fully_provisional():
             self.set_next_sort_order()
             add_to_update_fields(kwargs, "sortorder")
         if not self.tileid:

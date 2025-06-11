@@ -54,25 +54,22 @@ class TileTests(ArchesTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.add_users()
-        resources = []
-        resources.append(
+        resources = [
             ResourceInstance(
                 pk=CardinalityTestGraph.RESOURCE1.value,
                 legacyid=CardinalityTestGraph.RESOURCE1.value,
                 graph_id=CardinalityTestGraph.GRAPH_ID.value,
                 createdtime="1/1/2000",
                 resource_instance_lifecycle_state_id=DefaultLifecycleStates.PERPETUAL.value,
-            )
-        )
-        resources.append(
+            ),
             ResourceInstance(
                 pk=AllDatatypesTestGraph.RESOURCE1.value,
                 legacyid=AllDatatypesTestGraph.RESOURCE1.value,
                 graph_id=AllDatatypesTestGraph.GRAPH_ID.value,
                 createdtime="1/1/2000",
                 resource_instance_lifecycle_state_id=DefaultLifecycleStates.PERPETUAL.value,
-            )
-        )
+            ),
+        ]
         resources = ResourceInstance.objects.bulk_create(resources)
         nodegroups = [
             NodeGroup(pk=pk, cardinality="n")
@@ -824,3 +821,13 @@ class TileTests(ArchesTestCase):
 
         with self.assertRaisesMessage(TileValidationError, "Widget name"):
             tile.check_for_missing_nodes()
+
+    def test_save_blank_tile(self):
+        data_collecting_grouping_node_id = "72048cb3-adbc-11e6-9ccf-14109fd34195"
+        tile = Tile(
+            resourceinstance_id=UUID("40000000-0000-0000-0000-000000000000"),
+            nodegroup_id=UUID(data_collecting_grouping_node_id),
+        )
+        tile.save()
+
+        self.assertEqual(tile.data, {data_collecting_grouping_node_id: None})
