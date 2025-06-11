@@ -639,6 +639,7 @@ def update_resource_instance_data_based_on_graph_diff(
     # TODO: update function name to be less specific
     notify_completion(
         _("Updating business data based on graph changes."),
+        user,
     )
 
     try:
