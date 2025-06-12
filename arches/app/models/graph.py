@@ -391,8 +391,6 @@ class Graph(models.GraphModel):
         self.functions_x_graphs.append(function_x_graph)
         self.has_unpublished_changes = True
 
-        # function_x_graph.pk = uuid.uuid4()
-
         return function_x_graph
 
     def add_spatial_view(self, spatial_view):
