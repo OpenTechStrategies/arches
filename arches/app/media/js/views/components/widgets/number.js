@@ -1,5 +1,6 @@
 import ko from 'knockout';
 import _ from 'underscore';
+import arches from 'arches';
 import WidgetViewModel from 'viewmodels/widget';
 import numberWidgetTemplate from 'templates/views/components/widgets/number.htm';
 import 'bindings/formattedNumber';
@@ -18,7 +19,7 @@ import 'bindings/formattedNumber';
 
 var NumberWidget = function(params) {
     params.configKeys = ['placeholder', 'width', 'min', 'max', 'step', 'precision', 'prefix', 'suffix', 'defaultValue', 'format', 'uneditable'];
-
+    this.preview = arches.graphs.length > 0;
 
     WidgetViewModel.apply(this, [params]);
 
@@ -47,7 +48,7 @@ var NumberWidget = function(params) {
         return val || self.value() || null;
     }, self).extend({throttle: 600});
 
-    if (this.inResourceEditor) {
+    if (!this.preview) {
         this.value(Number(this.updateVal()));
     }
 
