@@ -19,13 +19,13 @@ import 'bindings/formattedNumber';
 var NumberWidget = function(params) {
     params.configKeys = ['placeholder', 'width', 'min', 'max', 'step', 'precision', 'prefix', 'suffix', 'defaultValue', 'format', 'uneditable'];
 
-        
+
     WidgetViewModel.apply(this, [params]);
 
     var self = this;
 
     this.disable = ko.computed(() => {
-        return ko.unwrap(self.disabled) || ko.unwrap(self.uneditable); 
+        return ko.unwrap(self.disabled) || ko.unwrap(self.uneditable);
     }, self);
 
     this.updateVal = ko.computed(function(){
@@ -47,7 +47,9 @@ var NumberWidget = function(params) {
         return val || self.value() || null;
     }, self).extend({throttle: 600});
 
-    this.value(Number(this.updateVal()));
+    if (this.inResourceEditor) {
+        this.value(Number(this.updateVal()));
+    }
 
     this.displayValue = ko.pureComputed(function() {
         if (self.value() !== null && self.value() !== undefined) {
