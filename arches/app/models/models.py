@@ -2465,10 +2465,11 @@ class SpatialView(models.Model):
         managed = True
         db_table = "spatial_views"
         triggers = [
-            pgtrigger.Composer(
+            pgtrigger.Trigger(
                 name="arches_update_spatial_views",
                 when=pgtrigger.After,
                 operation=pgtrigger.Update | pgtrigger.Delete | pgtrigger.Insert,
+                timing=pgtrigger.Deferred,
                 declare=[
                     ("sv_perform", "text"),
                     ("valid_geom_nodeid", "boolean"),
@@ -2476,11 +2477,8 @@ class SpatialView(models.Model):
                     ("valid_att_nodeids", "boolean"),
                     ("valid_language_count", "integer"),
                 ],
-                func=pgtrigger.Func(
-                    format_file_into_sql(
-                        "arches_update_spatial_views.sql",
-                        "sql/triggers",
-                    )
+                func=format_file_into_sql(
+                    "arches_update_spatial_views.sql", "sql/triggers"
                 ),
             )
         ]
