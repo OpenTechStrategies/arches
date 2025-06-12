@@ -156,7 +156,9 @@ class Graph(models.GraphModel):
                 for node in self.nodes.values():
                     if node.istopnode:
                         self.root = node
-                self.functions_x_graphs = super().get_functions_x_graphs()
+                self.functions_x_graphs = super().get_functions_x_graphs(
+                    force_recalculation=True
+                )
                 self.edges = {edge.pk: edge for edge in super().get_edges()}
                 # This resolves a tricky pointer issue with `append_branch`
                 # and possibly other functions as well. This block should
@@ -389,7 +391,7 @@ class Graph(models.GraphModel):
         self.functions_x_graphs.append(function_x_graph)
         self.has_unpublished_changes = True
 
-        function_x_graph.pk = uuid.uuid4()
+        # function_x_graph.pk = uuid.uuid4()
 
         return function_x_graph
 
