@@ -156,9 +156,7 @@ class Graph(models.GraphModel):
                 for node in self.nodes.values():
                     if node.istopnode:
                         self.root = node
-                self.functions_x_graphs = super().get_functions_x_graphs(
-                    force_recalculation=True
-                )
+                self.functions_x_graphs = super().get_functions_x_graphs()
                 self.edges = {edge.pk: edge for edge in super().get_edges()}
                 # This resolves a tricky pointer issue with `append_branch`
                 # and possibly other functions as well. This block should
