@@ -2437,13 +2437,6 @@ class Graph(models.GraphModel):
         """
         Creates an additional entry in the Graphs table that represents an draft version of the current graph
         """
-        if self.has_unpublished_changes:
-            raise GraphPublicationError(
-                message=_(
-                    "This graph has unpublished changes. Please either apply or discard them before creating a draft graph."
-                )
-            )
-
         with transaction.atomic():
             LanguageSynchronizer.synchronize_settings_with_db(
                 update_published_graphs=False
