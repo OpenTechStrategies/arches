@@ -22,7 +22,7 @@ var savedFunctions = ko.observableArray(_.map(data.applied_functions, function(f
 var viewModel = {
     loading: ko.observable(false),
     selectedFunction: ko.observable(),
-    shouldShowUpdatePublishedGraphsButton: ko.observable(false),
+    shouldShowUpdatePublishedGraphsButton: ko.observable(baseData.graph.has_unpublished_changes),
     shouldShowPublishModal: ko.observable(false),
     graph: koMapping.fromJS(baseData.graph),
 };
