@@ -389,8 +389,6 @@ class Graph(models.GraphModel):
         self.functions_x_graphs.append(function_x_graph)
         self.has_unpublished_changes = True
 
-        function_x_graph.pk = uuid.uuid4()
-
         return function_x_graph
 
     def add_spatial_view(self, spatial_view):
@@ -2439,13 +2437,6 @@ class Graph(models.GraphModel):
         """
         Creates an additional entry in the Graphs table that represents an draft version of the current graph
         """
-        if self.has_unpublished_changes:
-            raise GraphPublicationError(
-                message=_(
-                    "This graph has unpublished changes. Please either apply or discard them before creating a draft graph."
-                )
-            )
-
         with transaction.atomic():
             LanguageSynchronizer.synchronize_settings_with_db(
                 update_published_graphs=False

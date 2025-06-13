@@ -668,7 +668,9 @@ class GraphModel(SaveSupportsBlindOverwriteMixin, models.Model):
                 for function_dict in function_slugs
             ]
         else:
-            return self.functionxgraph_set.all()
+            return [
+                function_x_graph for function_x_graph in self.functionxgraph_set.all()
+            ]
 
     def get_edges(self, force_recalculation=False):
         if self.should_use_published_graph() and not force_recalculation:
