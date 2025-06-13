@@ -192,7 +192,7 @@ def revert_standard_search_view_config(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("models", "7853_add_timestamp_index"),
+        ("models", "11848_preserve_deferred_spatial_views_trigger"),
     ]
 
     operations = [
