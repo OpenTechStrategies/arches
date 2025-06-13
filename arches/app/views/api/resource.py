@@ -474,7 +474,62 @@ class Resources(APIBase):
 
 class ResourceInstanceLifecycleStates(APIBase):
     def get(self, request):
-        return JSONResponse(models.ResourceInstanceLifecycleState.objects.all())
+        def replace_resource_instance_lifecycle_id_with_resource_instance_lifecycle(
+            resource_instance_lifecycle_state,
+            resource_instance_lifecycle_id_to_serialized_resource_instance_lifecycle,
+        ):
+            if "resource_instance_lifecycle_id" in resource_instance_lifecycle_state:
+                resource_instance_lifecycle_state["resource_instance_lifecycle"] = (
+                    resource_instance_lifecycle_id_to_serialized_resource_instance_lifecycle[
+                        resource_instance_lifecycle_state.pop(
+                            "resource_instance_lifecycle_id"
+                        )
+                    ]
+                )
+
+                for related_resource_instance_lifecycle_states in (
+                    "next_resource_instance_lifecycle_states",
+                    "previous_resource_instance_lifecycle_states",
+                ):
+                    for (
+                        related_resource_instance_lifecycle_state
+                    ) in resource_instance_lifecycle_state.get(
+                        related_resource_instance_lifecycle_states, []
+                    ):
+                        replace_resource_instance_lifecycle_id_with_resource_instance_lifecycle(
+                            related_resource_instance_lifecycle_state,
+                            resource_instance_lifecycle_id_to_serialized_resource_instance_lifecycle,
+                        )
+
+            return resource_instance_lifecycle_state
+
+        resource_instance_lifecycles = models.ResourceInstanceLifecycle.objects.all()
+        resource_instance_lifecycle_states = (
+            models.ResourceInstanceLifecycleState.objects.all()
+        )
+
+        serialized_resource_instance_lifecycles = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(resource_instance_lifecycles)
+        )
+
+        resource_instance_lifecycle_id_to_serialized_resource_instance_lifecycle = {
+            resource_instance_lifecycle["id"]: resource_instance_lifecycle
+            for resource_instance_lifecycle in serialized_resource_instance_lifecycles
+        }
+
+        serialized_resource_instance_lifecycle_states = JSONDeserializer().deserialize(
+            JSONSerializer().serialize(resource_instance_lifecycle_states)
+        )
+
+        for (
+            serialized_resource_instance_lifecycle_state
+        ) in serialized_resource_instance_lifecycle_states:
+            replace_resource_instance_lifecycle_id_with_resource_instance_lifecycle(
+                serialized_resource_instance_lifecycle_state,
+                resource_instance_lifecycle_id_to_serialized_resource_instance_lifecycle,
+            )
+
+        return JSONResponse(serialized_resource_instance_lifecycle_states)
 
 
 class ResourceInstanceLifecycleState(APIBase):
@@ -501,7 +556,7 @@ class ResourceInstanceLifecycleState(APIBase):
             return JSONErrorResponse(str(e), status=404)
 
         try:
-            original_resource_instance_lifecycle_state = (
+            previous_resource_instance_lifecycle_state = (
                 resource.resource_instance_lifecycle_state
             )
 
@@ -516,7 +571,7 @@ class ResourceInstanceLifecycleState(APIBase):
 
         return JSONResponse(
             {
-                "original_resource_instance_lifecycle_state": original_resource_instance_lifecycle_state,
+                "previous_resource_instance_lifecycle_state": previous_resource_instance_lifecycle_state,
                 "current_resource_instance_lifecycle_state": current_resource_instance_lifecycle_state,
             }
         )

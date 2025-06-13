@@ -1520,7 +1520,12 @@ class ResourceInstanceLifecycle(models.Model):
         )
 
         ret["resource_instance_lifecycle_states"] = [
-            JSONSerializer().handle_model(resource_instance_lifecycle_state)
+            JSONSerializer().handle_model(
+                resource_instance_lifecycle_state,
+                fields=fields,
+                exclude=exclude,
+                **kwargs,
+            )
             for resource_instance_lifecycle_state in self.resource_instance_lifecycle_states.all()
         ]
 
@@ -1563,11 +1568,21 @@ class ResourceInstanceLifecycleState(models.Model):
 
         # for serialization we shouldn't need to recurse, 1 level down is enough
         ret["next_resource_instance_lifecycle_states"] = [
-            JSONSerializer().handle_model(resource_instance_lifecycle_state)
+            JSONSerializer().handle_model(
+                resource_instance_lifecycle_state,
+                fields=fields,
+                exclude=exclude,
+                **kwargs,
+            )
             for resource_instance_lifecycle_state in self.next_resource_instance_lifecycle_states.all()
         ]
         ret["previous_resource_instance_lifecycle_states"] = [
-            JSONSerializer().handle_model(resource_instance_lifecycle_state)
+            JSONSerializer().handle_model(
+                resource_instance_lifecycle_state,
+                fields=fields,
+                exclude=exclude,
+                **kwargs,
+            )
             for resource_instance_lifecycle_state in self.previous_resource_instance_lifecycle_states.all()
         ]
 
@@ -1788,6 +1803,14 @@ class TileModel(SaveSupportsBlindOverwriteMixin, models.Model):  # Tile
     class Meta:
         managed = True
         db_table = "tiles"
+        indexes = [
+            models.Index(
+                # Order nodegroup first to avoid separately indexing nodegroup.
+                "nodegroup",
+                "resourceinstance",
+                name="nodegroup_and_resource",
+            )
+        ]
 
     def __str__(self):
         return f"{self.find_nodegroup_alias()} ({self.pk})"
@@ -2467,10 +2490,11 @@ class SpatialView(models.Model):
         managed = True
         db_table = "spatial_views"
         triggers = [
-            pgtrigger.Composer(
+            pgtrigger.Trigger(
                 name="arches_update_spatial_views",
                 when=pgtrigger.After,
                 operation=pgtrigger.Update | pgtrigger.Delete | pgtrigger.Insert,
+                timing=pgtrigger.Deferred,
                 declare=[
                     ("sv_perform", "text"),
                     ("valid_geom_nodeid", "boolean"),
@@ -2478,11 +2502,8 @@ class SpatialView(models.Model):
                     ("valid_att_nodeids", "boolean"),
                     ("valid_language_count", "integer"),
                 ],
-                func=pgtrigger.Func(
-                    format_file_into_sql(
-                        "arches_update_spatial_views.sql",
-                        "sql/triggers",
-                    )
+                func=format_file_into_sql(
+                    "arches_update_spatial_views.sql", "sql/triggers"
                 ),
             )
         ]
