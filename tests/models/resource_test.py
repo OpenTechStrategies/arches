@@ -414,12 +414,12 @@ class ResourceTests(ArchesTestCase):
                         "string_template": "<String Node>",
                     },
                     "map_popup": {
-                        "nodegroup_id": None,
-                        "string_template": "",
+                        "nodegroup_id": str(node_group.nodegroupid),
+                        "string_template": "<String Node>",
                     },
                     "description": {
-                        "nodegroup_id": None,
-                        "string_template": "",
+                        "nodegroup_id": str(node_group.nodegroupid),
+                        "string_template": "<String Node>",
                     },
                 },
             },
@@ -444,8 +444,8 @@ class ResourceTests(ArchesTestCase):
         resource.save()
 
         self.assertEqual(resource.displayname(), "test value")
-        self.assertEqual(resource.description(), "")
-        self.assertEqual(resource.map_popup(), "")
+        self.assertEqual(resource.displaydescription(), "test value")
+        self.assertEqual(resource.map_popup(), "test value")
 
     def test_recalculate_descriptors_prefetch_related_objects(self):
         r1 = Resource(graph_id=self.search_model_graphid)
