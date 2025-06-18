@@ -376,7 +376,7 @@ class ResourceTests(ArchesTestCase):
     def test_calculate_descriptors(self):
         """
         this is a test for the ticket #12272
-        Test that descriptors are calculated correctly when 
+        Test that descriptors are calculated correctly when
         saving a resource instance with tiles appended directly
         """
 
@@ -391,17 +391,17 @@ class ResourceTests(ArchesTestCase):
         )
         graph.add_node(string_node)
 
-        edge= models.Edge.objects.create(
-            graph=graph,
-            domainnode=graph.root,
-            rangenode=string_node
+        edge = models.Edge.objects.create(
+            graph=graph, domainnode=graph.root, rangenode=string_node
         )
         graph.add_edge(edge)
-        graph.add_card(models.CardModel(
-            graph=graph,
-            nodegroup=node_group,
-            description="Test Card",
-        ))
+        graph.add_card(
+            models.CardModel(
+                graph=graph,
+                nodegroup=node_group,
+                description="Test Card",
+            )
+        )
 
         # Configure the primary descriptor to use the string node
         models.FunctionXGraph.objects.create(
