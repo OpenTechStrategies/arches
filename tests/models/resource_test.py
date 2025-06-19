@@ -443,9 +443,13 @@ class ResourceTests(ArchesTestCase):
         resource.tiles.append(tile)
         resource.save()
 
-        self.assertEqual(resource.displayname(), "test value")
-        self.assertEqual(resource.displaydescription(), "test value")
-        self.assertEqual(resource.map_popup(), "test value")
+        for display_type in (
+            resource.displayname,
+            resource.displaydescription,
+            resource.map_popup,
+        ):
+            with self.subTest(display_type=display_type):
+                self.assertEqual(display_type(), "test value")
 
     def test_recalculate_descriptors_prefetch_related_objects(self):
         r1 = Resource(graph_id=self.search_model_graphid)
