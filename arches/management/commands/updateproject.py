@@ -20,7 +20,10 @@ class Command(BaseCommand):  # pragma: no cover
             "This operation will upgrade your project to version 8.0\n"
             "This will replace the following files in your project:\n"
             "  - <project>/apps.py\n"
+            "  - .github/actions/build-and-test-branch/action.yml\n"
             "  - .github/workflows/main.yml\n"
+            "  - tsconfig.json\n"
+            "  - vitest.config.mts\n"
             "  - webpack/webpack-utils/build-filepath-lookup.js\n"
             "  - webpack/webpack.common.js\n"
             "  - webpack/webpack.config.dev.js\n"
@@ -107,7 +110,53 @@ from arches.settings_utils import generate_frontend_configuration"""
         )
         self.stdout.write("Done!")
 
+        # Replaces vitest.config.mts
+        self.stdout.write("Updating vitest.config.mts...")
+
+        if os.path.exists(os.path.join(settings.APP_ROOT, "..", "vitest.config.mts")):
+            os.remove(os.path.join(settings.APP_ROOT, "..", "vitest.config.mts"))
+
+        shutil.copy2(
+            os.path.join(
+                settings.ROOT_DIR, "install", "arches-templates", "vitest.config.mts"
+            ),
+            os.path.join(settings.APP_ROOT, "..", "vitest.config.mts"),
+        )
+        self.stdout.write("Done!")
+
         # Updates github workflows
+        self.stdout.write(
+            "Copying .github/actions/build-and-test-branch/action.yml directory to project..."
+        )
+
+        os.makedirs(
+            os.path.join(
+                settings.APP_ROOT, "..", ".github", "actions", "build-and-test-branch"
+            ),
+            exist_ok=True,
+        )
+
+        shutil.copy(
+            os.path.join(
+                settings.ROOT_DIR,
+                "install",
+                "arches-templates",
+                ".github",
+                "actions",
+                "build-and-test-branch",
+                "action.yml",
+            ),
+            os.path.join(
+                settings.APP_ROOT,
+                "..",
+                ".github",
+                "actions",
+                "build-and-test-branch",
+                "action.yml",
+            ),
+        )
+        self.stdout.write("Done!")
+
         self.stdout.write("Copying .github/workflows/main.yml directory to project...")
 
         os.makedirs(
