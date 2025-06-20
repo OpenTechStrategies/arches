@@ -1443,26 +1443,19 @@ class ResourceInstance(SaveSupportsBlindOverwriteMixin, models.Model):
         null=True,
         db_column="graphpublicationid",
         on_delete=models.PROTECT,
+        editable=False,
     )
-    name = I18n_TextField(blank=True, null=True)
-    descriptors = models.JSONField(blank=True, null=True)
-    legacyid = models.TextField(blank=True, unique=True, null=True)
+    name = I18n_TextField(blank=True, null=True, editable=False)
+    descriptors = models.JSONField(blank=True, null=True, editable=False)
+    legacyid = models.TextField(blank=True, unique=True, null=True, editable=False)
     createdtime = models.DateTimeField(auto_now_add=True)
     resource_instance_lifecycle_state = models.ForeignKey(
         blank=True,
         on_delete=models.PROTECT,
         to="models.ResourceInstanceLifecycleState",
         related_name="resource_instances",
+        editable=False,
     )
-
-    def get_initial_resource_instance_lifecycle_state(self, *args, **kwargs):
-        try:
-            return (
-                self.graph.resource_instance_lifecycle.get_initial_resource_instance_lifecycle_state()
-            )
-        except (ObjectDoesNotExist, AttributeError):
-            return None
-
     # This could be used as a lock, but primarily addresses the issue that a creating user
     # may not yet match the criteria to edit a ResourceInstance (via Set/LogicalSet) simply
     # because the details may not yet be complete. Only one user can create, as it is an
@@ -1481,6 +1474,13 @@ class ResourceInstance(SaveSupportsBlindOverwriteMixin, models.Model):
 
     def __str__(self):
         return f"{self.graph.name}: {self.name} ({self.pk})"
+
+    def get_initial_resource_instance_lifecycle_state(self, *args, **kwargs):
+        try:
+            lifecycle = self.graph.resource_instance_lifecycle
+            return lifecycle.get_initial_resource_instance_lifecycle_state()
+        except (ObjectDoesNotExist, AttributeError):
+            return None
 
     def get_instance_creator_and_edit_permissions(self, user=None):
         creatorid = None
