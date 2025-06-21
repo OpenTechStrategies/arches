@@ -541,7 +541,9 @@ class ResourceTests(ArchesTestCase):
         saving a resource instance with tiles appended directly
         """
 
-        graph = Graph.new(name="Descriptor Test Graph", is_resource=True)
+        graph = Graph.objects.create_graph(
+            name="Descriptor Test Graph", is_resource=True
+        )
         node_group = models.NodeGroup.objects.create()
         string_node = models.Node.objects.create(
             graph=graph,
