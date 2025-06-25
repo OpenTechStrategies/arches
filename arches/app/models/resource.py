@@ -313,6 +313,7 @@ class Resource(models.ResourceInstance):
                 resource_creation=True,
                 transaction_id=transaction_id,
                 context=context,
+                resource=self,
             )
 
         if index is True:
