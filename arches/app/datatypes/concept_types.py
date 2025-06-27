@@ -455,6 +455,9 @@ class ConceptListDataType(BaseConceptDataType):
         return ret
 
     def transform_export_values(self, value, *args, **kwargs):
+        if value is None:
+            return ""
+
         new_values = []
         for val in value:
             new_val = self.get_concept_export_value(
