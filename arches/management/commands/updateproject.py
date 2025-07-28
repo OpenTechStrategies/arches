@@ -22,6 +22,7 @@ class Command(BaseCommand):  # pragma: no cover
             "  - <project>/apps.py\n"
             "  - .github/actions/build-and-test-branch/action.yml\n"
             "  - .github/workflows/main.yml\n"
+            "  - eslint.config.mjs\n"
             "  - tsconfig.json\n"
             "  - vitest.config.mts\n"
             "  - webpack/webpack-utils/build-filepath-lookup.js\n"
@@ -33,10 +34,31 @@ class Command(BaseCommand):  # pragma: no cover
 
         if answer.lower() in ["y", "yes"]:
             self.update_to_v8()
+            self.update_to_v8_1()
         else:
             self.stdout.write("Operation aborted.")
 
+    def update_to_v8_1(self):
+        self.stdout.write("Updating project to version 8.1...")
+
+        # Replaces eslint.config.mjs
+        self.stdout.write("Updating eslint.config.mjs...")
+
+        if os.path.exists(os.path.join(settings.APP_ROOT, "..", "eslint.config.mjs")):
+            os.remove(os.path.join(settings.APP_ROOT, "..", "eslint.config.mjs"))
+
+        shutil.copy2(
+            os.path.join(
+                settings.ROOT_DIR, "install", "arches-templates", "eslint.config.mjs"
+            ),
+            os.path.join(settings.APP_ROOT, "..", "eslint.config.mjs"),
+        )
+        self.stdout.write("Done!")
+        self.stdout.write("Project successfully updated to version 8.1")
+
     def update_to_v8(self):
+        self.stdout.write("Updating project to version 8.0...")
+
         # Removes:
         #   `.frontend-configuration-settings.json`
         #   `.tsconfig-paths.json`
