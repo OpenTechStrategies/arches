@@ -890,9 +890,9 @@ class JsonLdReader(Reader):
                     try:
                         self.printline("Found multiple matches!", indent)
                         # if this doesn't throw an error then keep the possible branch "p"
-                        for k, v in vi.items():
+                        for k1, v in vi.items():
                             matched_branch = self.find_matching_branch(
-                                k, v, p[0], {}, tile, indent + 1
+                                k1, v, p[0], {}, tile, indent + 1
                             )
                         possible2.append(p)
                     except Exception as e:
