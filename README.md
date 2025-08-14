@@ -6,13 +6,13 @@ For general inquiries and to get technical support from the wider Arches communi
 
 For general user installation and app documentation, visit [arches.readthedocs.io](https://arches.readthedocs.io).
 
-For the documentation pertaining to the bleeding edge code (what is in the ``master`` branch), visit [arches.readthedocs.io/en/latest](https://arches.readthedocs.io/en/latest).  We welcome new contributors; please see [Contributing to Arches](CONTRIBUTING.md) for details.
+For the documentation pertaining to the version under development, visit [arches.readthedocs.io/en/latest](https://arches.readthedocs.io/en/latest).  We welcome new contributors; please see [Contributing to Arches](CONTRIBUTING.md) for details.
 
 Issue reports are encouraged! [Please read this article](http://polite.technology/reportabug.html) before reporting issues.
 *   [Report a Bug](https://github.com/archesproject/arches/issues/new?template=bug.md)
 *   [File a Feature Ticket](https://github.com/archesproject/arches/issues/new?template=feature.md)
 
-[Version 8.0.0 release notes](https://github.com/archesproject/arches/blob/dev/8.0.x/releases/8.0.0.md)
+[Version 8.0.1 release notes](https://github.com/archesproject/arches/blob/dev/8.0.x/releases/8.0.1.md)
 
 #### Quick Install
 
@@ -74,8 +74,10 @@ The following a general plan for the Arches project. Be aware this plan is tenta
 - RDM officially deprecated in favor of controlled lists
 
 ## 8.0 - Supported Applications
-- Arches Controlled Lists, June 15, 2025
-- Arches Lingo, beta version released June 15, 2025 beta. Final 1.0 released August 15,2025 
+- Arches Controlled Lists, June 30, 2025
+- Arches Lingo, alpha version released June 30, 2025. Final 1.0 released August 15, 2025.
+- Arches QuerySets, beta version released June 30, 2025.
+- Arches Modular Reports, beta version released June 30, 2025.
 
 ## 9.0 - Release date: Sept 15, 2027
 - Full migration to Vue

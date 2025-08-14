@@ -653,10 +653,12 @@ class Command(BaseCommand):
                 print("Could not save system settings")
             self.export_package_settings(dest_dir, "true")
 
-    @staticmethod
-    def update_resource_geojson_geometries():
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM refresh_geojson_geometries();")
+    def update_resource_geojson_geometries(self):
+        if not connection.in_atomic_block:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM refresh_geojson_geometries();")
+        else:
+            self.stdout.write("WARNING: Not refreshing geometries - transaction active")
 
     def load_package(
         self,
@@ -1475,7 +1477,7 @@ class Command(BaseCommand):
             create_concepts = True
 
         if len(data_source) > 0:
-            transaction_id = uuid.uuid1()
+            transaction_id = uuid.uuid4()
             for source in data_source:
                 path = utils.get_valid_path(source)
                 if path is not None:

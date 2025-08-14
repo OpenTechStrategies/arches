@@ -284,3 +284,51 @@ def ensure_single_default_searchview(sender, instance, **kwargs):
             raise ValidationError(
                 "Only one search logic component can be default at a time."
             )
+
+
+@receiver(post_save, sender=models.Card)
+@receiver(post_delete, sender=models.Card)
+@receiver(post_save, sender=models.CardModel)
+@receiver(post_delete, sender=models.CardModel)
+@receiver(post_save, sender=models.Node)
+@receiver(post_delete, sender=models.Node)
+@receiver(post_save, sender=models.Edge)
+@receiver(post_delete, sender=models.Edge)
+@receiver(post_save, sender=models.FunctionXGraph)
+@receiver(post_delete, sender=models.FunctionXGraph)
+@receiver(post_save, sender=models.GraphXPublishedGraph)
+@receiver(post_delete, sender=models.GraphXPublishedGraph)
+def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
+    models.GraphModel.objects.filter(
+        pk=instance.graph_id, has_unpublished_changes=False
+    ).update(has_unpublished_changes=True)
+
+
+@receiver(post_save, sender=models.NodeGroup)
+@receiver(post_delete, sender=models.NodeGroup)
+def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
+    # NodeGroups have no direct relation to the GraphModel objects,
+    # so this signal can fail to find the node when deleting a Graphs
+    if not instance.grouping_node_id:
+        return
+    try:
+        models.GraphModel.objects.filter(
+            pk=instance.grouping_node.graph_id, has_unpublished_changes=False
+        ).update(has_unpublished_changes=True)
+    except models.Node.DoesNotExist:
+        pass
+
+
+@receiver(post_save, sender=models.CardXNodeXWidget)
+@receiver(post_delete, sender=models.CardXNodeXWidget)
+def set_related_graph_has_unpublished_changes_to_true(sender, instance, **kwargs):
+    # CardXNodeXWidgets have no direct relation to the GraphModel objects,
+    # so this signal can fail to find the node when deleting a Graphs
+    if not instance.node_id:
+        return
+    try:
+        models.GraphModel.objects.filter(
+            pk=instance.node.graph_id, has_unpublished_changes=False
+        ).update(has_unpublished_changes=True)
+    except models.Node.DoesNotExist:
+        pass

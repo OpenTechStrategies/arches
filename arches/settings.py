@@ -105,6 +105,21 @@ ELASTICSEARCH_CUSTOM_INDEXES = []
 #     'should_update_asynchronously': False
 # }]
 
+TERM_SEARCH_TYPES = [
+    {
+        "type": "term",
+        "label": _("Term Matches"),
+        "key": "terms",
+        "module": "arches.app.search.search_term.TermSearch",
+    },
+    {
+        "type": "concept",
+        "label": _("Concepts"),
+        "key": "concepts",
+        "module": "arches.app.search.concept_search.ConceptSearch",
+    },
+]
+
 THUMBNAIL_GENERATOR = None  # "arches.app.utils.thumbnail_generator.ThumbnailGenerator"
 GENERATE_THUMBNAILS_ON_DEMAND = (
     False  # True to generate a thumnail on request if it doens't exist
@@ -328,10 +343,9 @@ TEMPLATES = build_templates_config(debug=DEBUG)
 STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "arches.settings_utils.ArchesApplicationsStaticFilesFinder",
-    "arches.settings_utils.CoreArchesStaticFilesFinderBuildDirectory",
-    "arches.settings_utils.CoreArchesStaticFilesFinderMediaRoot",
-    "arches.settings_utils.CoreArchesStaticFilesFinderNodeModules",
+    "arches.settings_utils.StaticFilesFinderBuildDirectory",
+    "arches.settings_utils.StaticFilesFinderMediaRoot",
+    "arches.settings_utils.StaticFilesFinderNodeModules",
     #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
@@ -359,7 +373,6 @@ AUTHENTICATION_BACKENDS = (
 
 INSTALLED_APPS = (
     "webpack_loader",
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -371,16 +384,20 @@ INSTALLED_APPS = (
     "arches.app.models",
     "arches.management",
     "guardian",
-    "captcha",
+    "django_recaptcha",
     "revproxy",
     "corsheaders",
     "oauth2_provider",
     "django_celery_results",
+    "pgtrigger",
 )
 
 # Placing this last ensures any templates provided by Arches Applications
 # take precedence over core arches templates in arches/app/templates.
-INSTALLED_APPS += ("arches.app",)
+INSTALLED_APPS += (
+    "arches.app",
+    "django.contrib.admin",
+)
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -455,7 +472,12 @@ LOGGING = {
             "handlers": ["file", "console"],
             "level": "WARNING",
             "propagate": True,
-        }
+        },
+        "django.request": {
+            "handlers": ["file", "console"],
+            "level": "WARNING",
+            "propagate": True,
+        },
     },
 }
 
@@ -508,7 +530,7 @@ NOCAPTCHA = True
 SILENCED_SYSTEM_CHECKS = ["guardian.W001"]
 
 if DEBUG is True:
-    SILENCED_SYSTEM_CHECKS += ["captcha.recaptcha_test_key_error"]
+    SILENCED_SYSTEM_CHECKS += ["django_recaptcha.recaptcha_test_key_error"]
 
 # group to assign users who self sign up via the web ui
 USER_SIGNUP_GROUP = "Crowdsource Editor"

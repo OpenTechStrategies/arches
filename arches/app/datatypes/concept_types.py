@@ -81,7 +81,9 @@ class BaseConceptDataType(BaseDataType):
             return self.value_lookup[valueid]
         except:
             try:
-                self.value_lookup[valueid] = models.Value.objects.get(pk=valueid)
+                self.value_lookup[valueid] = models.Value.objects.select_related(
+                    "concept", "valuetype"
+                ).get(pk=valueid)
                 return self.value_lookup[valueid]
             except ObjectDoesNotExist:
                 return models.Value()
@@ -107,8 +109,7 @@ class BaseConceptDataType(BaseDataType):
         date_range = {}
         cache_value = cache.get("concept-" + str(concept.conceptid), "no result")
         if cache_value == "no result":
-            values = models.Value.objects.filter(concept=concept)
-            for value in values:
+            for value in concept.value_set.select_related("valuetype"):
                 if value.valuetype.valuetype in ("min_year" "max_year"):
                     date_range[value.valuetype.valuetype] = value.value
             if "min_year" in date_range and "max_year" in date_range:
@@ -287,9 +288,12 @@ class ConceptDataType(BaseConceptDataType):
         data = self.get_tile_data(tile)
         if data:
             val = data[str(node.nodeid)]
-            value_data = JSONSerializer().serializeToPython(
-                self.get_value(uuid.UUID(val))
-            )
+            if val is None:
+                value_data = {}
+            else:
+                value_data = JSONSerializer().serializeToPython(
+                    self.get_value(uuid.UUID(val))
+                )
             return self.compile_json(tile, node, **value_data)
 
     def get_rdf_uri(self, node, data, which="r", c=None):
@@ -392,9 +396,8 @@ class ConceptDataType(BaseConceptDataType):
             if value["id"]:
                 return value["id"]
             else:
-                hits = [ident for ident in models.Value.objects.all()]
-                if hits:
-                    return str(hits[0].pk)
+                if arbitrary_value := models.Value.objects.first():
+                    return str(arbitrary_value.pk)
                 else:
                     print(f"No labels for concept: {concept_id}!")
                     return None
@@ -473,7 +476,7 @@ class ConceptListDataType(BaseConceptDataType):
         new_values = []
         data = self.get_tile_data(tile)
         if data:
-            for val in data[str(node.nodeid)]:
+            for val in data[str(node.nodeid)] or []:
                 new_val = self.get_value(uuid.UUID(val))
                 new_values.append(new_val)
         return self.compile_json(tile, node, concept_details=new_values)

@@ -6,7 +6,10 @@ import uuid
 import pyprind
 import sys
 
+import django
+
 from datetime import datetime
+from django.contrib.auth.models import User
 from django.db import connection, connections
 from django.db.models import prefetch_related_objects, Prefetch, Q, QuerySet
 from arches.app.models import models
@@ -181,7 +184,9 @@ def index_resources_using_multiprocessing(
     logger.debug(
         f"... resource type batch count (batch size={batch_size}): {len(resource_batches)}"
     )
-    with multiprocessing.Pool(processes=process_count) as pool:
+    with multiprocessing.Pool(
+        processes=process_count, initializer=django.setup
+    ) as pool:
         for resource_batch in resource_batches:
             pool.apply_async(
                 _index_resource_batch,
@@ -245,6 +250,7 @@ def index_resources_using_singleprocessing(
         str(nodeid): datatype
         for nodeid, datatype in models.Node.objects.values_list("nodeid", "datatype")
     }
+    all_users = User.objects.prefetch_related("groups")
     with se.BulkIndexer(batch_size=batch_size, refresh=True) as doc_indexer:
         with se.BulkIndexer(batch_size=batch_size, refresh=True) as term_indexer:
             if quiet is False:
@@ -272,6 +278,7 @@ def index_resources_using_singleprocessing(
                     fetchTiles=False,
                     datatype_factory=datatype_factory,
                     node_datatypes=node_datatypes,
+                    all_users=all_users,
                 )
                 doc_indexer.add(
                     index=RESOURCES_INDEX,
@@ -340,10 +347,9 @@ def index_resources_by_type(
             rq.add_query(term)
             rq.delete(index=RESOURCES_INDEX, refresh=True)
 
+        resources = Resource.objects.filter(graph_id=resource_type)
         if use_multiprocessing:
-            resource_ids = models.ResourceInstance.objects.filter(
-                graph_id=resource_type
-            ).values_list("resourceinstanceid", flat=True)
+            resource_ids = resources.values_list("resourceinstanceid", flat=True)
             index_resources_using_multiprocessing(
                 resourceids=resource_ids,
                 batch_size=batch_size,
@@ -357,7 +363,6 @@ def index_resources_by_type(
                 SearchEngineInstance as _se,
             )
 
-            resources = Resource.objects.filter(graph_id=resource_type)
             index_resources_using_singleprocessing(
                 resources=resources,
                 batch_size=batch_size,
@@ -602,3 +607,47 @@ def index_resources_by_transaction(
             transaction_id, len(resourceids), (datetime.now() - start).seconds
         )
     )
+
+
+def index_resources_by_time(
+    start_time,
+    batch_size=settings.BULK_IMPORT_BATCH_SIZE,
+    quiet=False,
+    use_multiprocessing=False,
+    max_subprocesses=0,
+    recalculate_descriptors=False,
+):
+    """
+    Indexes all the resources with a transaction id
+
+    Keyword Arguments:
+    quiet -- Silences the status bar output during certain operations, use in celery operations for example
+    recalculate_descriptors - forces the primary descriptors to be recalculated before (re)indexing
+
+    """
+    start = datetime.now()
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """SELECT DISTINCT resourceinstanceid FROM edit_log WHERE timestamp >= %s;""",
+            [start_time],
+        )
+        rows = cursor.fetchall()
+    resourceids = [id for (id,) in rows]
+
+    if use_multiprocessing:
+        index_resources_using_multiprocessing(
+            resourceids=resourceids,
+            batch_size=batch_size,
+            quiet=quiet,
+            max_subprocesses=max_subprocesses,
+            recalculate_descriptors=recalculate_descriptors,
+        )
+    else:
+        index_resources_using_singleprocessing(
+            resources=Resource.objects.filter(pk__in=resourceids),
+            batch_size=batch_size,
+            quiet=quiet,
+            title="time {}".format(start_time),
+            recalculate_descriptors=recalculate_descriptors,
+        )
