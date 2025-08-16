@@ -1372,8 +1372,8 @@ class FileListDataType(BaseDataType):
 
     def transform_value_for_tile(self, value, **kwargs):
         """
-        Accepts a comma delimited string of file paths as 'value'
-        or a dictionary / a list of dictionaries as following
+        The 'value' argument can be a comma delimited string of file paths,
+        a dictionary, or a list of dictionaries with the following properties:
         {
             "name": "",
             "altText": "",
@@ -1460,7 +1460,7 @@ class FileListDataType(BaseDataType):
             if len(compatible_renderers) == 1:
                 tile_file["renderer"] = compatible_renderers[0]
 
-            # if files includes metadata, add metadata to the tile_file
+            # if files include metadata, add metadata to the tile_file
             localized_metadata_keys = {"altText", "attribution", "description", "title"}
             languages = models.Language.objects.all()
             language = get_language()
