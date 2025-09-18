@@ -56,6 +56,11 @@ def _generate_urls_json():
     def build_urls(patterns, prefix="", namespace="", collected_urls=None):
         if collected_urls is None:
             collected_urls = {}
+        force_script_name = (
+            settings.FORCE_SCRIPT_NAME.rstrip("/")
+            if hasattr(settings, "FORCE_SCRIPT_NAME") and settings.FORCE_SCRIPT_NAME
+            else ""
+        )
 
         for pattern in patterns:
             if isinstance(pattern, URLPattern):
@@ -66,7 +71,7 @@ def _generate_urls_json():
                 if key not in collected_urls:
                     collected_urls[key] = {
                         "name": full_name,
-                        "url": path,
+                        "url": force_script_name + path,
                         "params": params,
                     }
 
