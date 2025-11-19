@@ -7511,17 +7511,21 @@ msgstr "Déclin"
 msgid "Resource Report"
 msgstr "Rapport de ressource"
 
-#: app/templates/views/standard-search-view.htm:28
+#: app/templates/views/components/search/standard-search-view.htm:36
 msgid "Clear Filters"
 msgstr "Effacer les filtres"
 
-#: app/templates/views/standard-search-view.htm:36
+#: app/templates/views/components/search/standard-search-view.htm:36
 msgid "Show Filters"
 msgstr "Afficher les filtres"
 
-#: app/templates/views/standard-search-view.htm:36
+#: app/templates/views/components/search/standard-search-view.htm:36
 msgid "Hide Filters"
 msgstr "Masquer les filtres"
+
+#: app/templates/views/components/search/lifecycle-state-filter.htm:12
+msgid "Lifecycle State"
+msgstr "État du cycle de vie"
 
 #: app/templates/views/user-profile-manager.htm:25
 msgid "Account Settings"
