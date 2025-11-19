@@ -101,7 +101,10 @@ class PrimaryDescriptorsFunction(AbstractPrimaryDescriptorsFunction):
                 ).format(config["nodegroup_id"])
             )
         if result.strip() == "":
-            result = _("Undefined")
+            if descriptor == "description":
+                result = ""
+            else:
+                result = _("Unnamed resource")
         if not updated:
             try:
                 result = resource.descriptors[language][descriptor]
