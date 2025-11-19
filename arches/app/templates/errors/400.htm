@@ -7,7 +7,7 @@
 	<!--===================================================-->
 	<div class="cls-header">
 	    <div class="cls-brand">
-	        <a class="box-inline" href="/index.html">
+	        <a class="box-inline" href="{% url 'search_home' %}">
 	            <span class="brand-title"><h4>{% trans "Arches" %}</h4></span>
 	        </a>
 	    </div>
@@ -23,7 +23,7 @@
 	    </div>
 
 	    <hr class="new-section-sm bord-no">
-	    <div class="pad-top"><a class="btn-link" href="/index.html">{% trans "Back to Homepage" %}</a></div>
+	    <div class="pad-top"><a class="btn-link" href="{% url 'search_home' %}">{% trans "Back to Homepage" %}</a></div>
 	</div>
 </div>
 {% endblock body %}
