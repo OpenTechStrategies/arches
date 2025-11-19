@@ -1311,7 +1311,6 @@ msgstr ""
 
 #: app/templates/help/function-help.htm:11
 msgid ""
-"\n"
 "            <p>Functions are discrete operations that can be associated with a Resource Model and are run on specific nodes or cards whenever a user clicks creates or modify's a Resource. Here in the Function Manager you will associate Functions with this Resource Model and configure them appropriately.</p>\n"
 "            <p>To add a Function to this Resource Model, click on it in Function Library, and notice that it is added to the list of Selected Functions. To delete a Function, use the <i class=\"ion-ios-trash add-tooltip\" style=\"color:lightcoral;\"></i> symbol in the upper right corner.\n"
 "              "
@@ -1341,9 +1340,7 @@ msgstr "ouvrir dans un nouvel onglet"
 #: app/templates/help/function-help.htm:19
 #, python-format
 msgid ""
-"\n"
-"            <p>Arches comes with three default functions (see below). However, functions are envisioned as the hook through which developers can easily customize Arches capabilities, because new Functions can be added to your individual Arches installation. Learn more <a href=\"https://github.com/archesproject/arches/wiki/Creating-New-Functions%%2C-DataTypes%%2C-and-Widgets\" target=\"_blank\">here</a>.</p>\n"
-"            "
+"<p>Arches comes with three default functions (see below). However, functions are envisioned as the hook through which developers can easily customize Arches capabilities, because new Functions can be added to your individual Arches installation. Learn more <a href=\"https://github.com/archesproject/arches/wiki/Creating-New-Functions%%2C-DataTypes%%2C-and-Widgets\" target=\"_blank\">here</a>.</p>"
 msgstr ""
 "<p>Arches est livré avec trois fonctions par défaut (voir ci-dessous). "
 "Cependant, les fonctions sont envisagées comme le crochet par lequel les "
@@ -1416,7 +1413,6 @@ msgstr ""
 
 #: app/templates/help/function-help.htm:36
 msgid ""
-"\n"
 "            <h5>Example</h5>\n"
 "            <p>Consider a Resource where the <strong>Name</strong> node value is <em>Folsom School</em> and <strong>Name Type</strong> node value is <em>Primary</em>.</p>\n"
 "            <p>Selecting the <strong>Name</strong> card will populate the template with <code>&lt;Name Type&gt;, &lt;Name&gt;</code>. The resulting descriptor would read <em>Primary, Folsom School</em>. Changing the template to <code>Building Name: &lt;Name&gt;</code> would yield <em>Building Name: Folsom School</em>.</p>\n"
@@ -2097,7 +2093,6 @@ msgstr ""
 
 #: app/templates/help/map-manager-help.htm:6
 msgid ""
-"\n"
 "        <p>Three categories of Map Layers will appear on your map: <strong>Resource Layers</strong> (the contents of your database), <strong>Basemaps</strong> (static background layers), and <strong>Overlays</strong> (custom data layers from outside your database). To configure a layer, first select its category in the top bar, and then choose it from the list at left.</p>\n"
 "      "
 msgstr ""
@@ -2916,7 +2911,6 @@ msgstr ""
 
 #: app/templates/help/system-settings-help.htm:6
 msgid ""
-"\n"
 "        <p>A number of global settings can be defined or altered here.</p>\n"
 "      "
 msgstr ""
@@ -2929,7 +2923,6 @@ msgstr "Paramètres d'application par défaut"
 
 #: app/templates/help/system-settings-help.htm:15
 msgid ""
-"\n"
 "                <strong>Application Name</strong> - Name of your Arches app, to be displayed in the browser title bar and elsewhere.<br>\n"
 "                <strong>Default Data Import/Export User</strong> - Name to associate with data that is imported into the system.<br>\n"
 "              "
@@ -2943,7 +2936,6 @@ msgstr "analyses d'audience Internet"
 
 #: app/templates/help/system-settings-help.htm:22
 msgid ""
-"\n"
 "                <strong>Google Analytics Key</strong> - If you have made a Google Analytics Key to track your app's traffic, enter it here.<br>\n"
 "              "
 msgstr ""
@@ -2956,7 +2948,6 @@ msgstr "Fournisseurs de services de thésaurus"
 
 #: app/templates/help/system-settings-help.htm:28
 msgid ""
-"\n"
 "                <strong>Thesaurus SPARQL Endpoint</strong> - Advanced users may create more SPARQL endpoints and register them here. These endpoints will be available in the RDM and allow you to import thesaurus entries from external sources.<br>\n"
 "              "
 msgstr ""
@@ -3118,7 +3109,6 @@ msgstr "Définissez le comportement par défaut des résultats de recherche."
 
 #: app/templates/help/system-settings-help.htm:66
 msgid ""
-"\n"
 "            <p>\n"
 "                <strong>Number of search results per page</strong> - Set the number of search results shown per page. Note this also defines the number of search result markers that are shown on the map.<br>\n"
 "                <strong>Number of search hints per dropdown</strong> - Set the number of search hints that will appear under the search bar as you type in search terms.<br>\n"
@@ -3184,7 +3174,6 @@ msgstr ""
 
 #: app/templates/help/system-settings-help.htm:90
 msgid ""
-"\n"
 "                <strong>1. Specify Search Criteria</strong> - Go to the Search page and enter all the criteria you would like to use to configure your Saved Search. You may notice that with the addition of each new search filter (either by using the term filter, map filtering tools, or temporal filters) the URL for the page will change.<br>\n"
 "                <strong>2. Copy the URL</strong> - In your browser address bar, copy the <em>entire</em> URL. This will be a long string that defines each of the search filters created in step 1.<br>\n"
 "                <strong>3. Create the Saved Search</strong> - Finally, head back to this page and fill out the settings that you see at left. You can also upload an image that will be shown along with your Search Search.\n"
@@ -7522,9 +7511,17 @@ msgstr "Déclin"
 msgid "Resource Report"
 msgstr "Rapport de ressource"
 
-#: app/templates/views/search.htm:60
+#: app/templates/views/standard-search-view.htm:28
 msgid "Clear Filters"
 msgstr "Effacer les filtres"
+
+#: app/templates/views/standard-search-view.htm:36
+msgid "Show Filters"
+msgstr "Afficher les filtres"
+
+#: app/templates/views/standard-search-view.htm:36
+msgid "Hide Filters"
+msgstr "Masquer les filtres"
 
 #: app/templates/views/user-profile-manager.htm:25
 msgid "Account Settings"
@@ -7664,7 +7661,7 @@ msgstr ""
 
 #: app/utils/data_management/resources/formats/format.py:217
 #, python-brace-format
-msgid " {0}: {1}\n"
+msgid " {0}: {1}"
 msgstr "{0} : {1}"
 
 #: app/utils/data_management/resources/formats/format.py:269
