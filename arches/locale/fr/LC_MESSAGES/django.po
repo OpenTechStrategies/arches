@@ -3802,7 +3802,15 @@ msgstr "Modifications provisoires"
 
 #: app/templates/javascript.htm:243
 msgid "QA Type"
-msgstr "Type de QA"
+msgstr "QA"
+
+#: app/templates/javascript.htm:243
+msgid "Date Created"
+msgstr "Date de création"
+
+#: app/templates/javascript.htm:243
+msgid "Date Edited"
+msgstr "Date de modification"
 
 #: app/templates/javascript.htm:244
 msgid "All Resources"
