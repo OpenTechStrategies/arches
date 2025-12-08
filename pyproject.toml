@@ -27,10 +27,11 @@ classifiers = [
     "Framework :: Django :: 5.2",
 ]
 dependencies = [
+    "arches-rule-based-permissions==0.0.1 @ git+https://code.librehq.com/ots/arches/arches-rule-based-permissions.git@vmhr-main",
     "arcgis2geojson==2.0.0",
     "celery==5.5.0",
     "defusedxml==0.7.1",
-    "Django>=5.2.3,<6.0.0",
+    "Django>=5.2.3,<6.0.0 @ git+https://github.com/OpenTechStrategies/django.git@vmhr-main",
     "django-celery-results==2.6.0",
     "django-cors-headers==4.7.0",
     "django-guardian==2.4.0",
